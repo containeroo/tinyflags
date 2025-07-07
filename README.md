@@ -79,11 +79,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Host:", *host)
-	fmt.Println("Port:", *port)
-	fmt.Println("Debug:", *debug)
-	fmt.Println("Tags:", *tags)
-	fmt.Println("Loglevel:", *loglevel)
+	fmt.Println("Host:", host)
+	fmt.Println("Port:", port)
+	fmt.Println("Debug:", debug)
+	fmt.Println("Tags:", tags)
+	fmt.Println("Loglevel:", loglevel)
 }
 ```
 

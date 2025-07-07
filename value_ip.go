@@ -1,6 +1,9 @@
 package tinyflags
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 // IPP defines a net.IP flag with the specified name, shorthand, default value, and usage.
 // Returns the flag for chaining. Retrieve the parsed value with .Value().
@@ -9,8 +12,16 @@ func (f *FlagSet) IPP(name, short string, def net.IP, usage string) *Flag[net.IP
 	val := NewFlagItem(
 		ptr,
 		def,
-		func(s string) (net.IP, error) { return net.ParseIP(s), nil },
-		func(ip net.IP) string { return ip.String() },
+		func(s string) (net.IP, error) {
+			ip := net.ParseIP(s)
+			if ip == nil {
+				return nil, fmt.Errorf("invalid IP address: %q", s)
+			}
+			return ip, nil
+		},
+		func(ip net.IP) string {
+			return ip.String()
+		},
 	)
 	return addScalar(f, name, short, usage, val, ptr)
 }
@@ -28,8 +39,16 @@ func (f *FlagSet) IPVarP(ptr *net.IP, name, short string, def net.IP, usage stri
 	val := NewFlagItem(
 		ptr,
 		def,
-		func(s string) (net.IP, error) { return net.ParseIP(s), nil },
-		func(ip net.IP) string { return ip.String() },
+		func(s string) (net.IP, error) {
+			ip := net.ParseIP(s)
+			if ip == nil {
+				return nil, fmt.Errorf("invalid IP address: %q", s)
+			}
+			return ip, nil
+		},
+		func(ip net.IP) string {
+			return ip.String()
+		},
 	)
 	return addScalar(f, name, short, usage, val, ptr)
 }

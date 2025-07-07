@@ -49,8 +49,8 @@ func (b *Flag[T]) Required() *Flag[T] {
 }
 
 // Value returns a pointer to the underlying parsed value.
-func (b *Flag[T]) Value() *T {
-	return b.ptr
+func (b *Flag[T]) Value() T {
+	return *b.ptr
 }
 
 // Metavar sets the placeholder name shown in help output for the flag value.

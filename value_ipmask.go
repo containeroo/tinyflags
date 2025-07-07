@@ -11,7 +11,6 @@ import (
 // Returns the flag for chaining. Retrieve the parsed value with .Value().
 func (f *FlagSet) IPMaskP(name, short string, def net.IPMask, usage string) *Flag[net.IPMask] {
 	ptr := new(net.IPMask)
-
 	val := NewFlagItem(
 		ptr,
 		def,
