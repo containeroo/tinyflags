@@ -1,5 +1,7 @@
 package tinyflags
 
+import "fmt"
+
 // Flag is a generic type for defining scalar.
 type Flag[T any] struct {
 	fs  *FlagSet  // The parent FlagSet this flag belongs to
@@ -62,13 +64,13 @@ func (b *Flag[T]) Metavar(s string) *Flag[T] {
 func (b *Flag[T]) Choices(allowed ...T) *Flag[T] {
 	if bv, ok := b.bf.value.(*FlagItem[T]); ok {
 		// Build validator from list
-		bv.SetValidator(func(v T) bool {
+		bv.SetValidator(func(v T) error {
 			for _, a := range allowed {
 				if bv.format(a) == bv.format(v) {
-					return true
+					return nil
 				}
 			}
-			return false
+			return fmt.Errorf("must be one of %s", formatAllowed(allowed, bv.format))
 		}, allowed)
 
 		// Convert allowed values to string for help text
@@ -81,7 +83,7 @@ func (b *Flag[T]) Choices(allowed ...T) *Flag[T] {
 }
 
 // Validator adds a custom validation function for the flag value.
-func (b *Flag[T]) Validator(fn func(T) bool) *Flag[T] {
+func (b *Flag[T]) Validator(fn func(T) error) *Flag[T] {
 	if bv, ok := b.bf.value.(*FlagItem[T]); ok {
 		bv.SetValidator(fn, nil) // no predefined list
 	}

@@ -49,10 +49,13 @@ func parseArgs(args []string) (*Config, error) {
 		Required().
 		Value()
 
-	hostip := tf.IP("host-ip", net.ParseIP("10.0.10.8"), "host ip to use. Must be in range 10.0.10.0/32").
-		Validator(func(ip net.IP) bool {
-			_, ipNet, _ := net.ParseCIDR("10.0.10.0/32")
-			return ipNet.Contains(ip)
+	hostip := tf.IP("host-ip", net.ParseIP("10.0.10.8"), "host ip to use. Must be in range 10.0.10.0/24").
+		Validator(func(ip net.IP) error {
+			_, ipNet, _ := net.ParseCIDR("10.0.10.0/24")
+			if !ipNet.Contains(ip) {
+				return fmt.Errorf("must be in range %s", ipNet.String())
+			}
+			return nil
 		}).
 		Value()
 
@@ -100,7 +103,7 @@ func main() {
 	args := []string{
 		"--port=9000",
 		"--host=example.com",
-		"--host-ip=10.5.10.12",
+		"--host-ip=10.0.10.12",
 		"-vtrue",
 		"-di",
 		"--log-level=debug",

@@ -11,7 +11,7 @@ type FlagItem[T any] struct {
 	changed   bool                    // True if the value was set via CLI or environment
 	parse     func(string) (T, error) // Function to parse a string into type T
 	format    func(T) string          // Function to format a value of type T as string
-	validator func(T) bool            // optional validation callback
+	validator func(T) error           // optional validation callback
 	allowed   []T                     // optional: for error reporting
 }
 
@@ -35,8 +35,10 @@ func (v *FlagItem[T]) Set(s string) error {
 	if err != nil {
 		return err
 	}
-	if v.validator != nil && !v.validator(val) {
-		return fmt.Errorf("invalid value %q: must be one of [%s]", s, formatAllowed(v.allowed, v.format))
+	if v.validator != nil {
+		if err := v.validator(val); err != nil {
+			return fmt.Errorf("invalid value %q: %w", s, err)
+		}
 	}
 	*v.ptr = val
 	v.changed = true
@@ -59,7 +61,7 @@ func (v *FlagItem[T]) IsChanged() bool {
 }
 
 // SetValidator sets a validation callback for this flag.
-func (v *FlagItem[T]) SetValidator(fn func(T) bool, allowed []T) {
+func (v *FlagItem[T]) SetValidator(fn func(T) error, allowed []T) {
 	v.validator = fn
 	v.allowed = allowed
 }
