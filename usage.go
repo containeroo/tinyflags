@@ -165,7 +165,7 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *baseFlag, prefix
 
 	// Build description metadata
 	desc := flag.usage
-	if len(flag.allowed) > 0 && flag.metavar == "" {
+	if len(flag.allowed) > 0 {
 		desc += " (Allowed: " + strings.Join(flag.allowed, ", ") + ")"
 	}
 	if flag.deprecated != "" {
