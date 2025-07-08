@@ -1,6 +1,9 @@
 package tinyflags
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // Flag is a generic type for defining scalar.
 type Flag[T any] struct {
@@ -32,7 +35,30 @@ func (b *Flag[T]) DisableEnv() *Flag[T] {
 // Group assigns this flag to a mutual exclusion group.
 // Flags in the same group are mutually exclusive and cannot be used together.
 func (b *Flag[T]) Group(name string) *Flag[T] {
-	b.fs.Group(name, b.bf)
+	if name == "" {
+		return b
+	}
+
+	// Search for existing group
+	var group *mutualGroup
+	for _, g := range b.fs.groups {
+		if g.name == name {
+			group = g
+			break
+		}
+	}
+	if group == nil {
+		group = &mutualGroup{name: name}
+		b.fs.groups = append(b.fs.groups, group)
+	}
+
+	// Avoid duplicate entry
+	if slices.Contains(group.flags, b.bf) {
+		return b
+	}
+
+	group.flags = append(group.flags, b.bf)
+	b.bf.group = group
 	return b
 }
 
@@ -62,23 +88,27 @@ func (b *Flag[T]) Metavar(s string) *Flag[T] {
 
 // Choices restricts the allowed values for this flag to a predefined set.
 func (b *Flag[T]) Choices(allowed ...T) *Flag[T] {
-	if bv, ok := b.bf.value.(*FlagItem[T]); ok {
-		// Build validator from list
-		bv.SetValidator(func(v T) error {
-			for _, a := range allowed {
-				if bv.format(a) == bv.format(v) {
-					return nil
-				}
-			}
-			return fmt.Errorf("must be one of %s", formatAllowed(allowed, bv.format))
-		}, allowed)
-
-		// Convert allowed values to string for help text
-		b.bf.allowed = make([]string, len(allowed))
-		for i, x := range allowed {
-			b.bf.allowed[i] = bv.format(x)
-		}
+	bv, ok := b.bf.value.(*FlagItem[T])
+	if !ok {
+		return b
 	}
+
+	// Build validator from list
+	bv.SetValidator(func(v T) error {
+		for _, a := range allowed {
+			if bv.format(a) == bv.format(v) {
+				return nil
+			}
+		}
+		return fmt.Errorf("must be one of %s", formatAllowed(allowed, bv.format))
+	}, allowed)
+
+	// Convert allowed values to string for help text
+	b.bf.allowed = make([]string, len(allowed))
+	for i, x := range allowed {
+		b.bf.allowed[i] = bv.format(x)
+	}
+
 	return b
 }
 

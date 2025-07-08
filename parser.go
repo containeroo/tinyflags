@@ -50,7 +50,7 @@ func (f *FlagSet) parseArgs(args []string) error {
 	f.positional = append(f.positional, positional...)
 
 	if f.requiredPositional > 0 && len(f.positional) < f.requiredPositional {
-		return fmt.Errorf("expected at least %d positional arguments, got %d", f.requiredPositional, len(f.positional))
+		return fmt.Errorf("expected at least %d positional argument%s, got %d", f.requiredPositional, pluralSuffix(f.requiredPositional), len(f.positional))
 	}
 	return nil
 }
@@ -116,5 +116,5 @@ func (f *FlagSet) handleError(err error) error {
 	case PanicOnError:
 		panic(err)
 	}
-	return err
+	return err // make linter happy
 }

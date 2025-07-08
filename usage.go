@@ -44,7 +44,8 @@ func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
 		fmt.Fprintln(w) // nolint:errcheck
 		return
 	case PrintFlags:
-		fmt.Fprintf(w, " [flags]") // nolint:errcheck
+		fmt.Fprintln(w, " [flags]") // nolint:errcheck
+		return
 	}
 
 	var userFlags []*baseFlag
@@ -80,15 +81,13 @@ func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
 // PrintTitle prints the configured title above the usage.
 func (f *FlagSet) PrintTitle(w io.Writer) {
 	if f.title != "" {
-		fmt.Fprint(w, f.title) // nolint:errcheck
-		fmt.Fprintln(w)        // nolint:errcheck
+		fmt.Fprintln(w, f.title) // nolint:errcheck
 	}
 }
 
 // PrintNotes prints epilog text below the usage block.
 func (f *FlagSet) PrintNotes(w io.Writer, width int) {
 	if f.notes != "" {
-		fmt.Fprintln(w)                           // nolint:errcheck
 		fmt.Fprintln(w, wrapText(f.notes, width)) // nolint:errcheck
 	}
 }
@@ -97,7 +96,6 @@ func (f *FlagSet) PrintNotes(w io.Writer, width int) {
 func (f *FlagSet) PrintDescription(w io.Writer, width int) {
 	if f.desc != "" {
 		fmt.Fprintln(w, wrapText(f.desc, width)) // nolint:errcheck
-		fmt.Fprintln(w)                          // nolint:errcheck
 	}
 }
 

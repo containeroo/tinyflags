@@ -111,9 +111,7 @@ func stateLongFlagFn(arg string) stateFn {
 
 		// If flag is of the form --flag=value
 		if hasVal {
-			if err := fl.value.Set(val); err != nil {
-				p.err = fmt.Errorf("invalid value for flag --%s: %w", name, err)
-			}
+			p.err = trySet(fl.value, val, "invalid value for flag --%s: %w", name)
 			return stateStartFn
 		}
 
@@ -125,9 +123,7 @@ func stateLongFlagFn(arg string) stateFn {
 		}
 
 		p.next() // consume the next argument
-		if err := fl.value.Set(next); err != nil {
-			p.err = fmt.Errorf("invalid value for flag --%s: %w", name, err)
-		}
+		p.err = trySet(fl.value, next, "invalid value for flag --%s: %w", name)
 		return stateStartFn
 	}
 }
@@ -162,9 +158,7 @@ func stateShortFlagFn(arg string) stateFn {
 			// Handle -p8080 (combined value)
 			if i < len(shorts)-1 {
 				val := shorts[i+1:]
-				if err := target.value.Set(val); err != nil {
-					p.err = fmt.Errorf("invalid value for flag -%s: %w", char, err)
-				}
+				p.err = trySet(target.value, val, "invalid value for flag -%s: %w", char)
 				break // done with this flag group
 			}
 
@@ -175,13 +169,20 @@ func stateShortFlagFn(arg string) stateFn {
 				return nil
 			}
 			p.next() // consume next arg
-			if err := target.value.Set(next); err != nil {
-				p.err = fmt.Errorf("invalid value for flag -%s: %w", char, err)
-			}
+			p.err = trySet(target.value, next, "invalid value for flag -%s: %w", char)
 			break
 		}
 		return stateStartFn
 	}
+}
+
+// trySet attempts to set the given value using input.
+// If setting fails, it wraps the error using the provided format and label.
+func trySet(value Value, input string, format string, label string) error {
+	if err := value.Set(input); err != nil {
+		return fmt.Errorf(format, label, err)
+	}
+	return nil
 }
 
 // splitFlagArg splits a string like "flag=value" into ("flag", "value", true).

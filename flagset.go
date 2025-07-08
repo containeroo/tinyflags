@@ -48,7 +48,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		descIndent:       40,
 		descMaxLen:       100,
 		usagePrintMode:   PrintFlags,
-		title:            "\nFlags:",
+		title:            "Flags:",
 	}
 	fs.Usage = func() {
 		out := fs.Output()
@@ -64,8 +64,8 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 
 // maybeAddBuiltinFlags adds --help and --version if enabled and not user-defined.
 func (f *FlagSet) maybeAddBuiltinFlags() {
+	// Only add default help if not already defined by the user
 	if f.enableHelp && f.showHelp == nil {
-		// Only add default help if not already defined by the user
 		if _, exists := f.flags["help"]; !exists {
 			f.showHelp = f.BoolP("help", "h", false, "show help").DisableEnv().Value()
 		}
@@ -121,6 +121,7 @@ func (f *FlagSet) Output() io.Writer { return f.output }
 func (f *FlagSet) IgnoreInvalidEnv(enable bool) { f.ignoreInvalidEnv = enable }
 
 // SetGetEnvFn overrides the env lookup function.
+// Only used for testing.
 func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.getEnv = fn }
 
 // Globaldelimiter sets the default delimiter for slice flags.
@@ -142,23 +143,6 @@ func (f *FlagSet) Arg(i int) (string, bool) {
 		return f.positional[i], true
 	}
 	return "", false
-}
-
-// Group adds a flag to a named mutual exclusion group.
-func (f *FlagSet) Group(name string, flag *baseFlag) {
-	// Don't re-register the flag here.
-	if name != "" {
-		for _, g := range f.groups {
-			if g.name == name {
-				g.flags = append(g.flags, flag)
-				flag.group = g
-				return
-			}
-		}
-		g := &mutualGroup{name: name, flags: []*baseFlag{flag}}
-		f.groups = append(f.groups, g)
-		flag.group = g
-	}
 }
 
 // UsagePrintMode sets the mode for printing usage.
