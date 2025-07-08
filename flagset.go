@@ -47,6 +47,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		enableVer:        true,
 		descIndent:       40,
 		descMaxLen:       100,
+		defaultDelimiter: ",",
 		usagePrintMode:   PrintFlags,
 		title:            "Flags:",
 	}

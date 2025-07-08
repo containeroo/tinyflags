@@ -35,12 +35,25 @@ func TestSmoke_ParseSimpleStringAndEnv(t *testing.T) {
 
 func TestSmoke_ParseArgs(t *testing.T) {
 	t.Parallel()
-	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-	age := fs.IntP("age", "a", 0, "your age").Value()
-	err := fs.Parse([]string{"--age=42"})
 
-	assert.NoError(t, err)
-	assert.Equal(t, 42, *age)
+	t.Run("IntP", func(t *testing.T) {
+		t.Parallel()
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		age := fs.IntP("age", "a", 0, "your age").Value()
+		err := fs.Parse([]string{"--age=42"})
+
+		assert.NoError(t, err)
+		assert.Equal(t, 42, *age)
+	})
+
+	t.Run("StingSlice", func(t *testing.T) {
+		t.Parallel()
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		list := fs.StringSlice("list", []string{"a", "b"}, "your list").Value()
+		err := fs.Parse([]string{"--list", "alpha", "--list=beta", "--list=gamma,delta"})
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"alpha", "beta", "gamma", "delta"}, *list)
+	})
 }
 
 func TestSmoke_HelpRequested(t *testing.T) {
