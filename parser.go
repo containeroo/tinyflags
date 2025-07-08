@@ -15,7 +15,7 @@ func (f *FlagSet) Parse(args []string) error {
 	}
 
 	// Check if help was requested
-	if f.enableHelp && f.showHelp != nil && *f.showHelp {
+	if f.enableHelp && f.showHelp {
 		var buf strings.Builder
 		f.SetOutput(&buf)
 		f.Usage()
@@ -23,7 +23,7 @@ func (f *FlagSet) Parse(args []string) error {
 	}
 
 	// Check if version was requested
-	if f.enableVer && f.showVersion != nil && *f.showVersion {
+	if f.enableVer && f.showVersion {
 		return &VersionRequested{Version: f.versionString}
 	}
 
