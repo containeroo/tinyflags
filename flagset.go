@@ -13,8 +13,8 @@ type FlagSet struct {
 	flags              map[string]*baseFlag // all registered flags by name
 	enableHelp         bool                 // whether to add built-in --help
 	enableVer          bool                 // whether to add built-in --version
-	showHelp           bool                 // internal help flag pointer
-	showVersion        bool                 // internal version flag pointer
+	showHelp           *bool                // internal help flag pointer
+	showVersion        *bool                // internal version flag pointer
 	groups             []*mutualGroup       // registered mutual exclusion groups
 	versionString      string               // version string for --version
 	getEnv             func(string) string  // env lookup (defaults to os.Getenv)
@@ -64,14 +64,14 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 
 // maybeAddBuiltinFlags adds --help and --version if enabled and not user-defined.
 func (f *FlagSet) maybeAddBuiltinFlags() {
-	if f.enableHelp && !f.showHelp {
+	if f.enableHelp && f.showHelp == nil {
 		// Only add default help if not already defined by the user
 		if _, exists := f.flags["help"]; !exists {
 			f.showHelp = f.BoolP("help", "h", false, "show help").DisableEnv().Value()
 		}
 	}
 	// Only add version if a version string was actually set and flag is not already present
-	if f.enableVer && !f.showVersion && f.versionString != "" {
+	if f.enableVer && f.showVersion == nil && f.versionString != "" {
 		if _, exists := f.flags["version"]; !exists {
 			f.showVersion = f.Bool("version", false, "show version").DisableEnv().Value()
 		}

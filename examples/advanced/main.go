@@ -13,12 +13,10 @@ import (
 type Config struct {
 	Port     int
 	Host     string
-	Addr     string
 	HostIP   net.IP
 	Verbose  bool
 	Insecure bool
 	Debug    bool
-	IpAddr   string
 	LogLevel string
 	Paths    []string
 }
@@ -51,9 +49,6 @@ func parseArgs(args []string) (*Config, error) {
 		Required().
 		Value()
 
-	defaultAddr, _ := net.ResolveTCPAddr("tcp", ":8080")
-	addr := tf.ListenAddrP("addr", "a", defaultAddr, "listen address").Value()
-
 	hostip := tf.IP("host-ip", net.ParseIP("10.0.10.8"), "host ip to use. Must be in range 10.0.10.0/24").
 		Validator(func(ip net.IP) error {
 			_, ipNet, _ := net.ParseCIDR("10.0.10.0/24")
@@ -82,7 +77,7 @@ func parseArgs(args []string) (*Config, error) {
 		return nil, err
 	}
 
-	if showHelp {
+	if *showHelp {
 		var buf bytes.Buffer
 		tf.SetOutput(&buf)
 		tf.Usage()
@@ -93,14 +88,13 @@ func parseArgs(args []string) (*Config, error) {
 	paths := tf.Args()
 
 	return &Config{
-		Port:     port,
-		Host:     host,
-		HostIP:   hostip,
-		Addr:     addr.String(),
-		Verbose:  verbose,
-		Insecure: insecure,
-		Debug:    debug,
-		LogLevel: loglevel,
+		Port:     *port,
+		Host:     *host,
+		HostIP:   *hostip,
+		Verbose:  *verbose,
+		Insecure: *insecure,
+		Debug:    *debug,
+		LogLevel: *loglevel,
 		Paths:    paths,
 	}, nil
 }

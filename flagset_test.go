@@ -20,7 +20,7 @@ func TestFlagSet(t *testing.T) {
 		port := tf.Int("port", 8080, "port to use")
 		err := tf.Parse([]string{"--port=1234"})
 		require.NoError(t, err)
-		assert.Equal(t, 1234, port.Value())
+		assert.Equal(t, 1234, *port.Value())
 
 		p, err := tf.Get("port")
 		require.NoError(t, err)
@@ -34,7 +34,7 @@ func TestFlagSet(t *testing.T) {
 		port := tf.IntSlice("port", []int{8080}, "port to use").Delimiter(":")
 		err := tf.Parse([]string{"--port=1234", "--port=5678", "--port=9012:3456"})
 		require.NoError(t, err)
-		assert.Equal(t, []int{1234, 5678, 9012, 3456}, port.Value())
+		assert.Equal(t, []int{1234, 5678, 9012, 3456}, *port.Value())
 
 		p, err := tf.Get("port")
 		require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestFlagSet(t *testing.T) {
 		port := tf.Int("port", 8080, "port to use")
 		err := tf.Parse([]string{})
 		require.NoError(t, err)
-		assert.Equal(t, 5050, port.Value())
+		assert.Equal(t, 5050, *port.Value())
 	})
 
 	t.Run("positional args", func(t *testing.T) {

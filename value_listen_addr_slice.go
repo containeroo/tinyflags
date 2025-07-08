@@ -6,7 +6,7 @@ import "net"
 // Each element is parsed using net.ResolveTCPAddr with "tcp" as the network.
 // Returns the flag for chaining. Retrieve the parsed value with .Value().
 func (f *FlagSet) ListenAddrSliceP(name, short string, def []*net.TCPAddr, usage string) *SliceFlag[[]*net.TCPAddr] {
-	var ptr *[]*net.TCPAddr
+	ptr := new([]*net.TCPAddr)
 	val := NewSliceItem(
 		ptr,
 		def,
