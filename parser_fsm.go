@@ -1,26 +1,23 @@
 package tinyflags
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
 
 // stateFn defines a function representing a parser state.
-// It takes a parser pointer and returns the next state function.
 type stateFn func(*parser) stateFn
 
 // parser holds parsing state and context for command-line argument parsing.
 type parser struct {
-	args  []string // CLI arguments to parse
-	index int      // current index in args
-	fs    *FlagSet // reference to the defined flag set
-	out   []string // collected positional arguments
-	err   error    // first error encountered, if any
+	args  []string
+	index int
+	fs    *FlagSet
+	out   []string
+	err   error
 }
 
 // next returns the next argument and advances the index.
-// If all args are consumed, it returns ok=false.
 func (p *parser) next() (arg string, ok bool) {
 	if p.index < len(p.args) {
 		arg = p.args[p.index]
@@ -39,8 +36,7 @@ func (p *parser) peek() (arg string, ok bool) {
 	return
 }
 
-// run executes the parser state machine starting from stateStartFn
-// It continues until there are no more states (state == nil).
+// run executes the parser state machine.
 func (p *parser) run() error {
 	state := stateStartFn
 	for state != nil {
@@ -49,94 +45,113 @@ func (p *parser) run() error {
 	return p.err
 }
 
-// parseArgsWithFSM initializes the parser and runs it.
-// It returns any positional arguments and the first error encountered.
 func parseArgsWithFSM(fs *FlagSet, args []string) ([]string, error) {
-	p := &parser{
-		fs:   fs,
-		args: args,
-	}
+	p := &parser{fs: fs, args: args}
 	err := p.run()
 	return p.out, err
 }
 
-// stateStartFn determines what kind of argument we're looking at (flag, positional, etc.)
-// and returns the appropriate handler state function.
 func stateStartFn(p *parser) stateFn {
 	arg, ok := p.next()
 	if !ok {
-		return nil // no more arguments → done
+		return nil
 	}
 
 	if arg == "--" {
-		// "--" means treat the rest as positional arguments
 		p.out = append(p.out, p.args[p.index:]...)
 		p.index = len(p.args)
 		return nil
 	}
 
 	if strings.HasPrefix(arg, "--") {
-		// Long-form flag like --debug or --port=8080
 		return stateLongFlagFn(arg)
 	}
 
 	if strings.HasPrefix(arg, "-") && len(arg) > 1 {
-		// Short-form flag like -d or grouped flags like -abc
 		return stateShortFlagFn(arg)
 	}
 
-	// Otherwise, it's a positional argument
 	p.out = append(p.out, arg)
 	return stateStartFn
 }
 
-// stateLongFlagFn handles arguments of the form --flag or --flag=value.
 func stateLongFlagFn(arg string) stateFn {
 	return func(p *parser) stateFn {
 		nameval := strings.TrimPrefix(arg, "--")
 		name, val, hasVal := splitFlagArg(nameval)
 
-		// Look up the flag by name
+		// Dynamic: --group.id.flag
+		// Dynamic: --group.id.field
+		if dot := strings.Index(name, "."); dot != -1 {
+			groupName := name[:dot]
+			rest := name[dot+1:]
+
+			// dynamic format: id.field
+			if dot2 := strings.Index(rest, "."); dot2 != -1 {
+				id := rest[:dot2]
+				field := rest[dot2+1:]
+
+				groupFields, ok := p.fs.dynamic[groupName]
+				if !ok {
+					p.err = fmt.Errorf("unknown dynamic group: --%s", name)
+					return nil
+				}
+				item, ok := groupFields[field]
+				if !ok {
+					p.err = fmt.Errorf("unknown dynamic field: --%s", name)
+					return nil
+				}
+
+				if hasVal {
+					p.err = trySetDynamic(item, id, val, name)
+					return stateStartFn
+				}
+
+				next, ok := p.peek()
+				if !ok || strings.HasPrefix(next, "-") {
+					p.err = fmt.Errorf("missing value for flag: --%s", name)
+					return nil
+				}
+				p.next()
+				p.err = trySetDynamic(item, id, next, name)
+				return stateStartFn
+			}
+		}
+
+		// Static
 		fl := p.fs.flags[name]
 		if fl == nil {
-			p.err = errors.New("unknown flag: --" + name)
+			p.err = fmt.Errorf("unknown flag: --%s", name)
 			return nil
 		}
 
-		// Handle booleans without explicit values: --flag ⇒ true
-		if f, ok := fl.value.(*BoolValue); ok && !f.IsStrictBool() {
+		// Non-strict bool
+		if b, ok := fl.value.(*BoolValue); ok && !b.IsStrictBool() {
 			fl.value.Set("true") // nolint:errcheck
 			return stateStartFn
 		}
 
-		// If flag is of the form --flag=value
 		if hasVal {
 			p.err = trySet(fl.value, val, "invalid value for flag --%s: %w", name)
 			return stateStartFn
 		}
 
-		// Otherwise, consume the next arg as the value
 		next, ok := p.peek()
 		if !ok || strings.HasPrefix(next, "-") {
-			p.err = errors.New("missing value for flag: --" + name)
+			p.err = fmt.Errorf("missing value for flag: --%s", name)
 			return nil
 		}
-
-		p.next() // consume the next argument
+		p.next()
 		p.err = trySet(fl.value, next, "invalid value for flag --%s: %w", name)
 		return stateStartFn
 	}
 }
 
-// stateShortFlagFn handles grouped short flags like -abc or single ones like -f value.
 func stateShortFlagFn(arg string) stateFn {
 	return func(p *parser) stateFn {
 		shorts := strings.TrimPrefix(arg, "-")
-
 		for i := 0; i < len(shorts); i++ {
 			char := string(shorts[i])
-
-			// Find the flag with matching short name
 			var target *baseFlag
 			for _, fl := range p.fs.flags {
 				if fl.short == char {
@@ -145,30 +160,27 @@ func stateShortFlagFn(arg string) stateFn {
 				}
 			}
 			if target == nil {
-				p.err = errors.New("unknown short flag: -" + char)
+				p.err = fmt.Errorf("unknown short flag: -%s", char)
 				return nil
 			}
 
-			// Handle -f where f is a non-strict bool flag
 			if b, ok := target.value.(*BoolValue); ok && !b.IsStrictBool() {
 				target.value.Set("true") // nolint:errcheck
-				continue                 // check next short flag in group
+				continue
 			}
 
-			// Handle -p8080 (combined value)
 			if i < len(shorts)-1 {
 				val := shorts[i+1:]
 				p.err = trySet(target.value, val, "invalid value for flag -%s: %w", char)
-				break // done with this flag group
+				break
 			}
 
-			// Handle -p 8080 (value in next argument)
 			next, ok := p.peek()
 			if !ok || strings.HasPrefix(next, "-") {
-				p.err = errors.New("missing value for flag: -" + char)
+				p.err = fmt.Errorf("missing value for flag: -%s", char)
 				return nil
 			}
-			p.next() // consume next arg
+			p.next()
 			p.err = trySet(target.value, next, "invalid value for flag -%s: %w", char)
 			break
 		}
@@ -176,8 +188,6 @@ func stateShortFlagFn(arg string) stateFn {
 	}
 }
 
-// trySet attempts to set the given value using input.
-// If setting fails, it wraps the error using the provided format and label.
 func trySet(value Value, input string, format string, label string) error {
 	if err := value.Set(input); err != nil {
 		return fmt.Errorf(format, label, err)
@@ -185,8 +195,13 @@ func trySet(value Value, input string, format string, label string) error {
 	return nil
 }
 
-// splitFlagArg splits a string like "flag=value" into ("flag", "value", true).
-// If there's no '=', it returns ("flag", "", false).
+func trySetDynamic(item DynamicValue, id, val, label string) error {
+	if err := item.Set(id, val); err != nil {
+		return fmt.Errorf("invalid value for dynamic flag --%s: %w", label, err)
+	}
+	return nil
+}
+
 func splitFlagArg(s string) (name, val string, hasVal bool) {
 	if i := strings.Index(s, "="); i >= 0 {
 		return s[:i], s[i+1:], true

@@ -8,31 +8,32 @@ import (
 
 // FlagSet stores configuration and registered flags for parsing.
 type FlagSet struct {
-	envPrefix          string               // optional ENV key prefix (e.g., APP_)
-	errorHandling      ErrorHandling        // behavior on parse errors
-	flags              map[string]*baseFlag // all registered flags by name
-	enableHelp         bool                 // whether to add built-in --help
-	enableVer          bool                 // whether to add built-in --version
-	showHelp           *bool                // internal help flag pointer
-	showVersion        *bool                // internal version flag pointer
-	groups             []*mutualGroup       // registered mutual exclusion groups
-	versionString      string               // version string for --version
-	getEnv             func(string) string  // env lookup (defaults to os.Getenv)
-	defaultDelimiter   string               // default delimiter for slice values
-	positional         []string             // captured positional args
-	requiredPositional int                  // number of required positional args
-	ignoreInvalidEnv   bool                 // ignore bad ENV overrides
-	name               string               // command name for usage
-	title              string               // optional usage title
-	desc               string               // optional text before usage
-	notes              string               // optional text after usage
-	sortFlags          bool                 // whether to sort flags in usage
-	Usage              func()               // custom usage printer
-	usagePrintMode     FlagPrintMode        // how to print usage
-	descMaxLen         int                  // max line length for descriptions
-	descIndent         int                  // indentation for descriptions
-	output             io.Writer            // output writer for usage/help
-	registered         []*baseFlag          // ordered list of flags
+	envPrefix          string                             // optional ENV key prefix (e.g., APP_)
+	errorHandling      ErrorHandling                      // behavior on parse errors
+	flags              map[string]*baseFlag               // all registered flags by name
+	enableHelp         bool                               // whether to add built-in --help
+	enableVer          bool                               // whether to add built-in --version
+	showHelp           *bool                              // internal help flag pointer
+	showVersion        *bool                              // internal version flag pointer
+	groups             []*mutualGroup                     // registered mutual exclusion groups
+	versionString      string                             // version string for --version
+	getEnv             func(string) string                // env lookup (defaults to os.Getenv)
+	defaultDelimiter   string                             // default delimiter for slice values
+	positional         []string                           // captured positional args
+	requiredPositional int                                // number of required positional args
+	ignoreInvalidEnv   bool                               // ignore bad ENV overrides
+	name               string                             // command name for usage
+	title              string                             // optional usage title
+	desc               string                             // optional text before usage
+	notes              string                             // optional text after usage
+	sortFlags          bool                               // whether to sort flags in usage
+	Usage              func()                             // custom usage printer
+	usagePrintMode     FlagPrintMode                      // how to print usage
+	descMaxLen         int                                // max line length for descriptions
+	descIndent         int                                // indentation for descriptions
+	output             io.Writer                          // output writer for usage/help
+	registered         []*baseFlag                        // ordered list of flags
+	dynamic            map[string]map[string]DynamicValue // group → field → item
 }
 
 // NewFlagSet creates a new FlagSet with a name and error behavior.
@@ -187,4 +188,13 @@ func GetAs[T any](fs *FlagSet, name string) (T, error) {
 		return zero, err
 	}
 	return v.(T), nil
+}
+
+// DynamicGroup starts a new group of dynamic flags (e.g. --http.alpha.port=8080).
+func (fs *FlagSet) DynamicGroup(prefix string) *DynamicGroup {
+	return &DynamicGroup{
+		fs:     fs,
+		prefix: prefix,
+		items:  map[string]DynamicValue{},
+	}
 }
