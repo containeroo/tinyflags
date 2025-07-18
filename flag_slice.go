@@ -5,8 +5,9 @@ import (
 	"strings"
 )
 
-type SliceFlagValue[T any] struct {
-	*FlagValue[[]T]
+// SliceValueImpl implements slice value parsing and validation.
+type SliceValueImpl[T any] struct {
+	*ValueImpl[[]T]
 	delimiter string
 	parse     func(string) (T, error)
 	format    func(T) string
@@ -14,23 +15,23 @@ type SliceFlagValue[T any] struct {
 	allowed   []T
 }
 
-func NewSliceFlagValue[T any](
+func NewSliceValueImpl[T any](
 	ptr *[]T,
 	def []T,
 	parse func(string) (T, error),
 	format func(T) string,
 	delimiter string,
-) *SliceFlagValue[T] {
+) *SliceValueImpl[T] {
 	*ptr = append([]T{}, def...)
-	return &SliceFlagValue[T]{
-		FlagValue: NewFlagValue(ptr, def, nil, nil),
+	return &SliceValueImpl[T]{
+		ValueImpl: NewValueImpl(ptr, def, nil, nil),
 		delimiter: delimiter,
 		parse:     parse,
 		format:    format,
 	}
 }
 
-func (s *SliceFlagValue[T]) Set(input string) error {
+func (s *SliceValueImpl[T]) Set(input string) error {
 	if !s.changed {
 		*s.ptr = nil
 	}
@@ -50,7 +51,7 @@ func (s *SliceFlagValue[T]) Set(input string) error {
 	return nil
 }
 
-func (s *SliceFlagValue[T]) Default() string {
+func (s *SliceValueImpl[T]) Default() string {
 	var out []string
 	for _, item := range s.def {
 		out = append(out, s.format(item))
@@ -58,14 +59,14 @@ func (s *SliceFlagValue[T]) Default() string {
 	return strings.Join(out, s.delimiter)
 }
 
-func (s *SliceFlagValue[T]) SetDelimiter(d string) {
+func (s *SliceValueImpl[T]) SetDelimiter(d string) {
 	s.delimiter = d
 }
 
-func (s *SliceFlagValue[T]) SetValidator(fn func(T) bool, allowed []T) {
+func (s *SliceValueImpl[T]) SetValidator(fn func(T) bool, allowed []T) {
 	s.validator = fn
 	s.allowed = allowed
 }
 
-func (s *SliceFlagValue[T]) isSlice()              {}
-func (s *SliceFlagValue[T]) Base() *FlagValue[[]T] { return s.FlagValue }
+func (s *SliceValueImpl[T]) isSlice()              {}
+func (s *SliceValueImpl[T]) Base() *ValueImpl[[]T] { return s.ValueImpl }

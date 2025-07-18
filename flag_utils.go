@@ -1,18 +1,15 @@
 package tinyflags
 
-// sliceValueProvider is a constraint for slice flag values that provide their FlagBase.
 type sliceValueProvider[T any] interface {
 	Value
 	FlagBaseProvider[[]T]
 }
 
-// scalarValueProvider is a constraint for scalar flag values that provide their FlagBase.
 type scalarValueProvider[T any] interface {
 	Value
 	FlagBaseProvider[T]
 }
 
-// addScalar registers a scalar flag and returns its builder.
 func addScalar[T any](f *FlagSet, name, short, usage string, val scalarValueProvider[T], ptr *T,
 ) *Flag[T] {
 	base := val.Base()
@@ -27,7 +24,7 @@ func addScalar[T any](f *FlagSet, name, short, usage string, val scalarValueProv
 	f.registered = append(f.registered, bf)
 
 	return &Flag[T]{
-		builderBase: builderBase[T]{
+		builderImpl: builderImpl[T]{
 			fs:    f,
 			bf:    bf,
 			value: base,
@@ -36,7 +33,6 @@ func addScalar[T any](f *FlagSet, name, short, usage string, val scalarValueProv
 	}
 }
 
-// addSlice registers a slice flag and returns its builder.
 func addSlice[T any](
 	f *FlagSet,
 	name, short, usage string,
@@ -55,9 +51,9 @@ func addSlice[T any](
 	f.flags[name] = bf
 	f.registered = append(f.registered, bf)
 
-	return &SliceFlag[T]{ // ← return correct wrapper
+	return &SliceFlag[T]{
 		Flag: Flag[[]T]{
-			builderBase: builderBase[[]T]{
+			builderImpl: builderImpl[[]T]{
 				fs:    f,
 				bf:    bf,
 				value: base,
@@ -67,8 +63,6 @@ func addSlice[T any](
 	}
 }
 
-// addDynamic registers a dynamic flag (e.g., --group.id.field) in the FlagSet.
-// It stores the item under fs.dynamic[group][field] for later parsing.
 func addDynamic(
 	fs *FlagSet,
 	group string,

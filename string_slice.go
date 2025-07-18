@@ -17,7 +17,7 @@ func (fs *FlagSet) StringSliceVar(ptr *[]string, name string, def []string, usag
 
 // StringSliceVarP defines a string slice flag with a short name and binds it to a variable.
 func (fs *FlagSet) StringSliceVarP(ptr *[]string, name, short string, def []string, usage string) *SliceFlag[string] {
-	val := NewSliceFlagValue(
+	val := NewSliceValueImpl(
 		ptr,
 		def,
 		func(s string) (string, error) { return s, nil },
@@ -47,7 +47,7 @@ func (g *DynamicGroup) StringSlice(field, usage string) *DynamicSliceFlag[string
 	}
 
 	return &DynamicSliceFlag[string]{
-		builderBase: builderBase[[]string]{
+		builderImpl: builderImpl[[]string]{
 			fs:  g.fs,
 			bf:  bf,
 			ptr: nil, // dynamic flags don't use a pre-bound pointer

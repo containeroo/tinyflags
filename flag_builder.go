@@ -1,28 +1,29 @@
 package tinyflags
 
-type builderBase[T any] struct {
+// builderImpl provides common builder methods for scalar and slice flags.
+type builderImpl[T any] struct {
 	fs    *FlagSet
 	bf    *baseFlag
-	value *FlagValue[T]
+	value *ValueImpl[T]
 	ptr   *T
 }
 
-func (b *builderBase[T]) Required() *builderBase[T] {
+func (b *builderImpl[T]) Required() *builderImpl[T] {
 	b.bf.required = true
 	return b
 }
 
-func (b *builderBase[T]) Hidden() *builderBase[T] {
+func (b *builderImpl[T]) Hidden() *builderImpl[T] {
 	b.bf.hidden = true
 	return b
 }
 
-func (b *builderBase[T]) Deprecated(reason string) *builderBase[T] {
+func (b *builderImpl[T]) Deprecated(reason string) *builderImpl[T] {
 	b.bf.deprecated = reason
 	return b
 }
 
-func (b *builderBase[T]) Group(name string) *builderBase[T] {
+func (b *builderImpl[T]) Group(name string) *builderImpl[T] {
 	if name == "" {
 		return b
 	}
@@ -39,7 +40,7 @@ func (b *builderBase[T]) Group(name string) *builderBase[T] {
 	return b
 }
 
-func (b *builderBase[T]) Env(key string) *builderBase[T] {
+func (b *builderImpl[T]) Env(key string) *builderImpl[T] {
 	if b.bf.disableEnv {
 		panic("cannot call Env after DisableEnv")
 	}
@@ -47,7 +48,7 @@ func (b *builderBase[T]) Env(key string) *builderBase[T] {
 	return b
 }
 
-func (b *builderBase[T]) DisableEnv() *builderBase[T] {
+func (b *builderImpl[T]) DisableEnv() *builderImpl[T] {
 	if b.bf.envKey != "" {
 		panic("cannot call DisableEnv after Env")
 	}
@@ -55,16 +56,16 @@ func (b *builderBase[T]) DisableEnv() *builderBase[T] {
 	return b
 }
 
-func (b *builderBase[T]) Metavar(s string) *builderBase[T] {
+func (b *builderImpl[T]) Metavar(s string) *builderImpl[T] {
 	b.bf.metavar = s
 	return b
 }
 
-func (b *builderBase[T]) Validator(fn func(T) error) *builderBase[T] {
+func (b *builderImpl[T]) Validator(fn func(T) error) *builderImpl[T] {
 	b.value.SetValidator(fn)
 	return b
 }
 
-func (b *builderBase[T]) Value() *T {
+func (b *builderImpl[T]) Value() *T {
 	return b.ptr
 }

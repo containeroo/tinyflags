@@ -1,6 +1,7 @@
 package tinyflags
 
-type FlagValue[T any] struct {
+// ValueImpl implements scalar flag parsing, formatting, and validation.
+type ValueImpl[T any] struct {
 	ptr      *T
 	def      T
 	value    T
@@ -10,9 +11,9 @@ type FlagValue[T any] struct {
 	validate func(T) error
 }
 
-func NewFlagValue[T any](ptr *T, def T, parse func(string) (T, error), format func(T) string) *FlagValue[T] {
+func NewValueImpl[T any](ptr *T, def T, parse func(string) (T, error), format func(T) string) *ValueImpl[T] {
 	*ptr = def
-	return &FlagValue[T]{
+	return &ValueImpl[T]{
 		ptr:    ptr,
 		def:    def,
 		parse:  parse,
@@ -20,7 +21,7 @@ func NewFlagValue[T any](ptr *T, def T, parse func(string) (T, error), format fu
 	}
 }
 
-func (f *FlagValue[T]) Set(s string) error {
+func (f *ValueImpl[T]) Set(s string) error {
 	val, err := f.parse(s)
 	if err != nil {
 		return err
@@ -36,8 +37,8 @@ func (f *FlagValue[T]) Set(s string) error {
 	return nil
 }
 
-func (f *FlagValue[T]) Get() any                      { return *f.ptr }
-func (f *FlagValue[T]) Default() string               { return f.format(f.def) }
-func (f *FlagValue[T]) IsChanged() bool               { return f.changed }
-func (f *FlagValue[T]) SetValidator(fn func(T) error) { f.validate = fn }
-func (f *FlagValue[T]) Base() *FlagValue[T]           { return f }
+func (f *ValueImpl[T]) Get() any                      { return *f.ptr }
+func (f *ValueImpl[T]) Default() string               { return f.format(f.def) }
+func (f *ValueImpl[T]) IsChanged() bool               { return f.changed }
+func (f *ValueImpl[T]) SetValidator(fn func(T) error) { f.validate = fn }
+func (f *ValueImpl[T]) Base() *ValueImpl[T]           { return f }

@@ -2,8 +2,9 @@ package tinyflags
 
 import "fmt"
 
+// Flag is the user-facing scalar flag builder.
 type Flag[T any] struct {
-	builderBase[T] // scalar flag builder
+	builderImpl[T] // scalar flag builder logic
 }
 
 // Choices restricts allowed scalar values.
@@ -23,10 +24,12 @@ func (f *Flag[T]) Choices(allowed ...T) *Flag[T] {
 	return f
 }
 
+// SliceFlag is the user-facing builder for slice flags.
 type SliceFlag[T any] struct {
-	Flag[[]T] // inherits scalar builders
+	Flag[[]T] // inherits scalar builder methods
 }
 
+// Delimiter configures the input separator for slice values.
 func (s *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 	if d, ok := s.bf.value.(HasDelimiter); ok {
 		d.SetDelimiter(sep)
@@ -36,7 +39,7 @@ func (s *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 
 // Choices restricts allowed slice elements.
 func (s *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
-	sv, ok := any(s.bf.value).(*SliceFlagValue[T])
+	sv, ok := any(s.bf.value).(*SliceValueImpl[T])
 	if !ok {
 		return s
 	}

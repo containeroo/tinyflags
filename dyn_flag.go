@@ -4,7 +4,7 @@ import "fmt"
 
 // DynamicFlag defines a builder for dynamic flags keyed by an instance ID (e.g., "alpha", "beta").
 type DynamicFlag[T any] struct {
-	builderBase[T]                 // Inherits builder methods like .Required(), .Group(), etc.
+	builderImpl[T]                 // Inherits builder methods like .Required(), .Group(), etc.
 	item           *DynamicItem[T] // Tracks all values by identifier
 }
 

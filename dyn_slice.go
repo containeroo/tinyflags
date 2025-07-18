@@ -76,7 +76,7 @@ func (d *DynamicSliceItem[T]) SetValidator(fn func(T) error) {
 
 // DynamicSliceFlag is a builder for dynamic slice flags.
 type DynamicSliceFlag[T any] struct {
-	builderBase[[]T]
+	builderImpl[[]T]
 	item *DynamicSliceItem[T]
 }
 

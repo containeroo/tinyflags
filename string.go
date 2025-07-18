@@ -16,8 +16,8 @@ func (fs *FlagSet) StringVar(ptr *string, name string, def string, usage string)
 }
 
 // StringVarP defines a scalar string flag with a short name and binds it to a variable.
-func (fs *FlagSet) StringVarP(ptr *string, name, short string, def string, usage string) *Flag[string] {
-	val := NewFlagValue(
+func (fs *FlagSet) StringVarP(ptr *string, name, short, def, usage string) *Flag[string] {
+	val := NewValueImpl(
 		ptr,
 		def,
 		func(s string) (string, error) { return s, nil },
@@ -44,7 +44,7 @@ func (g *DynamicGroup) String(field, usage string) *DynamicFlag[string] {
 	}
 
 	return &DynamicFlag[string]{
-		builderBase: builderBase[string]{
+		builderImpl: builderImpl[string]{
 			fs:    g.fs,
 			bf:    bf,
 			value: nil,

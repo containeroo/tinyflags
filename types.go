@@ -55,5 +55,5 @@ type HasDelimiter interface {
 
 // FlagBaseProvider is implemented by flag value types to expose the underlying FlagValue.
 type FlagBaseProvider[T any] interface {
-	Base() *FlagValue[T]
+	Base() *ValueImpl[T]
 }

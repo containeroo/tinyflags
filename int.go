@@ -19,7 +19,7 @@ func (fs *FlagSet) IntVar(ptr *int, name string, def int, usage string) *Flag[in
 
 // IntVarP defines a scalar int flag with a short name and binds it to a variable.
 func (fs *FlagSet) IntVarP(ptr *int, name, short string, def int, usage string) *Flag[int] {
-	val := NewFlagValue(
+	val := NewValueImpl(
 		ptr,
 		def,
 		strconv.Atoi,
@@ -47,7 +47,7 @@ func (g *DynamicGroup) Int(field, usage string) *DynamicFlag[int] {
 	}
 
 	return &DynamicFlag[int]{
-		builderBase: builderBase[int]{
+		builderImpl: builderImpl[int]{
 			fs:    g.fs,
 			bf:    bf,
 			value: nil,
