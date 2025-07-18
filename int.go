@@ -3,34 +3,34 @@ package tinyflags
 import "strconv"
 
 // Int defines a scalar int flag with a default value.
-func (fs *FlagSet) Int(name string, def int, usage string) *Flag[int] {
-	return fs.IntVarP(new(int), name, "", def, usage)
+func (f *FlagSet) Int(name string, def int, usage string) *Flag[int] {
+	return f.IntVarP(new(int), name, "", def, usage)
 }
 
 // IntP defines a scalar int flag with a short name.
-func (fs *FlagSet) IntP(name, short string, def int, usage string) *Flag[int] {
-	return fs.IntVarP(new(int), name, short, def, usage)
+func (f *FlagSet) IntP(name, short string, def int, usage string) *Flag[int] {
+	return f.IntVarP(new(int), name, short, def, usage)
 }
 
 // IntVar defines a scalar int flag and binds it to a variable.
-func (fs *FlagSet) IntVar(ptr *int, name string, def int, usage string) *Flag[int] {
-	return fs.IntVarP(ptr, name, "", def, usage)
+func (f *FlagSet) IntVar(ptr *int, name string, def int, usage string) *Flag[int] {
+	return f.IntVarP(ptr, name, "", def, usage)
 }
 
 // IntVarP defines a scalar int flag with a short name and binds it to a variable.
-func (fs *FlagSet) IntVarP(ptr *int, name, short string, def int, usage string) *Flag[int] {
+func (f *FlagSet) IntVarP(ptr *int, name, short string, def int, usage string) *Flag[int] {
 	val := NewValueImpl(
 		ptr,
 		def,
 		strconv.Atoi,
 		strconv.Itoa,
 	)
-	return addScalar(fs, name, short, usage, val, ptr)
+	return addScalar(f, name, short, usage, val, ptr)
 }
 
 // Int creates a dynamic int flag under the group (e.g. --group.id.port=8080).
 func (g *DynamicGroup) Int(field, usage string) *DynamicFlag[int] {
-	item := NewDynamicItem(
+	item := NewDynamicItemImpl(
 		field,
 		strconv.Atoi,
 		strconv.Itoa,
@@ -38,21 +38,5 @@ func (g *DynamicGroup) Int(field, usage string) *DynamicFlag[int] {
 
 	g.items[field] = item
 
-	// Register the dynamic pattern (e.g. group.*.port) in the main FlagSet
-	addDynamic(g.fs, g.prefix, field, item)
-
-	bf := &baseFlag{
-		name:  field,
-		usage: usage,
-	}
-
-	return &DynamicFlag[int]{
-		builderImpl: builderImpl[int]{
-			fs:    g.fs,
-			bf:    bf,
-			value: nil,
-			ptr:   nil,
-		},
-		item: item,
-	}
+	return addDynamic(g.fs, g.prefix, field, usage, item)
 }

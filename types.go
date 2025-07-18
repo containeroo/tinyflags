@@ -16,8 +16,11 @@ type baseFlag struct {
 }
 
 type mutualGroup struct {
-	name  string
-	flags []*baseFlag
+	name     string      // internal group name
+	flags    []*baseFlag // registered flags
+	title    string      // shown in help output
+	hidden   bool        // hides group from help output
+	required bool        // at least one flag must be set
 }
 
 type Value interface {

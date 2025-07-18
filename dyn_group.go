@@ -1,23 +1,21 @@
 package tinyflags
 
-import (
-	"slices"
-)
+import "slices"
 
-// DynamicGroup holds a set of dynamic fields under a shared prefix (e.g. "http").
-// Fields are accessed using instance identifiers like --http.alpha.port.
+// DynamicGroup defines a prefix for dynamic flags (e.g., "http").
+// Flags under this group are declared using `group.String(...)`, etc.
 type DynamicGroup struct {
 	fs     *FlagSet                // parent flag set
-	prefix string                  // used as prefix (e.g. "http")
-	items  map[string]DynamicValue // field name → dynamic value (e.g. port, address)
+	prefix string                  // e.g. "http"
+	items  map[string]DynamicValue // field name → dynamic value item
 }
 
-// Instances returns a sorted list of unique instance IDs seen across all dynamic flags.
+// Instances returns all seen instance IDs (e.g., alpha, beta).
 func (g *DynamicGroup) Instances() []string {
 	seen := make(map[string]struct{})
 	for _, v := range g.items {
-		if dv, ok := v.(dynamicItemValues); ok {
-			for id := range dv.ValuesAny() {
+		if impl, ok := v.(dynamicItemValues); ok {
+			for id := range impl.ValuesAny() {
 				seen[id] = struct{}{}
 			}
 		}

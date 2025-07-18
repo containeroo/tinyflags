@@ -31,10 +31,10 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.parseEnv(); err != nil {
 		return f.handleError(err)
 	}
-	if err := f.checkMutualExclusion(); err != nil {
+	if err := f.checkRequired(); err != nil {
 		return f.handleError(err)
 	}
-	if err := f.checkRequired(); err != nil {
+	if err := f.checkMutualExclusion(); err != nil {
 		return f.handleError(err)
 	}
 
@@ -50,7 +50,10 @@ func (f *FlagSet) parseArgs(args []string) error {
 	f.positional = append(f.positional, positional...)
 
 	if f.requiredPositional > 0 && len(f.positional) < f.requiredPositional {
-		return fmt.Errorf("expected at least %d positional argument%s, got %d", f.requiredPositional, pluralSuffix(f.requiredPositional), len(f.positional))
+		return fmt.Errorf("expected at least %d positional argument%s, got %d",
+			f.requiredPositional,
+			pluralSuffix(f.requiredPositional),
+			len(f.positional))
 	}
 	return nil
 }

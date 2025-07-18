@@ -170,10 +170,9 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *baseFlag, prefix
 		desc += " [DEPRECATED: " + flag.deprecated + "]"
 	}
 	if def := flag.value.Default(); def != "" {
+		desc += " (Default: " + def + ")"
 		if bv, ok := flag.value.(StrictBool); ok && bv.IsStrictBool() {
-			desc += " (Default: " + def + ")"
-		} else if !ok {
-			desc += " (Default: " + def + ")"
+			desc += " (Strict)"
 		}
 	}
 	if !flag.disableEnv && flag.envKey == "" && prefix != "" {
@@ -184,6 +183,20 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *baseFlag, prefix
 	}
 	if flag.required {
 		desc += " (Required)"
+	}
+
+	// Group information (if no title is set)
+	if flag.group != nil && !flag.group.hidden {
+		desc += " (Group: "
+		if flag.group.title != "" {
+			desc += flag.group.title
+		} else {
+			desc += flag.group.name
+		}
+		if flag.group.required {
+			desc += ", required"
+		}
+		desc += ")"
 	}
 
 	// Decide whether to wrap or keep on same line

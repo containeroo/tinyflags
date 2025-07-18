@@ -29,7 +29,12 @@ func TestSmoke_ParseArgs(t *testing.T) {
 			Value()
 
 		http := fs.DynamicGroup("http")
-		addr := http.String("address", "API address")
+		addr := http.String("address", "API address").Validator(func(s string) error {
+			if s == "localhost" {
+				return fmt.Errorf("cannot use localhost")
+			}
+			return nil
+		})
 		port := http.Int("port", "API port")
 		sl := http.StringSlice("list", "List of values")
 
@@ -63,7 +68,6 @@ func TestSmoke_ParseArgs(t *testing.T) {
 
 			// Use Get instead of MustGet for optional fields
 			portVal, _ := port.Get(id)
-
 			listVal, _ := sl.Get(id)
 
 			fmt.Println("  address:", addrVal)
@@ -72,7 +76,24 @@ func TestSmoke_ParseArgs(t *testing.T) {
 		}
 	})
 
-	t.Run("smoke error", func(t *testing.T) {
+	t.Run("smoke mutual group", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+
+		debug := fs.Bool("debug", true, "Enable debug mode").Group("db").Value()
+		noDebug := fs.Bool("no-debug", false, "Disable debug mode").Group("db").Value()
+		fs.GetGroup("db").Title("Debug Options").Description("Options for enabling debug mode").Required()
+
+		err := fs.Parse([]string{
+			"--debug",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, true, *debug)
+		assert.Equal(t, false, *noDebug)
+	})
+
+	t.Run("smoke choice error", func(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
@@ -86,5 +107,59 @@ func TestSmoke_ParseArgs(t *testing.T) {
 		})
 		require.EqualError(t, err, "invalid value for flag --list: got invalid value \"d\": must be one of [a, b, c].")
 		assert.Equal(t, []string{"a", "b", "c"}, *list) // defaults
+	})
+
+	t.Run("smoke dyn validator error", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		http := fs.DynamicGroup("http")
+		http.String("address", "API address").Validator(func(s string) error {
+			if s == "localhost" {
+				return fmt.Errorf("cannot use localhost")
+			}
+			return nil
+		})
+		http.Int("port", "API port")
+
+		err := fs.Parse([]string{
+			"--http.alpha.address=127.0.0.1",
+			"--http.alpha.port", "8080",
+			"--http.beta.address=localhost",
+			"--http.beta.list=a|b|c",
+		})
+		require.Error(t, err)
+		require.EqualError(t, err, "invalid value for dynamic flag --http.beta.address: cannot use localhost")
+	})
+
+	t.Run("smoke dyn values", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		http := fs.DynamicGroup("http")
+		addr := http.String("address", "API address").Validator(func(s string) error {
+			if s == "localhost" {
+				return fmt.Errorf("cannot use localhost")
+			}
+			return nil
+		})
+		port := http.Int("port", "API port")
+
+		err := fs.Parse([]string{
+			"--http.alpha.address=127.0.0.1",
+			"--http.alpha.port", "8080",
+			"--http.beta.address=10.0.0.1",
+		})
+		require.NoError(t, err)
+		addrs := map[string]string{
+			"alpha": "127.0.0.1",
+			"beta":  "10.0.0.1",
+		}
+		assert.Equal(t, addrs, addr.Values())
+
+		ports := map[string]int{
+			"alpha": 8080,
+		}
+		assert.Equal(t, ports, port.Values())
 	})
 }

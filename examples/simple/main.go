@@ -35,6 +35,10 @@ func main() {
 		Strict(). // strict bools require explicit value (--debug=true | --debug=false)
 		Value()
 
+	log := fs.BoolP("log", "l", false, "enable logging").Group("logging").Value()
+	noLog := fs.BoolP("no-log", "L", false, "disable logging").Group("logging").Value()
+	fs.GetGroup("logging").Hidden()
+
 	tags := fs.StringSlice("tag", []string{}, "list of tags").
 		Value()
 
@@ -56,4 +60,6 @@ func main() {
 	fmt.Println("Debug:", *debug)
 	fmt.Println("Tags:", *tags)
 	fmt.Println("Loglevel:", *loglevel)
+	fmt.Println("Log:", *log)
+	fmt.Println("No Log:", *noLog)
 }

@@ -198,3 +198,14 @@ func (f *FlagSet) DynamicGroup(prefix string) *DynamicGroup {
 		items:  map[string]DynamicValue{},
 	}
 }
+
+func (f *FlagSet) GetGroup(name string) *mutualGroup {
+	for _, g := range f.groups {
+		if g.name == name {
+			return g
+		}
+	}
+	group := &mutualGroup{name: name}
+	f.groups = append(f.groups, group)
+	return group
+}

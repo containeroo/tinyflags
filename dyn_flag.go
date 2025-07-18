@@ -2,18 +2,20 @@ package tinyflags
 
 import "fmt"
 
-// DynamicFlag defines a builder for dynamic flags keyed by an instance ID (e.g., "alpha", "beta").
+// DynamicFlag is a builder for a dynamic scalar flag.
+// Each instance (e.g. `--http.alpha.port`) can hold one value.
 type DynamicFlag[T any] struct {
-	builderImpl[T]                 // Inherits builder methods like .Required(), .Group(), etc.
-	item           *DynamicItem[T] // Tracks all values by identifier
+	fs   *FlagSet            // parent flag set
+	bf   *baseFlag           // metadata and registration
+	item *DynamicItemImpl[T] // actual value store
 }
 
-// Get retrieves the parsed value for a given instance ID, or false if not set.
+// Get retrieves the value for the given instance ID.
 func (d *DynamicFlag[T]) Get(id string) (T, bool) {
 	return d.item.Get(id)
 }
 
-// MustGet retrieves the value or panics if not set. Useful in tests or trusted code paths.
+// MustGet retrieves the value or panics if not set.
 func (d *DynamicFlag[T]) MustGet(id string) T {
 	val, ok := d.item.Get(id)
 	if !ok {
@@ -22,12 +24,12 @@ func (d *DynamicFlag[T]) MustGet(id string) T {
 	return val
 }
 
-// Values returns a map of all parsed values keyed by instance ID.
+// Values returns a map of all instance IDs and their values.
 func (d *DynamicFlag[T]) Values() map[string]T {
 	return d.item.Values()
 }
 
-// ValuesAny returns parsed values as map[string]any.
+// ValuesAny returns a map[string]any for introspection/debug.
 func (d *DynamicFlag[T]) ValuesAny() map[string]any {
 	return d.item.ValuesAny()
 }
