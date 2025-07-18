@@ -1,11 +1,9 @@
 package tinyflags
 
-import "fmt"
-
 type builderBase[T any] struct {
 	fs    *FlagSet
 	bf    *baseFlag
-	value *FlagBase[T]
+	value *FlagValue[T]
 	ptr   *T
 }
 
@@ -28,18 +26,15 @@ func (b *builderBase[T]) Group(name string) *builderBase[T] {
 	if name == "" {
 		return b
 	}
-	var group *mutualGroup
 	for _, g := range b.fs.groups {
 		if g.name == name {
-			group = g
-			break
+			g.flags = append(g.flags, b.bf)
+			b.bf.group = g
+			return b
 		}
 	}
-	if group == nil {
-		group = &mutualGroup{name: name}
-		b.fs.groups = append(b.fs.groups, group)
-	}
-	group.flags = append(group.flags, b.bf)
+	group := &mutualGroup{name: name, flags: []*baseFlag{b.bf}}
+	b.fs.groups = append(b.fs.groups, group)
 	b.bf.group = group
 	return b
 }
@@ -72,30 +67,4 @@ func (b *builderBase[T]) Validator(fn func(T) error) *builderBase[T] {
 
 func (b *builderBase[T]) Value() *T {
 	return b.ptr
-}
-
-// Choices restricts the allowed values for this flag to a predefined set.
-func (b *builderBase[T]) Choices(allowed ...T) *builderBase[T] {
-	bv, ok := b.bf.value.(*FlagBase[T])
-	if !ok {
-		return b
-	}
-
-	// Build validator from list
-	bv.SetValidator(func(v T) error {
-		for _, a := range allowed {
-			if bv.format(a) == bv.format(v) {
-				return nil
-			}
-		}
-		return fmt.Errorf("must be one of %s", formatAllowed(allowed, bv.format))
-	})
-
-	// Convert allowed values to string for help text
-	b.bf.allowed = make([]string, len(allowed))
-	for i, x := range allowed {
-		b.bf.allowed[i] = bv.format(x)
-	}
-
-	return b
 }

@@ -1,4 +1,3 @@
-// Package tinyflags provides dynamic flag support for grouped identifiers like --http.alpha.port=8080.
 package tinyflags
 
 import "fmt"

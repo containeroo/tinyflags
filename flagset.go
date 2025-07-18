@@ -191,9 +191,9 @@ func GetAs[T any](fs *FlagSet, name string) (T, error) {
 }
 
 // DynamicGroup starts a new group of dynamic flags (e.g. --http.alpha.port=8080).
-func (fs *FlagSet) DynamicGroup(prefix string) *DynamicGroup {
+func (f *FlagSet) DynamicGroup(prefix string) *DynamicGroup {
 	return &DynamicGroup{
-		fs:     fs,
+		fs:     f,
 		prefix: prefix,
 		items:  map[string]DynamicValue{},
 	}

@@ -1,26 +1,29 @@
 package tinyflags
 
-func (fs *FlagSet) String(name, usage string, def string) *Flag[string] {
+// String defines a scalar string flag with a default value.
+func (fs *FlagSet) String(name string, def string, usage string) *Flag[string] {
 	return fs.StringVarP(new(string), name, "", def, usage)
 }
 
+// StringP defines a string flag with a short name.
 func (fs *FlagSet) StringP(name, short string, def string, usage string) *Flag[string] {
 	return fs.StringVarP(new(string), name, short, def, usage)
 }
 
+// StringVar defines a string flag and binds it to a variable.
 func (fs *FlagSet) StringVar(ptr *string, name string, def string, usage string) *Flag[string] {
 	return fs.StringVarP(ptr, name, "", def, usage)
 }
 
-// String defines a scalar string flag (e.g. --name=value).
+// StringVarP defines a scalar string flag with a short name and binds it to a variable.
 func (fs *FlagSet) StringVarP(ptr *string, name, short string, def string, usage string) *Flag[string] {
-	value := NewFlagBase(
+	val := NewFlagValue(
 		ptr,
 		def,
 		func(s string) (string, error) { return s, nil },
 		func(s string) string { return s },
 	)
-	return register(fs, name, "", usage, value, ptr)
+	return addScalar(fs, name, short, usage, val, ptr)
 }
 
 func (g *DynamicGroup) String(field, usage string) *DynamicFlag[string] {
@@ -33,7 +36,7 @@ func (g *DynamicGroup) String(field, usage string) *DynamicFlag[string] {
 	g.items[field] = item
 
 	// Register the dynamic pattern (e.g. http.*.address) in the main FlagSet
-	g.fs.registerDynamic(g.prefix, field, item)
+	addDynamic(g.fs, g.prefix, field, item)
 
 	bf := &baseFlag{
 		name:  field,

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Parse parses CLI arguments, env vars, help/version, and validates required/mutual flags.
+// Parse parses CLI arguments, env vars, built-in help/version, and validations.
 func (f *FlagSet) Parse(args []string) error {
 	f.maybeAddBuiltinFlags()
 
@@ -14,6 +14,7 @@ func (f *FlagSet) Parse(args []string) error {
 		return f.handleError(err)
 	}
 
+	// Check if help was requested
 	if f.enableHelp && f.showHelp != nil && *f.showHelp {
 		var buf strings.Builder
 		f.SetOutput(&buf)
@@ -21,10 +22,12 @@ func (f *FlagSet) Parse(args []string) error {
 		return &HelpRequested{Message: buf.String()}
 	}
 
+	// Check if version was requested
 	if f.enableVer && f.showVersion != nil && *f.showVersion {
 		return &VersionRequested{Version: f.versionString}
 	}
 
+	// Load values from env and validate
 	if err := f.parseEnv(); err != nil {
 		return f.handleError(err)
 	}
@@ -47,8 +50,7 @@ func (f *FlagSet) parseArgs(args []string) error {
 	f.positional = append(f.positional, positional...)
 
 	if f.requiredPositional > 0 && len(f.positional) < f.requiredPositional {
-		return fmt.Errorf("expected at least %d positional argument%s, got %d",
-			f.requiredPositional, pluralSuffix(f.requiredPositional), len(f.positional))
+		return fmt.Errorf("expected at least %d positional argument%s, got %d", f.requiredPositional, pluralSuffix(f.requiredPositional), len(f.positional))
 	}
 	return nil
 }
@@ -114,5 +116,5 @@ func (f *FlagSet) handleError(err error) error {
 	case PanicOnError:
 		panic(err)
 	}
-	return err
+	return err // make linter happy
 }

@@ -170,7 +170,7 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *baseFlag, prefix
 		desc += " [DEPRECATED: " + flag.deprecated + "]"
 	}
 	if def := flag.value.Default(); def != "" {
-		if bv, ok := flag.value.(*BoolValue); ok && bv.IsStrictBool() {
+		if bv, ok := flag.value.(StrictBool); ok && bv.IsStrictBool() {
 			desc += " (Default: " + def + ")"
 		} else if !ok {
 			desc += " (Default: " + def + ")"
@@ -206,7 +206,7 @@ func getMetavar(flag *baseFlag) string {
 	isBool := false
 	isStrict := false
 
-	if bv, ok := flag.value.(*BoolValue); ok {
+	if bv, ok := flag.value.(StrictBool); ok {
 		isBool = true
 		isStrict = bv.IsStrictBool()
 	}

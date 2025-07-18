@@ -52,3 +52,8 @@ type SliceMarker interface {
 type HasDelimiter interface {
 	SetDelimiter(string) // Updates the delimiter used during Set()
 }
+
+// FlagBaseProvider is implemented by flag value types to expose the underlying FlagValue.
+type FlagBaseProvider[T any] interface {
+	Base() *FlagValue[T]
+}

@@ -4,9 +4,9 @@ import (
 	"strconv"
 )
 
-// BoolValue embeds FlagBase[bool] and tracks whether strict boolean parsing is required.
+// BoolValue holds the internal state of a boolean flag and whether it is strict.
 type BoolValue struct {
-	*FlagBase[bool]
+	*FlagValue[bool]
 	strict bool
 }
 
@@ -18,7 +18,7 @@ func (b *BoolValue) IsStrictBool() bool {
 // BoolFlag provides fluent builder methods for boolean flags,
 // including support for .Strict() to require explicit values.
 type BoolFlag struct {
-	*Flag[bool] // embed core builder methods like Env(), Required(), etc.
+	*Flag[bool] // embeds core builder methods like Env(), Required(), etc.
 	val         *BoolValue
 }
 
@@ -33,25 +33,26 @@ func (fs *FlagSet) Bool(name string, def bool, usage string) *BoolFlag {
 	return fs.BoolVarP(new(bool), name, "", def, usage)
 }
 
-// Bool defines a boolean flag with a default value.
-func (fs *FlagSet) BoolP(name string, short string, def bool, usage string) *BoolFlag {
+// BoolP defines a boolean flag with a short name and a default value.
+func (fs *FlagSet) BoolP(name, short string, def bool, usage string) *BoolFlag {
 	return fs.BoolVarP(new(bool), name, short, def, usage)
 }
 
+// BoolVar defines a boolean flag and binds it to the given pointer.
 func (fs *FlagSet) BoolVar(ptr *bool, name string, def bool, usage string) *BoolFlag {
 	return fs.BoolVarP(ptr, name, "", def, usage)
 }
 
-// BoolVar defines a boolean flag and stores the result in the given pointer.
-func (fs *FlagSet) BoolVarP(ptr *bool, name string, short string, def bool, usage string) *BoolFlag {
+// BoolVarP defines a boolean flag with a short name and binds it to the given pointer.
+func (fs *FlagSet) BoolVarP(ptr *bool, name, short string, def bool, usage string) *BoolFlag {
 	val := &BoolValue{
-		FlagBase: NewFlagBase(
+		FlagValue: NewFlagValue(
 			ptr,
 			def,
 			strconv.ParseBool,
 			strconv.FormatBool,
 		),
 	}
-	flag := register(fs, name, short, usage, val.FlagBase, ptr)
+	flag := addScalar(fs, name, short, usage, val, ptr)
 	return &BoolFlag{Flag: flag, val: val}
 }
