@@ -15,14 +15,6 @@ type baseFlag struct {
 	allowed    []string // allowed values for this flag
 }
 
-type mutualGroup struct {
-	name     string      // internal group name
-	flags    []*baseFlag // registered flags
-	title    string      // shown in help output
-	hidden   bool        // hides group from help output
-	required bool        // at least one flag must be set
-}
-
 type Value interface {
 	Set(string) error
 	Get() any
@@ -58,5 +50,5 @@ type HasDelimiter interface {
 
 // FlagBaseProvider is implemented by flag value types to expose the underlying FlagValue.
 type FlagBaseProvider[T any] interface {
-	Base() *ValueImpl[T]
+	Base() *ScalarValueImpl[T]
 }

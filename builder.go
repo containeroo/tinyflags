@@ -4,7 +4,7 @@ package tinyflags
 type builderImpl[T any] struct {
 	fs    *FlagSet
 	bf    *baseFlag
-	value *ValueImpl[T]
+	value *ScalarValueImpl[T]
 	ptr   *T
 }
 

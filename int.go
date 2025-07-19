@@ -19,7 +19,7 @@ func (f *FlagSet) IntVar(ptr *int, name string, def int, usage string) *Flag[int
 
 // IntVarP defines a scalar int flag with a short name and binds it to a variable.
 func (f *FlagSet) IntVarP(ptr *int, name, short string, def int, usage string) *Flag[int] {
-	val := NewValueImpl(
+	val := NewScalarValueImpl(
 		ptr,
 		def,
 		strconv.Atoi,

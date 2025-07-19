@@ -83,7 +83,7 @@ func TestSmoke_ParseArgs(t *testing.T) {
 
 		debug := fs.Bool("debug", true, "Enable debug mode").Group("db").Value()
 		noDebug := fs.Bool("no-debug", false, "Disable debug mode").Group("db").Value()
-		fs.GetGroup("db").Title("Debug Options").Description("Options for enabling debug mode").Required()
+		fs.GetGroup("db").Title("Debug Options").Required()
 
 		err := fs.Parse([]string{
 			"--debug",

@@ -7,7 +7,7 @@ import (
 
 // SliceValueImpl implements slice value parsing and validation.
 type SliceValueImpl[T any] struct {
-	*ValueImpl[[]T]
+	*ScalarValueImpl[[]T]
 	delimiter string
 	parse     func(string) (T, error)
 	format    func(T) string
@@ -24,10 +24,10 @@ func NewSliceValueImpl[T any](
 ) *SliceValueImpl[T] {
 	*ptr = append([]T{}, def...)
 	return &SliceValueImpl[T]{
-		ValueImpl: NewValueImpl(ptr, def, nil, nil),
-		delimiter: delimiter,
-		parse:     parse,
-		format:    format,
+		ScalarValueImpl: NewScalarValueImpl(ptr, def, nil, nil),
+		delimiter:       delimiter,
+		parse:           parse,
+		format:          format,
 	}
 }
 
@@ -68,5 +68,5 @@ func (s *SliceValueImpl[T]) SetValidator(fn func(T) bool, allowed []T) {
 	s.allowed = allowed
 }
 
-func (s *SliceValueImpl[T]) isSlice()              {}
-func (s *SliceValueImpl[T]) Base() *ValueImpl[[]T] { return s.ValueImpl }
+func (s *SliceValueImpl[T]) isSlice()                    {}
+func (s *SliceValueImpl[T]) Base() *ScalarValueImpl[[]T] { return s.ScalarValueImpl }

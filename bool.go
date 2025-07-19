@@ -4,7 +4,7 @@ import "strconv"
 
 // BoolValue holds the internal state of a boolean flag and whether it is strict.
 type BoolValue struct {
-	*ValueImpl[bool]
+	*ScalarValueImpl[bool]
 	strict bool
 }
 
@@ -44,7 +44,7 @@ func (f *FlagSet) BoolVar(ptr *bool, name string, def bool, usage string) *BoolF
 // BoolVarP defines a boolean flag with a short name and binds it to the given pointer.
 func (f *FlagSet) BoolVarP(ptr *bool, name, short string, def bool, usage string) *BoolFlag {
 	val := &BoolValue{
-		ValueImpl: NewValueImpl(
+		ScalarValueImpl: NewScalarValueImpl(
 			ptr,
 			def,
 			strconv.ParseBool,

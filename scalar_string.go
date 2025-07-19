@@ -17,23 +17,11 @@ func (f *FlagSet) StringVar(ptr *string, name string, def string, usage string) 
 
 // StringVarP defines a scalar string flag with a short name and binds it to a variable.
 func (f *FlagSet) StringVarP(ptr *string, name, short, def, usage string) *Flag[string] {
-	val := NewValueImpl(
+	val := NewScalarValueImpl(
 		ptr,
 		def,
 		func(s string) (string, error) { return s, nil },
 		func(s string) string { return s },
 	)
 	return addScalar(f, name, short, usage, val, ptr)
-}
-
-func (g *DynamicGroup) String(field, usage string) *DynamicFlag[string] {
-	item := NewDynamicItemImpl(
-		field,
-		func(s string) (string, error) { return s, nil },
-		func(s string) string { return s },
-	)
-
-	g.items[field] = item
-
-	return addDynamic(g.fs, g.prefix, field, usage, item)
 }
