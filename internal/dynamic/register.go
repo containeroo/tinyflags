@@ -1,6 +1,11 @@
 package dynamic
 
-// defineDynamicScalar creates and registers a dynamic scalar flag of type T.
+import (
+	"github.com/containeroo/tinyflags/internal/builder"
+	"github.com/containeroo/tinyflags/internal/core"
+)
+
+// defineDynamicScalar registers a scalar field under the group.
 func defineDynamicScalar[T any](
 	g *Group,
 	field string,
@@ -11,10 +16,15 @@ func defineDynamicScalar[T any](
 	if err := g.fs.RegisterDynamic(g.prefix, field, item); err != nil {
 		panic(err)
 	}
-	return &ScalarFlag[T]{item: item}
+	bf := &core.BaseFlag{Name: field}
+
+	return &ScalarFlag[T]{
+		DynamicFlag: builder.NewDynamicFlag[T](g.fs, bf),
+		item:        item,
+	}
 }
 
-// defineDynamicSlice creates and registers a dynamic slice flag of type T.
+// defineDynamicSlice registers a slice field under the group.
 func defineDynamicSlice[T any](
 	g *Group,
 	field string,
@@ -25,5 +35,10 @@ func defineDynamicSlice[T any](
 	if err := g.fs.RegisterDynamic(g.prefix, field, item); err != nil {
 		panic(err)
 	}
-	return &SliceFlag[T]{item: item}
+	bf := &core.BaseFlag{Name: field}
+
+	return &SliceFlag[T]{
+		DynamicFlag: builder.NewDynamicFlag[T](g.fs, bf),
+		item:        item,
+	}
 }

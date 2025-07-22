@@ -63,6 +63,10 @@ func (f *FlagSet) parseArgs(args []string) error {
 // parseEnv loads unset flags from environment variables.
 func (f *FlagSet) parseEnv() error {
 	for _, fl := range f.flags {
+		if fl.Value == nil {
+			// dynamically‐registered flags aren’t loaded from ENV
+			continue
+		}
 		if fl.Value.Changed() {
 			continue
 		}

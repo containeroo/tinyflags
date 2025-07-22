@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// String registers a dynamic string flag under this group.
+// String adds a string field.
 func (g *Group) String(field, usage string) *ScalarFlag[string] {
 	return defineDynamicScalar(g,
 		field,
@@ -14,16 +14,17 @@ func (g *Group) String(field, usage string) *ScalarFlag[string] {
 	)
 }
 
-// Int registers a dynamic int flag under this group.
+// Int adds an int field.
 func (g *Group) Int(field, usage string) *ScalarFlag[int] {
 	return defineDynamicScalar(g, field, strconv.Atoi, strconv.Itoa)
 }
 
-// Duration registers a dynamic time.Duration flag under this group.
+// Duration add a time.Duration field.
 func (g *Group) Duration(field, usage string) *ScalarFlag[time.Duration] {
 	return defineDynamicScalar(g, field, time.ParseDuration, time.Duration.String)
 }
 
+// Float64 adds a float64 field.
 func (g *Group) Float64(field, usage string) *ScalarFlag[float64] {
 	return defineDynamicScalar(g, field,
 		func(s string) (float64, error) { return strconv.ParseFloat(s, 64) },
@@ -31,6 +32,7 @@ func (g *Group) Float64(field, usage string) *ScalarFlag[float64] {
 	)
 }
 
+// Float32 adds a float32 field.
 func (g *Group) Float32(field, usage string) *ScalarFlag[float32] {
 	return defineDynamicScalar(g, field,
 		func(s string) (float32, error) {

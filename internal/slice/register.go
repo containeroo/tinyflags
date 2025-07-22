@@ -12,7 +12,7 @@ type sliceValueProvider[T any] interface {
 
 func RegisterSlice[T any](
 	reg core.Registry,
-	name, short, usage string,
+	name, usage string,
 	val sliceValueProvider[T],
 	ptr *[]T,
 ) *SliceFlag[T] {
@@ -20,7 +20,6 @@ func RegisterSlice[T any](
 
 	bf := &core.BaseFlag{
 		Name:  name,
-		Short: short,
 		Usage: usage,
 		Value: val,
 	}
@@ -28,11 +27,7 @@ func RegisterSlice[T any](
 	reg.RegisterFlag(name, bf)
 
 	return &SliceFlag[T]{
-		DefaultFlag: builder.DefaultFlag[[]T]{
-			Registry: reg,
-			BF:       bf,
-			Ptr:      ptr,
-		},
-		val: base,
+		StaticFlag: builder.NewDefaultFlag(reg, bf, ptr),
+		val:        base,
 	}
 }

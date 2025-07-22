@@ -1,44 +1,44 @@
 package core
 
-// MutualGroup defines a mutually exclusive group of flags.
-// Only one flag in a group can be set at a time.
+// MutualGroup enforces exclusivity among a set of flags.
+// Only one flag in the group may be set.
 type MutualGroup struct {
-	Name      string      // Name is the group identifier.
-	Flags     []*BaseFlag // Flags is the list of flags that belong to this group.
-	titleText string      // titleText is the custom title shown in help output (optional).
-	hidden    bool        // isHidden marks the group as hidden from help output.
-	required  bool        // isRequired marks the group as required (one flag must be set).
+	Name      string      // Identifier for this group.
+	Flags     []*BaseFlag // Member flags.
+	titleText string      // Optional title to display in help.
+	hidden    bool        // Hide this group in help.
+	required  bool        // Require exactly one of the flags.
 }
 
-// Title sets the custom title text shown in the help output.
+// Title sets a custom help heading.
 func (g *MutualGroup) Title(t string) *MutualGroup {
 	g.titleText = t
 	return g
 }
 
-// TitleText returns the group's custom title text.
+// TitleText returns the custom heading, if any.
 func (g *MutualGroup) TitleText() string {
 	return g.titleText
 }
 
-// Hidden marks the group as hidden from help output.
+// Hidden marks the group as omitted from help.
 func (g *MutualGroup) Hidden() *MutualGroup {
 	g.hidden = true
 	return g
 }
 
-// IsHidden returns true if the group is marked as hidden.
+// IsHidden reports whether the group is hidden.
 func (g *MutualGroup) IsHidden() bool {
 	return g.hidden
 }
 
-// Required marks the group as required (at least one flag must be set).
+// Required enforces that one member must be set.
 func (g *MutualGroup) Required() *MutualGroup {
 	g.required = true
 	return g
 }
 
-// IsRequired returns true if the group is marked as required.
+// IsRequired reports whether the group is required.
 func (g *MutualGroup) IsRequired() bool {
 	return g.required
 }

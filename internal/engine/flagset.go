@@ -37,6 +37,8 @@ type FlagSet struct {
 	showVersion        *bool                                   // showVersion is a pointer to the parsed --version flag value, if enabled.
 	Usage              func()                                  // Usage is the customizable function for printing usage. Defaults to printing title, description, flags, and notes.
 	sortFlags          bool                                    // sortFlags determines whether flags are printed in sorted order.
+	authors            string
+	hideEnvs           bool
 }
 
 // NewFlagSet creates a new FlagSet with the given name and error handling policy.
@@ -62,6 +64,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		out := fs.Output()
 		fs.PrintUsage(out, fs.usagePrintMode)
 		fs.PrintTitle(out)
+		fs.PrintAuthors(out)
 		fs.PrintDescription(out, fs.descMaxLen)
 		fs.PrintDefaults()
 		fs.PrintNotes(out, fs.descMaxLen)
@@ -82,6 +85,8 @@ func (f *FlagSet) EnvPrefix(prefix string) { f.envPrefix = prefix }
 // Title sets the usage section title.
 func (f *FlagSet) Title(s string) { f.title = s }
 
+func (f *FlagSet) Authors(s string) { f.authors = s }
+
 // Description sets the prolog text shown above the flags.
 func (f *FlagSet) Description(s string) { f.desc = s }
 
@@ -96,6 +101,8 @@ func (f *FlagSet) DisableVersion() {
 	f.enableVer = false
 	f.versionString = ""
 }
+
+func (f *FlagSet) HideEnvs() { f.hideEnvs = true }
 
 // Sorted enables or disables sorted help output.
 func (f *FlagSet) Sorted(enable bool) { f.sortFlags = enable }
@@ -197,7 +204,7 @@ func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.flags["help"]; !exists {
-			f.showHelp = f.BoolP("help", "h", false, "show help").DisableEnv().Value()
+			f.showHelp = f.Bool("help", false, "show help").Short("h").DisableEnv().Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {

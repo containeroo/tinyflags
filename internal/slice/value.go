@@ -60,13 +60,13 @@ func (f *SliceValue[T]) Get() any {
 	return *f.ptr
 }
 
-func (f *SliceValue[T]) DefaultString() string {
-	out := make([]string, 0, len(f.def))
-	for _, v := range f.def {
-		out = append(out, f.format(v))
-	}
-	return strings.Join(out, f.delimiter)
-}
+// func (f *SliceValue[T]) DefaultString() string {
+// 	out := make([]string, 0, len(f.def))
+// 	for _, v := range f.def {
+// 		out = append(out, f.format(v))
+// 	}
+// 	return strings.Join(out, f.delimiter)
+// }
 
 func (f *SliceValue[T]) Changed() bool {
 	return f.changed
@@ -74,7 +74,7 @@ func (f *SliceValue[T]) Changed() bool {
 
 func (f *SliceValue[T]) setValidate(fn func(T) error) { f.validate = fn }
 
-func (s *SliceValue[T]) isSlice()             {}
+// func (s *SliceValue[T]) isSlice()             {}
 func (f *SliceValue[T]) Base() *SliceValue[T] { return f }
 
 func (f *SliceValue[T]) Default() string {

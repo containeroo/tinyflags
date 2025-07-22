@@ -72,26 +72,26 @@ func stateStartFn(p *parser) stateFn {
 		return nil // no more arguments → done
 	}
 
-	if arg == "--" {
-		// "--" means treat the rest as positional arguments
+	switch {
+	case arg == "--":
+		// treat the rest as positional arguments
 		p.out = append(p.out, p.args[p.index:]...)
 		p.index = len(p.args)
 		return nil
-	}
 
-	if strings.HasPrefix(arg, "--") {
-		// Long-form flag like --debug or --port=8080
+	case strings.HasPrefix(arg, "--"):
+		// long form: --flag or --flag=value
 		return stateLongFlagFn(arg)
-	}
 
-	if strings.HasPrefix(arg, "-") && len(arg) > 1 {
-		// Short-form flag like -d or grouped flags like -abc
+	case strings.HasPrefix(arg, "-") && len(arg) > 1:
+		// short form: -f, -abc, or -fvalue
 		return stateShortFlagFn(arg)
-	}
 
-	// Otherwise, it's a positional argument
-	p.out = append(p.out, arg)
-	return stateStartFn
+	default:
+		// positional argument
+		p.out = append(p.out, arg)
+		return stateStartFn
+	}
 }
 
 // stateLongFlagFn handles arguments of the form --flag or --flag=value.
@@ -124,6 +124,7 @@ func handleDynamicFlag(name, val string, hasVal bool) stateFn {
 			p.err = fmt.Errorf("unknown dynamic group: --%s", name)
 			return nil
 		}
+
 		item, ok := groupFields[field]
 		if !ok {
 			p.err = fmt.Errorf("unknown dynamic field: --%s", name)
@@ -135,16 +136,29 @@ func handleDynamicFlag(name, val string, hasVal bool) stateFn {
 			return stateStartFn
 		}
 
-		next, ok := p.peek()
-		if !ok || strings.HasPrefix(next, "-") {
-			p.err = fmt.Errorf("missing value for flag: --%s", name)
+		// Handle non‐strict bool (--group.id.flag → true)
+		if handled := tryDynamicBool(item, id); handled {
+			return stateStartFn
+		}
+
+		if handled := handleDynamicValue(p, item, id, name); !handled {
 			return nil
 		}
 
-		p.next()
-		p.err = trySetDynamic(item, id, next, name)
 		return stateStartFn
 	}
+}
+
+func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool {
+	next, ok := p.peek()
+	if !ok || strings.HasPrefix(next, "-") {
+		p.err = fmt.Errorf("missing value for flag: --%s", name)
+		return false
+	}
+
+	p.next()
+	p.err = trySetDynamic(item, id, next, name)
+	return true
 }
 
 func handleStaticFlag(name, val string, hasVal bool) stateFn {
@@ -152,11 +166,13 @@ func handleStaticFlag(name, val string, hasVal bool) stateFn {
 		fl := p.fs.flags[name]
 
 		// Handle booleans (with or without strict mode)
-		if bv, ok := fl.Value.(core.StrictBool); ok {
-			if !bv.IsStrictBool() {
-				fl.Value.Set("true") // nolint:errcheck
-				return stateStartFn
-			}
+		if handled := tryBool(fl); handled {
+			return stateStartFn
+		}
+
+		// Support implicit increment if applicable
+		if handled := tryCounter(p, fl); handled {
+			return stateStartFn
 		}
 
 		if hasVal {
@@ -164,15 +180,12 @@ func handleStaticFlag(name, val string, hasVal bool) stateFn {
 			return stateStartFn
 		}
 
-		next, ok := p.peek()
-		if !ok || strings.HasPrefix(next, "-") {
-			p.err = fmt.Errorf("missing value for flag: --%s", name)
-			return nil
+		if handled := tryLongValue(p, fl, name); handled {
+			return stateStartFn
 		}
 
-		p.next()
-		p.err = trySet(fl.Value, next, "invalid value for flag --%s: got %s.", name)
-		return stateStartFn
+		p.err = fmt.Errorf("missing value for flag: --%s", name)
+		return nil
 	}
 }
 
@@ -189,22 +202,26 @@ func stateShortFlagFn(arg string) stateFn {
 				return nil
 			}
 
-			// case: -v   (non-strict bool)
-			if handled := handleShortBool(flag); handled {
+			// Handle non-strict bools like -v
+			if handled := tryBool(flag); handled {
+				continue
+			}
+
+			// Handle counters like -vvvv
+			if handled := tryCounter(p, flag); handled {
 				continue
 			}
 
 			// case: -p8080 (combined)
-			if i < len(shorts)-1 {
-				val := shorts[i+1:]
-				p.err = trySet(flag.Value, val, "invalid value for flag -%s: %w", char)
+			if handled := tryShortCombined(p, flag, i, shorts, char); handled {
 				break
 			}
 
-			// case: -p 8080 (value is next arg)
-			p.err = handleShortValue(p, flag, char)
+			// case: -p 8080
+			p.err = tryShortValue(p, flag, char)
 			break
 		}
+
 		return stateStartFn
 	}
 }
@@ -218,7 +235,7 @@ func findShortFlag(fs *FlagSet, short string) *core.BaseFlag {
 	return nil
 }
 
-func handleShortBool(flag *core.BaseFlag) bool {
+func tryBool(flag *core.BaseFlag) bool {
 	if b, ok := flag.Value.(core.StrictBool); ok && !b.IsStrictBool() {
 		flag.Value.Set("true") // nolint:errcheck
 		return true
@@ -226,10 +243,49 @@ func handleShortBool(flag *core.BaseFlag) bool {
 	return false
 }
 
-func handleShortValue(p *parser, flag *core.BaseFlag, short string) error {
+// tryDynamicBool returns true if it consumed the flag as a non-strict bool shorthand.
+func tryDynamicBool(item core.DynamicValue, id string) bool {
+	if b, ok := item.(core.StrictBool); ok && !b.IsStrictBool() {
+		// “--group.id.flag” with no =value → =true
+		item.Set(id, "true") // nolint:errcheck
+		return true
+	}
+	// everything else → we did *not* handle shorthand
+	return false
+}
+
+func tryCounter(p *parser, flag *core.BaseFlag) bool {
+	if inc, ok := flag.Value.(core.Incrementable); ok {
+		p.err = inc.Increment()
+		return true
+	}
+	return false
+}
+
+func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char string) bool {
+	if i < len(shorts)-1 {
+		val := shorts[i+1:]
+		p.err = trySet(flag.Value, val, "invalid value for flag -%s: %w", char)
+		return true
+	}
+	return false
+}
+
+func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
-		return fmt.Errorf("missing value for flag: -%s", short)
+		return false
+	}
+
+	p.next()
+	p.err = trySet(flag.Value, next, "invalid value for flag --%s: got %s.", name)
+	return true
+}
+
+func tryShortValue(p *parser, flag *core.BaseFlag, short string) error {
+	next, ok := p.peek()
+	if !ok || strings.HasPrefix(next, "-") {
+		return fmt.Errorf("missing value for flag: -%s", flag.Short)
 	}
 	p.next()
 	return trySet(flag.Value, next, "invalid value for flag -%s: %w", short)

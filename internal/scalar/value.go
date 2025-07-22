@@ -2,7 +2,7 @@ package scalar
 
 // ScalarValue implements scalar flag parsing, formatting, and validation.
 type ScalarValue[T any] struct {
-	Ptr      *T
+	ptr      *T
 	def      T
 	value    T
 	changed  bool
@@ -14,7 +14,7 @@ type ScalarValue[T any] struct {
 func NewScalarValue[T any](ptr *T, def T, parse func(string) (T, error), format func(T) string) *ScalarValue[T] {
 	*ptr = def
 	return &ScalarValue[T]{
-		Ptr:    ptr,
+		ptr:    ptr,
 		def:    def,
 		parse:  parse,
 		format: format,
@@ -31,13 +31,13 @@ func (f *ScalarValue[T]) Set(s string) error {
 			return err
 		}
 	}
-	*f.Ptr = val
+	*f.ptr = val
 	f.value = val
 	f.changed = true
 	return nil
 }
 
-func (f *ScalarValue[T]) Get() any                     { return *f.Ptr }
+func (f *ScalarValue[T]) Get() any                     { return *f.ptr }
 func (f *ScalarValue[T]) Default() string              { return f.format(f.def) }
 func (f *ScalarValue[T]) Changed() bool                { return f.changed }
 func (f *ScalarValue[T]) setValidate(fn func(T) error) { f.validate = fn }

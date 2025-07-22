@@ -11,13 +11,13 @@ import (
 func defineScalar[T any](
 	r core.Registry,
 	ptr *T,
-	name, short, usage string,
+	name, usage string,
 	def T,
 	parse func(string) (T, error),
 	format func(T) string,
 ) *scalar.ScalarFlag[T] {
 	val := scalar.NewScalarValue(ptr, def, parse, format)
-	return scalar.RegisterScalar(r, name, short, usage, val, ptr)
+	return scalar.RegisterScalar(r, name, usage, val, ptr)
 }
 
 // defineSlice creates and registers a slice flag for the given Registry.
@@ -25,11 +25,11 @@ func defineScalar[T any](
 func defineSlice[T any](
 	r core.Registry,
 	ptr *[]T,
-	name, short, usage string,
+	name, usage string,
 	def []T,
 	parse func(string) (T, error),
 	format func(T) string,
 ) *slice.SliceFlag[T] {
 	val := slice.NewSliceValue(ptr, def, parse, format, r.DefaultDelimiter())
-	return slice.RegisterSlice(r, name, short, usage, val, ptr)
+	return slice.RegisterSlice(r, name, usage, val, ptr)
 }

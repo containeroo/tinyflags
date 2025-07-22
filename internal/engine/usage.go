@@ -58,6 +58,13 @@ func (f *FlagSet) PrintTitle(w io.Writer) {
 	}
 }
 
+// PrintAuthors writes the usage authors heading.
+func (f *FlagSet) PrintAuthors(w io.Writer) {
+	if f.authors != "" {
+		fmt.Fprintln(w, "Authors: "+f.authors) // nolint:errcheck
+	}
+}
+
 // PrintDescription renders the prolog text above flags.
 func (f *FlagSet) PrintDescription(w io.Writer, width int) {
 	if f.desc != "" {
@@ -111,27 +118,51 @@ func (f *FlagSet) printSortedFlags(w io.Writer, userFlags []*core.BaseFlag, vers
 	}
 	sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
 	for _, fl := range all {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, fl, f.envPrefix)
+		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, fl, f.envPrefix)
 	}
 }
 
 // printUnsortedFlags prints flags in registration order.
 func (f *FlagSet) printUnsortedFlags(w io.Writer, userFlags []*core.BaseFlag, versionFlag, helpFlag *core.BaseFlag) {
 	for _, fl := range userFlags {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, fl, f.envPrefix)
+		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, fl, f.envPrefix)
 	}
 	if versionFlag != nil {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, versionFlag, f.envPrefix)
+		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, versionFlag, f.envPrefix)
 	}
 	if helpFlag != nil {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, helpFlag, f.envPrefix)
+		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, helpFlag, f.envPrefix)
 	}
 }
 
 // printFlagUsage renders a single flag's full usage line.
-func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *core.BaseFlag, prefix string) {
+func printFlagUsage(w io.Writer, descIndent, maxDesc int, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
 	var b strings.Builder
 
+	formatFlagNames(&b, flag)
+	if meta := getPlaceholder(flag); meta != "" {
+		b.WriteString(" ")
+		b.WriteString(meta)
+	}
+	flagLine := b.String()
+
+	desc := buildFlagDescription(flag, globalHideEnvs, prefix)
+
+	if len(flagLine)+len(desc) <= maxDesc {
+		fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, desc) // nolint:errcheck
+		return
+	}
+
+	wrapped := wrapText(desc, maxDesc-descIndent-1)
+	lines := strings.Split(wrapped, "\n")
+
+	fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, lines[0]) // nolint:errcheck
+	for _, l := range lines[1:] {
+		fmt.Fprintf(w, "%-*s %s\n", descIndent, "", l) // nolint:errcheck
+	}
+}
+
+func formatFlagNames(b *strings.Builder, flag *core.BaseFlag) {
 	if flag.Short != "" {
 		b.WriteString("  -")
 		b.WriteString(flag.Short)
@@ -141,13 +172,9 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *core.BaseFlag, p
 	}
 	b.WriteString("--")
 	b.WriteString(flag.Name)
+}
 
-	if meta := getMetavar(flag); meta != "" {
-		b.WriteString(" ")
-		b.WriteString(meta)
-	}
-
-	flagLine := b.String()
+func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix string) string {
 	desc := flag.Usage
 
 	if len(flag.Allowed) > 0 {
@@ -162,46 +189,47 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, flag *core.BaseFlag, p
 			desc += " (Strict)"
 		}
 	}
-	if !flag.DisableEnv && flag.EnvKey == "" && prefix != "" {
+
+	if shouldInjectEnvKey(flag, globalHideEnvs, prefix) {
 		flag.EnvKey = strings.ToUpper(prefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
 	}
-	if !flag.DisableEnv && flag.EnvKey != "" {
+	if shouldShowEnv(flag, globalHideEnvs) {
 		desc += " (Env: " + flag.EnvKey + ")"
 	}
-	if flag.Required {
+	if !flag.HideRequired && flag.Required {
 		desc += " (Required)"
 	}
 	if flag.Group != nil && !flag.Group.IsHidden() {
-		desc += " (Group: "
-		if flag.Group.TitleText() != "" {
-			desc += flag.Group.TitleText()
-		} else {
-			desc += flag.Group.Name
-		}
-		if flag.Group.IsRequired() {
-			desc += ", required"
-		}
-		desc += ")"
+		desc += buildGroupInfo(flag.Group)
 	}
-
-	// Decide whether to wrap or keep on same line
-	if len(flagLine)+len(desc) <= maxDesc {
-		fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, desc) // nolint:errcheck
-		return
-	}
-
-	// Wrap description if too long
-	wrapped := wrapText(desc, maxDesc-descIndent-1)
-	lines := strings.Split(wrapped, "\n")
-
-	fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, lines[0]) // nolint:errcheck
-	for _, l := range lines[1:] {
-		fmt.Fprintf(w, "%-*s %s\n", descIndent, "", l) // nolint:errcheck
-	}
+	return desc
 }
 
-// getMetavar returns the placeholder for a flag value shown in help.
-func getMetavar(flag *core.BaseFlag) string {
+func shouldInjectEnvKey(flag *core.BaseFlag, globalHideEnvs bool, prefix string) bool {
+	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey == "" && prefix != ""
+}
+
+func shouldShowEnv(flag *core.BaseFlag, globalHideEnvs bool) bool {
+	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey != ""
+}
+
+func buildGroupInfo(group *core.MutualGroup) string {
+	var b strings.Builder
+	b.WriteString(" (Group: ")
+	if group.TitleText() != "" {
+		b.WriteString(group.TitleText())
+	} else {
+		b.WriteString(group.Name)
+	}
+	if group.IsRequired() {
+		b.WriteString(", required")
+	}
+	b.WriteString(")")
+	return b.String()
+}
+
+// getPlaceholder returns the placeholder for a flag value shown in help.
+func getPlaceholder(flag *core.BaseFlag) string {
 	isBool := false
 	isStrict := false
 
@@ -214,26 +242,26 @@ func getMetavar(flag *core.BaseFlag) string {
 		return ""
 	}
 
-	var meta string
-	if flag.Metavar != "" {
-		meta = flag.Metavar
+	var placeholder string
+	if flag.Placeholder != "" {
+		placeholder = flag.Placeholder
 	} else if len(flag.Allowed) > 0 {
-		meta = "<" + strings.Join(flag.Allowed, "|") + ">"
+		placeholder = "<" + strings.Join(flag.Allowed, "|") + ">"
 	} else if isStrict {
-		meta = "<true|false>"
+		placeholder = "<true|false>"
 	} else {
-		meta = strings.ToUpper(flag.Name)
+		placeholder = strings.ToUpper(flag.Name)
 	}
 
 	if _, ok := flag.Value.(core.SliceMarker); ok {
-		meta += "..."
+		placeholder += "..."
 	}
-	return meta
+	return placeholder
 }
 
 // printUsageToken writes a short usage token (e.g. -v, --verbose) to the usage line.
 func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
-	meta := getMetavar(fl)
+	meta := getPlaceholder(fl)
 
 	switch mode {
 	case PrintShort:

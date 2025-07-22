@@ -12,7 +12,7 @@ type scalarValueProvider[T any] interface {
 
 func RegisterScalar[T any](
 	reg core.Registry,
-	name, short, usage string,
+	name, usage string,
 	val scalarValueProvider[T],
 	ptr *T,
 ) *ScalarFlag[T] {
@@ -20,19 +20,13 @@ func RegisterScalar[T any](
 
 	bf := &core.BaseFlag{
 		Name:  name,
-		Short: short,
 		Usage: usage,
 		Value: val,
 	}
-
 	reg.RegisterFlag(name, bf)
 
 	return &ScalarFlag[T]{
-		DefaultFlag: builder.DefaultFlag[T]{
-			Registry: reg,
-			BF:       bf,
-			Ptr:      ptr,
-		},
-		val: base,
+		StaticFlag: builder.NewDefaultFlag(reg, bf, ptr),
+		val:        base,
 	}
 }

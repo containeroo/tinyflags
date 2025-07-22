@@ -6,29 +6,24 @@ import (
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
-// Group represents a dynamic flag group such as `--http.alpha.port`.
-// Each instance (e.g., "alpha") may set fields defined under this group.
+// Group manages a set of dynamic flags under one prefix.
 type Group struct {
-	fs     FlagSetRef                   // reference to parent FlagSet
-	prefix string                       // shared prefix, e.g., "http"
-	items  map[string]core.DynamicValue // field name → dynamic value storage
+	fs     FlagSetRef                   // parent flagset
+	prefix string                       // e.g. "http"
+	items  map[string]core.DynamicValue // field → parser
 }
 
-// NewGroup creates a new dynamic group with the given prefix.
+// NewGroup starts a new dynamic group.
 func NewGroup(fs FlagSetRef, prefix string) *Group {
-	return &Group{
-		fs:     fs,
-		prefix: prefix,
-		items:  make(map[string]core.DynamicValue),
-	}
+	return &Group{fs: fs, prefix: prefix, items: map[string]core.DynamicValue{}}
 }
 
-// Instances returns a sorted list of all instance IDs seen across fields.
+// Instances returns all seen IDs, sorted.
 func (g *Group) Instances() []string {
 	seen := map[string]struct{}{}
 	for _, v := range g.items {
-		if d, ok := v.(core.DynamicItemValues); ok {
-			for id := range d.ValuesAny() {
+		if di, ok := v.(core.DynamicItemValues); ok {
+			for id := range di.ValuesAny() {
 				seen[id] = struct{}{}
 			}
 		}

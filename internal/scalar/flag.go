@@ -1,3 +1,4 @@
+// internal/scalar/flag.go
 package scalar
 
 import (
@@ -9,7 +10,7 @@ import (
 
 // ScalarFlag is the user-facing scalar flag builder.
 type ScalarFlag[T any] struct {
-	builder.DefaultFlag[T]
+	builder.StaticFlag[T]
 	val *ScalarValue[T]
 }
 
@@ -23,10 +24,14 @@ func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
 		}
 		return fmt.Errorf("must be one of %s", utils.FormatAllowed(allowed, f.val.format))
 	})
-	f.BF.Allowed = make([]string, len(allowed))
+
+	formatted := make([]string, len(allowed))
 	for i, a := range allowed {
-		f.BF.Allowed[i] = f.val.format(a)
+		formatted[i] = f.val.format(a)
 	}
+
+	f.Allowed(formatted...)
+
 	return f
 }
 

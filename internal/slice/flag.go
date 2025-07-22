@@ -7,9 +7,9 @@ import (
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
-// SliceFlag is the user-facing builder for slice flags.
+// SliceFlag is the user‐facing builder for slice flags.
 type SliceFlag[T any] struct {
-	builder.DefaultFlag[[]T]
+	builder.StaticFlag[[]T]
 	val *SliceValue[T]
 }
 
@@ -29,13 +29,18 @@ func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
 		}
 		return fmt.Errorf("must be one of [%s]", utils.FormatAllowed(allowed, f.val.format))
 	})
-	f.BF.Allowed = make([]string, len(allowed))
+
+	formatted := make([]string, len(allowed))
 	for i, a := range allowed {
-		f.BF.Allowed[i] = f.val.format(a)
+		formatted[i] = f.val.format(a)
 	}
+
+	f.Allowed(formatted...)
+
 	return f
 }
 
+// Validate lets you plug in arbitrary per‐element checks.
 func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
 	f.val.setValidate(fn)
 	return f
