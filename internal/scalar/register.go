@@ -28,7 +28,7 @@ func RegisterScalar[T any](
 	reg.RegisterFlag(name, bf)
 
 	return &ScalarFlag[T]{
-		StaticFlag: builder.NewDefaultFlag(reg, bf, ptr),
+		StaticFlag: builder.NewStaticFlag(reg, bf, ptr),
 		val:        base,
 	}
 }

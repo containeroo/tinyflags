@@ -1,9 +1,10 @@
 package engine
 
 import (
-	"fmt"
 	"io"
 	"os"
+	"slices"
+	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/dynamic"
@@ -11,32 +12,32 @@ import (
 
 // FlagSet manages the definition, parsing, and usage output of command-line flags.
 type FlagSet struct {
-	name               string                                  // name of the application or command (used in usage output).
-	errorHandling      ErrorHandling                           // errorHandling determines what happens when parsing fails.
-	flags              map[string]*core.BaseFlag               // flags holds all registered named flags by their long name.
-	registered         []*core.BaseFlag                        // registered keeps the order in which flags were added (for ordered output).
-	groups             []*core.MutualGroup                     // groups holds mutual exclusion groups (e.g. only one of a set of flags is allowed).
-	dynamic            map[string]map[string]core.DynamicValue // dynamic holds all dynamically defined flags grouped by group name and field name.
-	positional         []string                                // positional stores remaining positional arguments after flag parsing.
-	requiredPositional int                                     // requiredPositional defines how many positional arguments must be provided.
-	envPrefix          string                                  // envPrefix is the optional prefix applied to environment variable lookups (e.g. "APP_").
-	getEnv             func(string) string                     // getEnv is the function used to look up environment variables (default: os.Getenv).
-	ignoreInvalidEnv   bool                                    // ignoreInvalidEnv skips unknown or invalid environment overrides.
-	defaultDelimiter   string                                  // defaultDelimiter is the global delimiter for slice flags (default: ",").
-	title              string                                  // title is printed before the list of flags in usage output.
-	desc               string                                  // desc is printed as a prolog above the flags.
-	notes              string                                  // notes is printed as an epilog below the flags.
-	versionString      string                                  // versionString is shown when --version is triggered.
-	usagePrintMode     FlagPrintMode                           // usagePrintMode controls what is printed in PrintUsage.
-	descMaxLen         int                                     // descMaxLen controls the max line length before wrapping.
-	descIndent         int                                     // descIndent controls the left indent of flag descriptions.
-	output             io.Writer                               // output is where usage output is written (default: os.Stdout).
-	enableHelp         bool                                    // enableHelp toggles whether the built-in --help flag is added automatically.
-	enableVer          bool                                    // enableVer toggles whether the built-in --version flag is added automatically.
-	showHelp           *bool                                   // showHelp is a pointer to the parsed --help flag value, if enabled.
-	showVersion        *bool                                   // showVersion is a pointer to the parsed --version flag value, if enabled.
-	Usage              func()                                  // Usage is the customizable function for printing usage. Defaults to printing title, description, flags, and notes.
-	sortFlags          bool                                    // sortFlags determines whether flags are printed in sorted order.
+	name               string                    // name of the application or command (used in usage output).
+	errorHandling      ErrorHandling             // errorHandling determines what happens when parsing fails.
+	flags              map[string]*core.BaseFlag // flags holds all registered named flags by their long name.
+	registered         []*core.BaseFlag          // registered keeps the order in which flags were added (for ordered output).
+	groups             []*core.MutualGroup       // groups holds mutual exclusion groups (e.g. only one of a set of flags is allowed).
+	dynamicGroups      map[string]*dynamic.Group // dynamicGroups holds all dynamically defined groups.
+	positional         []string                  // positional stores remaining positional arguments after flag parsing.
+	requiredPositional int                       // requiredPositional defines how many positional arguments must be provided.
+	envPrefix          string                    // envPrefix is the optional prefix applied to environment variable lookups (e.g. "APP_").
+	getEnv             func(string) string       // getEnv is the function used to look up environment variables (default: os.Getenv).
+	ignoreInvalidEnv   bool                      // ignoreInvalidEnv skips unknown or invalid environment overrides.
+	defaultDelimiter   string                    // defaultDelimiter is the global delimiter for slice flags (default: ",").
+	title              string                    // title is printed before the list of flags in usage output.
+	desc               string                    // desc is printed as a prolog above the flags.
+	notes              string                    // notes is printed as an epilog below the flags.
+	versionString      string                    // versionString is shown when --version is triggered.
+	usagePrintMode     FlagPrintMode             // usagePrintMode controls what is printed in PrintUsage.
+	descMaxLen         int                       // descMaxLen controls the max line length before wrapping.
+	descIndent         int                       // descIndent controls the left indent of flag descriptions.
+	output             io.Writer                 // output is where usage output is written (default: os.Stdout).
+	enableHelp         bool                      // enableHelp toggles whether the built-in --help flag is added automatically.
+	enableVer          bool                      // enableVer toggles whether the built-in --version flag is added automatically.
+	showHelp           *bool                     // showHelp is a pointer to the parsed --help flag value, if enabled.
+	showVersion        *bool                     // showVersion is a pointer to the parsed --version flag value, if enabled.
+	Usage              func()                    // Usage is the customizable function for printing usage. Defaults to printing title, description, flags, and notes.
+	sortFlags          bool                      // sortFlags determines whether flags are printed in sorted order.
 	authors            string
 	hideEnvs           bool
 }
@@ -154,24 +155,29 @@ func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
 	f.registered = append(f.registered, bf)
 }
 
-// RegisterDynamic registers a dynamic flag for the given group and field.
-func (f *FlagSet) RegisterDynamic(group, field string, val core.DynamicValue) error {
-	if f.dynamic == nil {
-		f.dynamic = make(map[string]map[string]core.DynamicValue)
-	}
-	if _, ok := f.dynamic[group]; !ok {
-		f.dynamic[group] = make(map[string]core.DynamicValue)
-	}
-	if _, exists := f.dynamic[group][field]; exists {
-		return fmt.Errorf("dynamic flag already registered: %s.%s", group, field)
-	}
-	f.dynamic[group][field] = val
-	return nil
-}
-
 // DynamicGroup creates a new dynamic group with the given prefix.
 func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
-	return dynamic.NewGroup(f, name)
+	if f.dynamicGroups == nil {
+		f.dynamicGroups = make(map[string]*dynamic.Group)
+	}
+	if g, ok := f.dynamicGroups[name]; ok {
+		return g
+	}
+	// create new group
+	g := dynamic.NewGroup(f, name)
+	f.dynamicGroups[name] = g
+	return g
+}
+
+func (f *FlagSet) DynamicGroups() []*dynamic.Group {
+	out := make([]*dynamic.Group, 0, len(f.dynamicGroups))
+	for _, g := range f.dynamicGroups {
+		out = append(out, g)
+	}
+	slices.SortFunc(out, func(a, b *dynamic.Group) int {
+		return strings.Compare(a.Name(), b.Name())
+	})
+	return out
 }
 
 // GetGroup returns a mutual exclusion group by name (creating it if necessary).

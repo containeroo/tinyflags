@@ -9,8 +9,8 @@ type StaticFlag[T any] struct {
 	ptr      *T             // destination for parsed values
 }
 
-// NewDefaultFlag returns a DefaultFlag ready for embedding.
-func NewDefaultFlag[T any](reg core.Registry, bf *core.BaseFlag, ptr *T) StaticFlag[T] {
+// NewStaticFlag returns a DefaultFlag ready for embedding.
+func NewStaticFlag[T any](reg core.Registry, bf *core.BaseFlag, ptr *T) StaticFlag[T] {
 	return StaticFlag[T]{registry: reg, bf: bf, ptr: ptr}
 }
 

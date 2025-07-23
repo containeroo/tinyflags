@@ -9,6 +9,7 @@ import (
 // For example: --http.alpha.tags=a,b
 type DynamicSliceValue[T any] struct {
 	field     string                  // field name (e.g. "tags")
+	def       []T                     // default value
 	parse     func(string) (T, error) // parser for each item
 	format    func(T) string          // formatter for output and help
 	delimiter string                  // input separator (default: ",")
@@ -19,11 +20,13 @@ type DynamicSliceValue[T any] struct {
 // NewDynamicSliceValue builds a per-ID slice parser.
 func NewDynamicSliceValue[T any](
 	field string,
+	def []T,
 	parse func(string) (T, error),
 	format func(T) string,
 	delimiter string,
 ) *DynamicSliceValue[T] {
 	return &DynamicSliceValue[T]{
+		def:       def,
 		field:     field,
 		parse:     parse,
 		format:    format,
@@ -57,4 +60,12 @@ func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) {
 // SetDelimiter sets a custom delimiter for parsing the slice.
 func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
 	d.delimiter = sep
+}
+
+func (d *DynamicSliceValue[T]) ValuesAny() map[string]any {
+	m := make(map[string]any, len(d.values))
+	for k, v := range d.values {
+		m[k] = v
+	}
+	return m
 }
