@@ -151,6 +151,16 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return f.impl.DynamicGroup(name)
 }
 
+// GetDynamic retrieves a dynamic field value for a given ID with the correct type.
+func GetDynamic[T any](group *dynamic.Group, field, id string) (T, error) {
+	return dynamic.Get[T](group, field, id)
+}
+
+// MustGetDynamic panics if the field or id is missing.
+func MustGetDynamic[T any](group *dynamic.Group, field, id string) T {
+	return dynamic.MustGet[T](group, field, id)
+}
+
 // DynamicGroups returns all dynamic flag groups.
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.impl.DynamicGroups()
