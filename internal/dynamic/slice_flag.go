@@ -44,17 +44,27 @@ func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
 	return f
 }
 
-// Get returns the parsed slice for the given ID.
-func (f *SliceFlag[T]) Get(id string) ([]T, bool) {
-	val, ok := f.item.values[id]
-	return val, ok
+// Has returns true if the flag was set
+func (f *SliceFlag[T]) Has(id string) bool {
+	_, ok := f.item.values[id]
+	return ok
 }
 
 // Get returns the parsed slice for the given ID.
-func (f SliceFlag[T]) MustGet(id string) []T {
+// Fallback to default only happens here
+func (f *SliceFlag[T]) Get(id string) ([]T, bool) {
+	val, ok := f.item.values[id]
+	if !ok {
+		return f.item.def, false
+	}
+	return val, true
+}
+
+// Get returns the parsed slice for the given ID.
+func (f *SliceFlag[T]) MustGet(id string) []T {
 	val, ok := f.Get(id)
 	if !ok {
-		panic("value not set")
+		panic(fmt.Sprintf("required flag not set: %s for id %s", f.item.field, id))
 	}
 	return val
 }

@@ -43,7 +43,7 @@ func (f *ScalarValue[T]) Set(s string) error {
 func (f *ScalarValue[T]) Get() any { return *f.ptr }
 
 // Default returns the default value as string.
-func (f *ScalarValue[T]) Default() string { return f.format(f.def) }
+func (f *ScalarValue[T]) Default() T { return f.def }
 
 // Changed returns true if the value was changed.
 func (f *ScalarValue[T]) Changed() bool { return f.changed }

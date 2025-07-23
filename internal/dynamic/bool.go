@@ -44,11 +44,6 @@ func (g *Group) Bool(field, usage string) *BoolFlag {
 	// wrap it so it also implements StrictBool
 	flagVal := &BoolValue{item: item, strictMode: new(bool)}
 
-	// register for dynamic‐value parsing
-	if err := g.fs.RegisterDynamic(g.prefix, field, flagVal); err != nil {
-		panic(err)
-	}
-
 	// register a BaseFlag so it shows up in help
 	bf := &core.BaseFlag{Name: field, Usage: usage}
 	g.fs.RegisterFlag(field, bf)

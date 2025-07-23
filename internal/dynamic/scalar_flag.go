@@ -41,16 +41,25 @@ func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
 	return f
 }
 
-// Get retrieves the parsed value.
+// Has returns true if the flag was set
+func (f *ScalarFlag[T]) Has(id string) bool {
+	_, ok := f.item.values[id]
+	return ok
+}
+
+// Fallback to default only happens here
 func (f *ScalarFlag[T]) Get(id string) (T, bool) {
 	val, ok := f.item.values[id]
-	return val, ok
+	if !ok {
+		return f.item.def, false
+	}
+	return val, true
 }
 
 func (f *ScalarFlag[T]) MustGet(id string) T {
 	val, ok := f.Get(id)
 	if !ok {
-		panic("value not set")
+		panic(fmt.Sprintf("required flag not set: %s for id %s", f.item.field, id))
 	}
 	return val
 }

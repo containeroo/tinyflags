@@ -151,19 +151,14 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return f.impl.DynamicGroup(name)
 }
 
+// DynamicGroups returns all dynamic flag groups.
+func (f *FlagSet) DynamicGroups() []*dynamic.Group {
+	return f.impl.DynamicGroups()
+}
+
 // DefaultDelimiter returns the slice-value separator.
 func (f *FlagSet) DefaultDelimiter() string {
 	return f.impl.DefaultDelimiter()
-}
-
-// RegisterDynamic adds a dynamic flag under the given group.
-func (f *FlagSet) RegisterDynamic(group, field string, val core.DynamicValue) error {
-	return f.impl.RegisterDynamic(group, field, val)
-}
-
-// RegisterFlag adds a custom BaseFlag.
-func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
-	f.impl.RegisterFlag(name, bf)
 }
 
 // Groups returns all mutual-exclusion groups.

@@ -3,7 +3,6 @@ package core
 // Registry manages static flags, dynamic groups, and defaults.
 type Registry interface {
 	RegisterFlag(name string, bf *BaseFlag)
-	RegisterDynamic(group, field string, item DynamicValue) error
 	GetGroup(name string) *MutualGroup
 	Groups() []*MutualGroup
 	DefaultDelimiter() string
