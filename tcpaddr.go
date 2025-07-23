@@ -6,7 +6,6 @@ import (
 	"github.com/containeroo/tinyflags/internal/scalar"
 )
 
-// tcpaddr.go in tinyflags root
 func (f *FlagSet) TCPAddr(name string, def *net.TCPAddr, usage string) *scalar.ScalarFlag[*net.TCPAddr] {
 	ptr := new(*net.TCPAddr)
 	return f.impl.TCPAddrVar(ptr, name, usage, def)

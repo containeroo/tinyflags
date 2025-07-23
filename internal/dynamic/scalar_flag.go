@@ -35,6 +35,7 @@ func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
 	return f
 }
 
+// Validate lets you plug in arbitrary per‐element checks.
 func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
 	f.item.setValidate(fn)
 	return f

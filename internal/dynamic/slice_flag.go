@@ -38,6 +38,7 @@ func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
 	return f
 }
 
+// Validate lets you plug in arbitrary per‐element checks.
 func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
 	f.item.setValidate(fn)
 	return f

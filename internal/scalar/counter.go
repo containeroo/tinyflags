@@ -7,6 +7,7 @@ import (
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
+// Increment increments the counter value.
 func (c *CounterValue) Increment() error {
 	next := *c.ptr + 1
 	if c.validate != nil {

@@ -11,6 +11,7 @@ type ScalarValue[T any] struct {
 	validate func(T) error
 }
 
+// NewScalarValue creates a new scalar value.
 func NewScalarValue[T any](ptr *T, def T, parse func(string) (T, error), format func(T) string) *ScalarValue[T] {
 	*ptr = def
 	return &ScalarValue[T]{
@@ -21,6 +22,7 @@ func NewScalarValue[T any](ptr *T, def T, parse func(string) (T, error), format 
 	}
 }
 
+// Set parses and stores one entry.
 func (f *ScalarValue[T]) Set(s string) error {
 	val, err := f.parse(s)
 	if err != nil {
@@ -37,8 +39,17 @@ func (f *ScalarValue[T]) Set(s string) error {
 	return nil
 }
 
-func (f *ScalarValue[T]) Get() any                     { return *f.ptr }
-func (f *ScalarValue[T]) Default() string              { return f.format(f.def) }
-func (f *ScalarValue[T]) Changed() bool                { return f.changed }
+// Get returns the stored value.
+func (f *ScalarValue[T]) Get() any { return *f.ptr }
+
+// Default returns the default value as string.
+func (f *ScalarValue[T]) Default() string { return f.format(f.def) }
+
+// Changed returns true if the value was changed.
+func (f *ScalarValue[T]) Changed() bool { return f.changed }
+
+// setValidate sets a per-item validation function.
 func (f *ScalarValue[T]) setValidate(fn func(T) error) { f.validate = fn }
-func (f *ScalarValue[T]) Base() *ScalarValue[T]        { return f }
+
+// Base returns the underlying value.
+func (f *ScalarValue[T]) Base() *ScalarValue[T] { return f }

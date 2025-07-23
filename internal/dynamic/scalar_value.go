@@ -34,6 +34,7 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	return nil
 }
 
+// setValidate sets a per-item validation function.
 func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn
 }
