@@ -97,7 +97,7 @@ func TestSmoke_ParseArgs(t *testing.T) {
 		fs.Version("1.0.0")
 
 		http := fs.DynamicGroup("http")
-		addr := http.String("address", "API address")
+		addr := http.String("address", "", "API address")
 
 		err := fs.Parse([]string{
 			"--http.alpha.address=127.0.0.1",
@@ -121,7 +121,7 @@ func TestSmoke_ParseArgs(t *testing.T) {
 		fs.Version("1.0.0")
 
 		http := fs.DynamicGroup("http")
-		addrs := http.StringSlice("addresses", "API address")
+		addrs := http.StringSlice("addresses", []string{}, "API address")
 
 		err := fs.Parse([]string{
 			"--http.alpha.addresses=127.0.0.1",
@@ -187,15 +187,15 @@ Flags:
 			Value()
 
 		http := fs.DynamicGroup("http")
-		addr := http.String("address", "API address").
+		addr := http.String("address", "", "API address").
 			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
 				}
 				return nil
 			})
-		port := http.Int("port", "API port")
-		sl := http.StringSlice("list", "List of values")
+		port := http.Int("port", 0, "API port")
+		sl := http.StringSlice("list", []string{}, "List of values")
 
 		verbose := fs.Bool("verbose", false, "Enable verbose mode").
 			Strict().
@@ -292,9 +292,9 @@ Flags:
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 		http := fs.DynamicGroup("http")
-		http.String("ip", "ip address").Choices("127.0.0.1", "10.0.0.1")
+		http.String("ip", "127.0.0.1", "ip address").Choices("127.0.0.1", "10.0.0.1")
 
-		http.String("address", "API address").
+		http.String("address", "", "API address").
 			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
@@ -302,11 +302,11 @@ Flags:
 				return nil
 			})
 
-		http.StringSlice("list", "list of values").
+		http.StringSlice("list", []string{}, "list of values").
 			Choices("a", "b", "c").
 			Required()
 
-		http.Int("port", "API port")
+		http.Int("port", 0, "API port")
 
 		err := fs.Parse([]string{
 			"--http.alpha.address=127.0.0.1",
@@ -323,7 +323,7 @@ Flags:
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 		http := fs.DynamicGroup("http")
-		addr := http.String("address", "API address").
+		addr := http.String("address", "127.0.0.1", "API address").
 			Choices("127.0.0.1", "10.0.0.1")
 
 		err := fs.Parse([]string{
@@ -343,14 +343,14 @@ Flags:
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 		http := fs.DynamicGroup("http")
-		addr := http.String("address", "API address").
+		addr := http.String("address", "", "API address").
 			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
 				}
 				return nil
 			})
-		port := http.Int("port", "API port")
+		port := http.Int("port", 0, "API port")
 		enabled := http.Bool("enabled", "Enable service").Strict()
 
 		verbose := http.Bool("verbose", "Enable verbose mode")

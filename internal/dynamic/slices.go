@@ -11,57 +11,51 @@ import (
 )
 
 // StringSlice
-func (g *Group) StringSlice(field, usage string) *SliceFlag[string] {
-	return registerDynamicSlice(g, field, utils.ParseString, utils.FormatString)
+func (g *Group) StringSlice(field string, def []string, usage string) *SliceFlag[string] {
+	return registerDynamicSlice(g, field, def, utils.ParseString, utils.FormatString)
 }
 
 // IntSlice
-func (g *Group) IntSlice(field, usage string) *SliceFlag[int] {
-	return registerDynamicSlice(g, field, strconv.Atoi, strconv.Itoa)
+func (g *Group) IntSlice(field string, def []int, usage string) *SliceFlag[int] {
+	return registerDynamicSlice(g, field, def, strconv.Atoi, strconv.Itoa)
 }
 
 // DurationSlice
-func (g *Group) DurationSlice(field, usage string) *SliceFlag[time.Duration] {
-	return registerDynamicSlice(g, field, time.ParseDuration, time.Duration.String)
+func (g *Group) DurationSlice(field string, def []time.Duration, usage string) *SliceFlag[time.Duration] {
+	return registerDynamicSlice(g, field, def, time.ParseDuration, time.Duration.String)
 }
 
 // Float64Slice
-func (g *Group) Float64Slice(field, usage string) *SliceFlag[float64] {
-	return registerDynamicSlice(g, field, utils.ParseFloat64, utils.FormatFloat64)
+func (g *Group) Float64Slice(field string, def []float64, usage string) *SliceFlag[float64] {
+	return registerDynamicSlice(g, field, def, utils.ParseFloat64, utils.FormatFloat64)
 }
 
 // Float32Slice
-func (g *Group) Float32Slice(field, usage string) *SliceFlag[float32] {
-	return registerDynamicSlice(g, field, utils.ParseFloat32, utils.FormatFloat32)
+func (g *Group) Float32Slice(field string, def []float32, usage string) *SliceFlag[float32] {
+	return registerDynamicSlice(g, field, def, utils.ParseFloat32, utils.FormatFloat32)
 }
 
 // TCPAddrSlice
-func (g *Group) TCPAddrSlice(field, usage string) *SliceFlag[*net.TCPAddr] {
-	return registerDynamicSlice(g, field, utils.ParseTCPAddr, utils.FormatTCPAddr)
+func (g *Group) TCPAddrSlice(field string, def []*net.TCPAddr, usage string) *SliceFlag[*net.TCPAddr] {
+	return registerDynamicSlice(g, field, def, utils.ParseTCPAddr, utils.FormatTCPAddr)
 }
 
 // URLSlice
-func (g *Group) URLSlice(field, usage string) *SliceFlag[*url.URL] {
-	return registerDynamicSlice(g, field, url.Parse, func(u *url.URL) string { return u.String() })
+func (g *Group) URLSlice(field string, def []*url.URL, usage string) *SliceFlag[*url.URL] {
+	return registerDynamicSlice(g, field, def, url.Parse, func(u *url.URL) string { return u.String() })
 }
 
 // FileSlice
-func (g *Group) FileSlice(field, usage string) *SliceFlag[*os.File] {
-	return registerDynamicSlice(g, field,
-		func(s string) (*os.File, error) { return os.Open(s) },
-		func(f *os.File) string { return f.Name() },
-	)
+func (g *Group) FileSlice(field string, def []*os.File, usage string) *SliceFlag[*os.File] {
+	return registerDynamicSlice(g, field, def, utils.ParseFile, utils.FormatFile)
 }
 
 // TimeSlice
-func (g *Group) TimeSlice(field, usage string) *SliceFlag[time.Time] {
-	return registerDynamicSlice(g, field,
-		func(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) },
-		func(t time.Time) string { return t.Format(time.RFC3339) },
-	)
+func (g *Group) TimeSlice(field string, def []time.Time, usage string) *SliceFlag[time.Time] {
+	return registerDynamicSlice(g, field, def, utils.ParseTime, utils.FormatTime)
 }
 
 // BytesSlice
-func (g *Group) BytesSlice(field, usage string) *SliceFlag[uint64] {
-	return registerDynamicSlice(g, field, utils.ParseBytes, utils.FormatBytes)
+func (g *Group) BytesSlice(field string, def []uint64, usage string) *SliceFlag[uint64] {
+	return registerDynamicSlice(g, field, def, utils.ParseBytes, utils.FormatBytes)
 }

@@ -9,10 +9,11 @@ import (
 func registerDynamicScalar[T any](
 	g *Group,
 	field string,
+	def T,
 	parse func(string) (T, error),
 	format func(T) string,
 ) *ScalarFlag[T] {
-	item := NewDynamicScalarValue(field, parse, format)
+	item := NewDynamicScalarValue(field, def, parse, format)
 	bf := &core.BaseFlag{Name: field}
 	g.items[field] = item
 
@@ -26,10 +27,11 @@ func registerDynamicScalar[T any](
 func registerDynamicSlice[T any](
 	g *Group,
 	field string,
+	def []T,
 	parse func(string) (T, error),
 	format func(T) string,
 ) *SliceFlag[T] {
-	item := NewDynamicSliceValue(field, parse, format, g.fs.DefaultDelimiter())
+	item := NewDynamicSliceValue(field, def, parse, format, g.fs.DefaultDelimiter())
 	bf := &core.BaseFlag{Name: field}
 	g.items[field] = item
 
