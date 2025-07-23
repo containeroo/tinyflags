@@ -13,10 +13,12 @@ type BoolValue struct {
 	strictMode *bool
 }
 
+// Set parses and stores one entry.
 func (s *BoolValue) Set(id, raw string) error {
 	return s.item.Set(id, raw)
 }
 
+// IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
 func (s *BoolValue) IsStrictBool() bool {
 	return *s.strictMode
 }
@@ -62,11 +64,13 @@ func (g *Group) Bool(field, usage string) *BoolFlag {
 	}
 }
 
+// Get retrieves the parsed value.
 func (f *BoolFlag) Get(id string) (bool, bool) {
 	val, ok := f.item.values[id]
 	return val, ok
 }
 
+// MustGet returns the parsed value, panicking if not set.
 func (f *BoolFlag) MustGet(id string) bool {
 	val, ok := f.Get(id)
 	if !ok {

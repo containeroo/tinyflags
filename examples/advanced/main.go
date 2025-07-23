@@ -17,9 +17,8 @@ type Config struct {
 	ListenAddr     string
 	SchemaHostPort string
 	HostIP         net.IP
-	Verbose        bool
+	Verbose        int
 	Insecure       bool
-	Debug          bool
 	LogLevel       string
 	Paths          []string
 }
@@ -50,14 +49,16 @@ func parseArgs(args []string) (*Config, error) {
 		Required().
 		Value()
 
-	host := tf.StringP("host", "h", "localhost", "host to use").
+	host := tf.String("host", "localhost", "host to use").
+		Short("h").
 		Required().
 		Value()
 
-	listenAddr := tf.TCPAddrP("listen-addr", "l", &net.TCPAddr{
+	listenAddr := tf.TCPAddr("listen-addr", &net.TCPAddr{
 		IP:   net.ParseIP("127.0.0.1"),
 		Port: 8080,
 	}, "listen address to use").
+		Short("l").
 		Value()
 
 	schemaHostPort := tf.String("schema-host-port", "scheme://host:port", "schema://host:port").
@@ -83,14 +84,12 @@ func parseArgs(args []string) (*Config, error) {
 		Choices("debug", "info", "warn", "error").
 		Value()
 
-	debug := tf.BoolP("debug", "d", false, "debug mode").
+	insecure := tf.Bool("insecure", false, "insecure mode").
+		Short("i").
 		Value()
 
-	insecure := tf.BoolP("insecure", "i", false, "insecure mode").
-		Value()
-
-	verbose := tf.BoolP("verbose", "v", false, "verbose mode").
-		Strict().
+	verbose := tf.Counter("verbose", "verbose mode").
+		Short("v").
 		Value()
 
 	if err := tf.Parse(args); err != nil {
@@ -108,15 +107,13 @@ func parseArgs(args []string) (*Config, error) {
 	paths := tf.Args()
 
 	return &Config{
-		Port: *port,
-		Host: *host,
-		// ListenAddr:     tcpAddrPtrPtrToString(listenAddr),
+		Port:           *port,
+		Host:           *host,
 		ListenAddr:     (*listenAddr).String(),
 		SchemaHostPort: *schemaHostPort,
 		HostIP:         *hostip,
 		Verbose:        *verbose,
 		Insecure:       *insecure,
-		Debug:          *debug,
 		LogLevel:       *loglevel,
 		Paths:          paths,
 	}, nil
@@ -127,8 +124,7 @@ func main() {
 		"--port=9000",
 		"--host=example.com",
 		"--host-ip=10.0.10.12",
-		"-vtrue",
-		"-di",
+		"-vv",
 		"--log-level=debug",
 		"/first/path", "/second/path",
 	}
