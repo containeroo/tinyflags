@@ -63,6 +63,9 @@ func (f *FlagSet) Parse(args []string) error {
 	return f.impl.Parse(args)
 }
 
+// Name returns the name of the application.
+func (f *FlagSet) Name() string { return f.impl.Name() }
+
 // Version sets the version string for --version output.
 func (f *FlagSet) Version(s string) { f.impl.Version(s) }
 

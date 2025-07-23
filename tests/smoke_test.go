@@ -170,7 +170,7 @@ Flags:
 		assert.EqualError(t, err, "Usage: custom.exe\n")
 	})
 
-	t.Run("smoke", func(t *testing.T) {
+	t.Run("smoke example", func(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)

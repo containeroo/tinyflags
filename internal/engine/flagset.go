@@ -73,6 +73,9 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 	return fs
 }
 
+// Name returns the name of the application.
+func (f *FlagSet) Name() string { return f.name }
+
 // Version sets the version string to enable the --version flag.
 func (f *FlagSet) Version(s string) {
 	f.versionString = s
