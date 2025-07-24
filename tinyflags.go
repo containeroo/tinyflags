@@ -161,6 +161,11 @@ func MustGetDynamic[T any](group *dynamic.Group, id string, flag string) T {
 	return dynamic.MustGet[T](group, id, flag)
 }
 
+// GetOrDefaultDynamic returns the default value if the field or id is missing.
+func GetOrDefaultDynamic[T any](group *dynamic.Group, id, flag string) T {
+	return dynamic.GetOrDefault[T](group, id, flag)
+}
+
 // DynamicGroups returns all dynamic flag groups.
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.impl.DynamicGroups()

@@ -50,28 +50,55 @@ func (g *Group) Lookup(field string) (core.DynamicValue, bool) {
 	return val, ok
 }
 
-func Get[T any](g *Group, field, id string) (T, error) {
+// Get returns all fields for a given ID as a map of field → value.
+func (g *Group) Get(id string) map[string]any {
+	out := make(map[string]any)
+	for field, val := range g.items {
+		if v, ok := val.GetAny(id); ok {
+			out[field] = v
+		}
+	}
+	return out
+}
+
+func Get[T any](g *Group, id, flag string) (T, error) {
 	var zero T
 
-	item, ok := g.Items()[field]
+	item, ok := g.Items()[flag]
 	if !ok {
-		return zero, fmt.Errorf("field not registered: %q", field)
+		return zero, fmt.Errorf("field not registered: %q", flag)
 	}
 	v, ok := item.(*DynamicScalarValue[T])
 	if !ok {
-		return zero, fmt.Errorf("field %q has wrong type", field)
+		return zero, fmt.Errorf("field %q has wrong type", flag)
 	}
 	val, ok := v.values[id]
 	if !ok {
-		return zero, fmt.Errorf("value for field %q not found for id %q", field, id)
+		return zero, fmt.Errorf("value for field %q not found for id %q", flag, id)
 	}
 	return val, nil
 }
 
-func MustGet[T any](g *Group, field, id string) T {
-	val, err := Get[T](g, field, id)
+func MustGet[T any](g *Group, id, flag string) T {
+	val, err := Get[T](g, flag, id)
 	if err != nil {
 		panic(err)
+	}
+	return val
+}
+
+func GetOrDefault[T any](g *Group, id, flag string) T {
+	item, ok := g.Items()[flag]
+	if !ok {
+		panic(fmt.Sprintf("field not registered: %q", flag))
+	}
+	v, ok := item.(*DynamicScalarValue[T])
+	if !ok {
+		panic(fmt.Sprintf("field %q has wrong type", flag))
+	}
+	val, ok := v.values[id]
+	if !ok {
+		return v.def
 	}
 	return val
 }

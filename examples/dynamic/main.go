@@ -44,8 +44,8 @@ func main() {
 			name := group.Name()
 			switch name {
 			case "http":
-				addr, _ := tinyflags.GetDynamic[string](group, id, "address")
-				port, _ := tinyflags.GetDynamic[int](group, id, "port")
+				addr := tinyflags.GetOrDefaultDynamic[string](group, id, "address")
+				port := tinyflags.GetOrDefaultDynamic[int](group, id, "port")
 				checker := HTTPChecker{
 					Name:    name,
 					Address: addr,
