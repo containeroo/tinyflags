@@ -10,6 +10,11 @@ import (
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
+// Bool
+func (g *Group) Bool(field string, def bool, usage string) *BoolFlag {
+	return registerDynamicBool(g, field, def, strconv.ParseBool, strconv.FormatBool)
+}
+
 // String
 func (g *Group) String(field string, def string, usage string) *ScalarFlag[string] {
 	return registerDynamicScalar(g, field, def, utils.ParseString, utils.FormatString)

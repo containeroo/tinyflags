@@ -40,3 +40,33 @@ func registerDynamicSlice[T any](
 		item:        item,
 	}
 }
+
+// registerDynamicBool registers a dynamic boolean field under the group.
+func registerDynamicBool(
+	g *Group,
+	field string,
+	def bool,
+	parse func(string) (bool, error),
+	format func(bool) string,
+) *BoolFlag {
+	item := NewDynamicScalarValue(field, def, parse, format)
+
+	// BoolValue wraps item to expose IsStrictBool
+	flagVal := &BoolValue{
+		item:       item,
+		strictMode: new(bool), // pointer for later mutation by .Strict()
+	}
+
+	g.items[field] = flagVal // Store in dynamic group registry
+
+	// Also create and register BaseFlag
+	bf := &core.BaseFlag{Name: field}
+	g.fs.RegisterFlag(field, bf)
+
+	// Return the user-facing BoolFlag
+	return &BoolFlag{
+		DynamicFlag: builder.NewDynamicFlag[bool](g.fs, bf),
+		item:        item,
+		strictMode:  *flagVal.strictMode,
+	}
+}

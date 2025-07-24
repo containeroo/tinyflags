@@ -1,11 +1,6 @@
 package dynamic
 
-import (
-	"strconv"
-
-	"github.com/containeroo/tinyflags/internal/builder"
-	"github.com/containeroo/tinyflags/internal/core"
-)
+import "github.com/containeroo/tinyflags/internal/builder"
 
 // BoolValue wraps a DynamicScalarValue[bool] and lets the FSM see IsStrictBool.
 type BoolValue struct {
@@ -14,13 +9,25 @@ type BoolValue struct {
 }
 
 // Set parses and stores one entry.
-func (s *BoolValue) Set(id, raw string) error {
-	return s.item.Set(id, raw)
+func (b *BoolValue) Set(id, raw string) error {
+	return b.item.Set(id, raw)
+}
+
+func (b *BoolValue) FieldName() string {
+	return b.item.field
+}
+
+func (b *BoolValue) GetAny(id string) (any, bool) {
+	val, ok := b.item.values[id]
+	if ok {
+		return val, true
+	}
+	return b.item.def, false
 }
 
 // IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
-func (s *BoolValue) IsStrictBool() bool {
-	return *s.strictMode
+func (b *BoolValue) IsStrictBool() bool {
+	return *b.strictMode
 }
 
 // BoolFlag is the builder for per-ID boolean flags.
@@ -34,29 +41,6 @@ type BoolFlag struct {
 func (b *BoolFlag) Strict() *BoolFlag {
 	b.strictMode = true
 	return b
-}
-
-// Bool registers a dynamic boolean field under this group.
-func (g *Group) Bool(field string, def bool, usage string) *BoolFlag {
-	// create the raw parser/storage
-	item := NewDynamicScalarValue(field, def, strconv.ParseBool, strconv.FormatBool)
-
-	// wrap it so it also implements StrictBool
-	flagVal := &BoolValue{item: item, strictMode: new(bool)}
-
-	// register a BaseFlag so it shows up in help
-	bf := &core.BaseFlag{Name: field, Usage: usage}
-	g.fs.RegisterFlag(field, bf)
-
-	// build the fluent API
-	df := builder.NewDynamicFlag[bool](g.fs, bf)
-
-	// return the builder, wiring strictMode pointer
-	return &BoolFlag{
-		DynamicFlag: df,
-		item:        item,
-		strictMode:  *flagVal.strictMode,
-	}
 }
 
 // Get retrieves the parsed value.
