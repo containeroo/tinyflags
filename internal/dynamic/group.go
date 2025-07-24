@@ -61,44 +61,53 @@ func (g *Group) Get(id string) map[string]any {
 	return out
 }
 
+// Get returns the parsed value for a given ID and flag, or an error if missing or wrong type.
 func Get[T any](g *Group, id, flag string) (T, error) {
 	var zero T
 
 	item, ok := g.Items()[flag]
 	if !ok {
-		return zero, fmt.Errorf("field not registered: %q", flag)
+		return zero, fmt.Errorf("dynamic flag %q is not registered", flag)
 	}
-	v, ok := item.(*DynamicScalarValue[T])
+
+	val, ok := item.(*DynamicScalarValue[T])
 	if !ok {
-		return zero, fmt.Errorf("field %q has wrong type", flag)
+		return zero, fmt.Errorf("dynamic flag %q has unexpected type", flag)
 	}
-	val, ok := v.values[id]
+
+	v, ok := val.values[id]
 	if !ok {
-		return zero, fmt.Errorf("value for field %q not found for id %q", flag, id)
+		return zero, fmt.Errorf("no value set for --%s.%s.%s", g.Name(), id, flag)
 	}
-	return val, nil
+
+	return v, nil
 }
 
+// MustGet panics if Get returns an error.
 func MustGet[T any](g *Group, id, flag string) T {
-	val, err := Get[T](g, flag, id)
+	v, err := Get[T](g, id, flag)
 	if err != nil {
 		panic(err)
 	}
-	return val
+	return v
 }
 
+// GetOrDefault returns the value for ID if set, or the default otherwise.
+// Panics if the flag is not registered or has a mismatched type.
 func GetOrDefault[T any](g *Group, id, flag string) T {
 	item, ok := g.Items()[flag]
 	if !ok {
-		panic(fmt.Sprintf("field not registered: %q", flag))
+		panic(fmt.Sprintf("dynamic flag %q is not registered", flag))
 	}
-	v, ok := item.(*DynamicScalarValue[T])
+
+	val, ok := item.(*DynamicScalarValue[T])
 	if !ok {
-		panic(fmt.Sprintf("field %q has wrong type", flag))
+		panic(fmt.Sprintf("dynamic flag %q has unexpected type", flag))
 	}
-	val, ok := v.values[id]
+
+	v, ok := val.values[id]
 	if !ok {
-		return v.def
+		return val.def
 	}
-	return val
+	return v
 }
