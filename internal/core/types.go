@@ -19,6 +19,8 @@ type Value interface {
 // DynamicValue accepts keyed values (e.g. --http.alpha.port).
 type DynamicValue interface {
 	Set(id, val string) error
+	FieldName() string
+	GetAny(id string) (any, bool)
 }
 
 // DynamicItemValues exposes all parsed dynamic entries.

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/containeroo/tinyflags"
-	"github.com/containeroo/tinyflags/internal/dynamic"
 )
 
 func main() {
@@ -45,8 +44,8 @@ func main() {
 			name := group.Name()
 			switch name {
 			case "http":
-				addr, _ := tinyflags.GetDynamic[string](group, "address", id)
-				port, _ := tinyflags.GetDynamic[int](group, "port", id)
+				addr, _ := tinyflags.GetDynamic[string](group, id, "address")
+				port, _ := tinyflags.GetDynamic[int](group, id, "port")
 				checker := HTTPChecker{
 					Name:    name,
 					Address: addr,

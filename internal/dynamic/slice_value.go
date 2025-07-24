@@ -52,6 +52,18 @@ func (d *DynamicSliceValue[T]) Set(id, input string) error {
 	return nil
 }
 
+func (d *DynamicSliceValue[T]) FieldName() string {
+	return d.field
+}
+
+func (d *DynamicSliceValue[T]) GetAny(id string) (any, bool) {
+	val, ok := d.values[id]
+	if ok {
+		return val, true
+	}
+	return d.def, false
+}
+
 // SetValidator sets a per-item validation function.
 func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn

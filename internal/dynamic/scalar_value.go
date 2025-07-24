@@ -41,6 +41,18 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	return nil
 }
 
+func (d *DynamicScalarValue[T]) FieldName() string {
+	return d.field
+}
+
+func (d *DynamicScalarValue[T]) GetAny(id string) (any, bool) {
+	val, ok := d.values[id]
+	if ok {
+		return val, true
+	}
+	return d.def, false
+}
+
 // setValidate sets a per-item validation function.
 func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn

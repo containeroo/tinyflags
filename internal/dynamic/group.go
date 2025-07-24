@@ -45,6 +45,11 @@ func (g *Group) Instances() []string {
 	return ids
 }
 
+func (g *Group) Lookup(field string) (core.DynamicValue, bool) {
+	val, ok := g.items[field]
+	return val, ok
+}
+
 func Get[T any](g *Group, field, id string) (T, error) {
 	var zero T
 
