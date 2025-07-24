@@ -70,26 +70,26 @@ func Get[T any](g *Group, id, flag string) (T, error) {
 		return zero, fmt.Errorf("dynamic flag %q is not registered", flag)
 	}
 
-	val, ok := item.(*DynamicScalarValue[T])
-	if !ok {
-		return zero, fmt.Errorf("dynamic flag %q has unexpected type", flag)
-	}
-
-	v, ok := val.values[id]
+	v, ok := item.GetAny(id)
 	if !ok {
 		return zero, fmt.Errorf("no value set for --%s.%s.%s", g.Name(), id, flag)
 	}
 
-	return v, nil
+	typed, ok := v.(T)
+	if !ok {
+		return zero, fmt.Errorf("dynamic flag %q has unexpected type", flag)
+	}
+
+	return typed, nil
 }
 
 // MustGet panics if Get returns an error.
 func MustGet[T any](g *Group, id, flag string) T {
-	v, err := Get[T](g, id, flag)
+	val, err := Get[T](g, id, flag)
 	if err != nil {
 		panic(err)
 	}
-	return v
+	return val
 }
 
 // GetOrDefault returns the value for ID if set, or the default otherwise.
@@ -100,14 +100,11 @@ func GetOrDefault[T any](g *Group, id, flag string) T {
 		panic(fmt.Sprintf("dynamic flag %q is not registered", flag))
 	}
 
-	val, ok := item.(*DynamicScalarValue[T])
+	v, _ := item.GetAny(id) // fallback to default is handled by the implementation
+	typed, ok := v.(T)
 	if !ok {
 		panic(fmt.Sprintf("dynamic flag %q has unexpected type", flag))
 	}
 
-	v, ok := val.values[id]
-	if !ok {
-		return val.def
-	}
-	return v
+	return typed
 }
