@@ -37,9 +37,9 @@ func (b *BoolFlag) Strict() *BoolFlag {
 }
 
 // Bool registers a dynamic boolean field under this group.
-func (g *Group) Bool(field, usage string) *BoolFlag {
+func (g *Group) Bool(field string, def bool, usage string) *BoolFlag {
 	// create the raw parser/storage
-	item := NewDynamicScalarValue(field, strconv.ParseBool, strconv.FormatBool)
+	item := NewDynamicScalarValue(field, def, strconv.ParseBool, strconv.FormatBool)
 
 	// wrap it so it also implements StrictBool
 	flagVal := &BoolValue{item: item, strictMode: new(bool)}

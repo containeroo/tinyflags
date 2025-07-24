@@ -66,7 +66,7 @@ type CounterFlag struct {
 }
 
 // NewCounter creates a new counter flag.
-func NewCounter(r core.Registry, ptr *int, name, usage string, def int) *CounterFlag {
+func NewCounter(r core.Registry, ptr *int, name string, def int, usage string) *CounterFlag {
 	val := NewCounterValue(ptr, def)
 	flag := RegisterScalar(r, name, usage, val, ptr)
 	return &CounterFlag{ScalarFlag: flag, val: val}

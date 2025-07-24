@@ -41,11 +41,6 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	return nil
 }
 
-func (f *ScalarFlag[T]) Default(def T) *ScalarFlag[T] {
-	f.item.def = def
-	return f
-}
-
 // setValidate sets a per-item validation function.
 func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn

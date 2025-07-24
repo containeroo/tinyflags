@@ -14,12 +14,12 @@ func main() {
 	fs.Version("1.0.0")
 
 	http := fs.DynamicGroup("http")
-	addr := http.String("address", "API address")
-	port := http.Int("port", "API port")
+	http.String("address", "", "API address")
+	http.Int("port", 8080, "API port")
 
 	tcp := fs.DynamicGroup("tcp")
-	tcp.String("address", "API address")
-	tcp.Int("port", "API port")
+	tcp.String("address", "", "API address")
+	tcp.Int("port", 8080, "API port")
 
 	// parse two dynamic flags
 	if err := fs.Parse([]string{
@@ -45,8 +45,8 @@ func main() {
 			name := group.Name()
 			switch name {
 			case "http":
-				addr, _ := dynamic.Get[string](group, "address", id)
-				port, _ := dynamic.Get[int](group, "port", id)
+				addr, _ := tinyflags.GetDynamic[string](group, "address", id)
+				port, _ := tinyflags.GetDynamic[int](group, "port", id)
 				checker := HTTPChecker{
 					Name:    name,
 					Address: addr,

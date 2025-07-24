@@ -43,14 +43,14 @@ func (f *FlagSet) BoolVar(ptr *bool, name, short string, def bool, usage string)
 
 // Counter  defines a counter flag.
 // A counter is a flag that increments on each occurrence.
-func (f *FlagSet) Counter(name, usage string) *scalar.CounterFlag {
-	return f.impl.CounterVar(new(int), name, usage, 0)
+func (f *FlagSet) Counter(name string, def int, usage string) *scalar.CounterFlag {
+	return f.impl.CounterVar(new(int), name, 0, usage)
 }
 
 // CounterVar defines a counter flag, binding the flag to a pointer (ptr).
 // A counter is a flag that increments on each occurrence.
-func (f *FlagSet) CounterVar(ptr *int, name, usage string) *scalar.CounterFlag {
-	return f.impl.CounterVar(ptr, name, usage, 0)
+func (f *FlagSet) CounterVar(ptr *int, name string, def int, usage string) *scalar.CounterFlag {
+	return f.impl.CounterVar(ptr, name, 0, usage)
 }
 
 // DurationVar declares a time.Duration flag, binding the flag to a pointer (ptr).

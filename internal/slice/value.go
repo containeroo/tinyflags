@@ -64,7 +64,7 @@ func (f *SliceValue[T]) Get() any {
 }
 
 // Default returns the default value as string.
-func (f *SliceValue[T]) Default() T {
+func (f *SliceValue[T]) Default() string {
 	out := make([]string, 0, len(f.def))
 	for _, v := range f.def {
 		out = append(out, f.format(v))

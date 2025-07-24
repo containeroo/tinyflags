@@ -43,8 +43,9 @@ func NewBoolValue(ptr *bool, def bool) *BoolValue {
 }
 
 // NewBool creates a new BoolFlag with full builder support.
-func NewBool(r core.Registry, ptr *bool, name, usage string, def bool) *BoolFlag {
+func NewBool(r core.Registry, ptr *bool, name string, def bool, usage string) *BoolFlag {
 	val := NewBoolValue(ptr, def)
+
 	flag := RegisterScalar(r, name, usage, val, ptr)
 	return &BoolFlag{ScalarFlag: flag, val: val}
 }
