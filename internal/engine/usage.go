@@ -183,13 +183,14 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 	if flag.Deprecated != "" {
 		desc += " [DEPRECATED: " + flag.Deprecated + "]"
 	}
-	if def := flag.Value.Default(); def != "" {
-		desc += " (Default: " + def + ")"
-		if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
-			desc += " (Strict)"
+	if flag.Value != nil {
+		if def := flag.Value.Default(); def != "" {
+			desc += " (Default: " + def + ")"
+			if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
+				desc += " (Strict)"
+			}
 		}
 	}
-
 	if shouldInjectEnvKey(flag, globalHideEnvs, prefix) {
 		flag.EnvKey = strings.ToUpper(prefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
 	}
