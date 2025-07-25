@@ -37,7 +37,7 @@ func parseArgs(args []string) (*Config, error) {
 		tf.PrintUsage(out, tinyflags.PrintBoth)
 		tf.PrintTitle(out)
 		tf.PrintDescription(out, 80)
-		tf.PrintDefaults()
+		tf.PrintDefaults(out, 80)
 		tf.PrintNotes(out, 80)
 		tf.PrintAuthors(out)
 	}
@@ -88,7 +88,7 @@ func parseArgs(args []string) (*Config, error) {
 		Short("i").
 		Value()
 
-	verbose := tf.Counter("verbose", "verbose mode").
+	verbose := tf.Counter("verbose", -1, "verbose mode").
 		Short("v").
 		Value()
 

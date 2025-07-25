@@ -18,8 +18,6 @@ func RegisterSlice[T any](
 	val sliceValueProvider[T],
 	ptr *[]T,
 ) *SliceFlag[T] {
-	base := val.Base()
-
 	bf := &core.BaseFlag{
 		Name:  name,
 		Usage: usage,
@@ -30,6 +28,6 @@ func RegisterSlice[T any](
 
 	return &SliceFlag[T]{
 		StaticFlag: builder.NewStaticFlag(reg, bf, ptr),
-		val:        base,
+		val:        val.Base(),
 	}
 }

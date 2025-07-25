@@ -67,7 +67,8 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		fs.PrintTitle(out)
 		fs.PrintAuthors(out)
 		fs.PrintDescription(out, fs.descMaxLen)
-		fs.PrintDefaults()
+		fs.PrintDefaults(out, fs.descMaxLen)
+		fs.PrintDynamicDefaults(out, fs.descMaxLen)
 		fs.PrintNotes(out, fs.descMaxLen)
 	}
 
@@ -207,6 +208,10 @@ func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
 	g := f.GetGroup(group)
 	g.Flags = append(g.Flags, bf)
 	bf.Group = g
+}
+
+func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
+	return f.flags[name]
 }
 
 // maybeAddBuiltinFlags adds --help and --version if enabled and not already defined.

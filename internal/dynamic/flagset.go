@@ -9,4 +9,5 @@ type FlagSetRef interface {
 	GetGroup(name string) *core.MutualGroup
 	Groups() []*core.MutualGroup
 	DefaultDelimiter() string
+	LookupFlag(name string) *core.BaseFlag
 }

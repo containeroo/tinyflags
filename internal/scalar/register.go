@@ -18,8 +18,6 @@ func RegisterScalar[T any](
 	val scalarValueProvider[T],
 	ptr *T,
 ) *ScalarFlag[T] {
-	base := val.Base()
-
 	bf := &core.BaseFlag{
 		Name:  name,
 		Usage: usage,
@@ -29,6 +27,6 @@ func RegisterScalar[T any](
 
 	return &ScalarFlag[T]{
 		StaticFlag: builder.NewStaticFlag(reg, bf, ptr),
-		val:        base,
+		val:        val.Base(),
 	}
 }

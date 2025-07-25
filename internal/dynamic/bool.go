@@ -1,69 +1,63 @@
 package dynamic
 
-import "github.com/containeroo/tinyflags/internal/builder"
+import (
+	"github.com/containeroo/tinyflags/internal/builder"
+)
 
-// BoolValue wraps a DynamicScalarValue[bool] and lets the FSM see IsStrictBool.
+// BoolValue wraps a DynamicScalarValue[bool] and exposes strict-mode information.
 type BoolValue struct {
-	item       *DynamicScalarValue[bool]
-	strictMode *bool
-}
-
-// Set parses and stores one entry.
-func (b *BoolValue) Set(id, raw string) error {
-	return b.item.Set(id, raw)
-}
-
-func (b *BoolValue) FieldName() string {
-	return b.item.field
-}
-
-func (b *BoolValue) GetAny(id string) (any, bool) {
-	val, ok := b.item.values[id]
-	if ok {
-		return val, true
-	}
-	return b.item.def, false
+	*DynamicScalarValue[bool]
+	strictMode bool
 }
 
 // IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
 func (b *BoolValue) IsStrictBool() bool {
-	return *b.strictMode
+	return b.strictMode
 }
 
-// BoolFlag is the builder for per-ID boolean flags.
+// BoolFlag provides fluent builder methods for dynamic boolean flags.
 type BoolFlag struct {
 	*builder.DynamicFlag[bool]
 	item       *DynamicScalarValue[bool]
-	strictMode bool
+	strictMode *bool
 }
 
-// Strict requires explicit `=true|false`.
+// Strict requires the flag to be passed as --flag=true|false.
 func (b *BoolFlag) Strict() *BoolFlag {
-	b.strictMode = true
+	*b.strictMode = true
 	return b
 }
 
-// Get retrieves the parsed value.
+// Get retrieves the parsed value for the given ID, falling back to default.
 func (f *BoolFlag) Get(id string) (bool, bool) {
 	val, ok := f.item.values[id]
-	return val, ok
+	if !ok {
+		return f.item.def, false
+	}
+	return val, true
 }
 
-// MustGet returns the parsed value, panicking if not set.
+// MustGet retrieves the parsed value or panics if not set.
 func (f *BoolFlag) MustGet(id string) bool {
 	val, ok := f.Get(id)
 	if !ok {
-		panic("value not set")
+		panic("value not set for dynamic bool flag: " + f.item.field + " (" + id + ")")
 	}
 	return val
 }
 
-// Values returns all stored values.
+// Has reports whether the value was explicitly set for this ID.
+func (f *BoolFlag) Has(id string) bool {
+	_, ok := f.item.values[id]
+	return ok
+}
+
+// Values returns all stored values for all IDs.
 func (f *BoolFlag) Values() map[string]bool {
 	return f.item.values
 }
 
-// ValuesAny returns values as a generic map.
+// ValuesAny returns all stored values as map[string]any for interface use.
 func (f *BoolFlag) ValuesAny() map[string]any {
 	m := make(map[string]any, len(f.item.values))
 	for k, v := range f.item.values {

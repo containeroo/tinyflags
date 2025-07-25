@@ -127,12 +127,12 @@ func (f *FlagSet) DescriptionMaxLen(n int) { f.impl.DescriptionMaxLen(n) }
 func (f *FlagSet) DescriptionIndent(n int) { f.impl.DescriptionIndent(n) }
 
 // PrintDefaults prints all defined flags and their defaults.
-func (f *FlagSet) PrintDefaults() { f.impl.PrintDefaults() }
+func (f *FlagSet) PrintDefaults(w io.Writer, width int) { f.impl.PrintDefaults(w, width) }
+
+func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) { f.impl.PrintDynamicDefaults(w, width) }
 
 // PrintUsage writes usage text in the specified mode.
-func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
-	f.impl.PrintUsage(w, mode)
-}
+func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) { f.impl.PrintUsage(w, mode) }
 
 // PrintTitle writes the help title.
 func (f *FlagSet) PrintTitle(w io.Writer) { f.impl.PrintTitle(w) }

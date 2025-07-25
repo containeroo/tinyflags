@@ -17,7 +17,7 @@ func TestSmoke_ParseArgs(t *testing.T) {
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 
-		verbose := fs.Counter("verbose", "Enable verbose mode").
+		verbose := fs.Counter("verbose", 0, "Enable verbose mode").
 			Max(4).
 			Short("v").
 			Placeholder("NUM").
@@ -36,7 +36,7 @@ func TestSmoke_ParseArgs(t *testing.T) {
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 
-		verbose := fs.Counter("verbose", "Enable verbose mode").
+		verbose := fs.Counter("verbose", 0, "Enable verbose mode").
 			Max(2).
 			Value()
 
@@ -351,9 +351,9 @@ Flags:
 				return nil
 			})
 		port := http.Int("port", 0, "API port")
-		enabled := http.Bool("enabled", "Enable service").Strict()
+		enabled := http.Bool("enabled", true, "Enable service").Strict()
 
-		verbose := http.Bool("verbose", "Enable verbose mode")
+		verbose := http.Bool("verbose", true, "Enable verbose mode")
 
 		err := fs.Parse([]string{
 			"--http.alpha.enabled=true",
@@ -385,5 +385,35 @@ Flags:
 			"alpha": true,
 		}
 		assert.Equal(t, verboses, verbose.Values())
+	})
+
+	t.Run("smoke dyn help", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		http := fs.DynamicGroup("http")
+		http.String("address", "", "API address").
+			Validate(func(s string) error {
+				if s == "localhost" {
+					return fmt.Errorf("cannot use localhost")
+				}
+				return nil
+			})
+		http.Int("port", 0, "API port")
+		http.Bool("enabled", true, "Enable service").Strict()
+
+		http.Bool("verbose", true, "Enable verbose mode")
+
+		err := fs.Parse([]string{
+			"--http.alpha.enabled=true",
+			"--http.alpha.address=127.0.0.1",
+			"--http.alpha.port", "8080",
+			"--http.alpha.verbose",
+			"--http.beta.address=10.0.0.1",
+			"--http.beta.enabled=false",
+			"--help",
+		})
+		require.Error(t, err)
+		assert.EqualError(t, err, "Usage: app [flags]\n")
 	})
 }

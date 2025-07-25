@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/containeroo/tinyflags/internal/core"
+	"github.com/containeroo/tinyflags/internal/dynamic"
 )
 
 // FlagPrintMode defines how usage should be rendered.
@@ -80,8 +81,8 @@ func (f *FlagSet) PrintNotes(w io.Writer, width int) {
 }
 
 // PrintDefaults prints all visible flags with their descriptions.
-func (f *FlagSet) PrintDefaults() {
-	w := tabwriter.NewWriter(f.Output(), 2, 4, 2, ' ', 0)
+func (f *FlagSet) PrintDefaults(out io.Writer, width int) {
+	w := tabwriter.NewWriter(out, 2, 4, 2, ' ', 0)
 	userFlags, versionFlag, helpFlag := f.splitFlags()
 
 	if f.sortFlags {
@@ -139,7 +140,7 @@ func (f *FlagSet) printUnsortedFlags(w io.Writer, userFlags []*core.BaseFlag, ve
 func printFlagUsage(w io.Writer, descIndent, maxDesc int, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
 	var b strings.Builder
 
-	formatFlagNames(&b, flag)
+	//	formatFlagNames(&b, flag)
 	if meta := getPlaceholder(flag); meta != "" {
 		b.WriteString(" ")
 		b.WriteString(meta)
@@ -303,4 +304,69 @@ func (f *FlagSet) orderedFlags() []*core.BaseFlag {
 	}
 
 	return all
+}
+
+// PrintDynamicDefaults renders all dynamic groups and their flags.
+func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) {
+	type dynGroup struct {
+		name string
+		g    *dynamic.Group
+	}
+
+	var groups []dynGroup
+	for name, g := range f.dynamicGroups {
+		if g.IsHidden() {
+			continue
+		}
+		groups = append(groups, dynGroup{name: name, g: g})
+	}
+
+	sort.SliceStable(groups, func(i, j int) bool {
+		if groups[i].g.IsGroupSorted() && groups[j].g.IsGroupSorted() {
+			return groups[i].name < groups[j].name
+		}
+		return false
+	})
+
+	for _, group := range groups {
+		name := group.name
+		g := group.g
+
+		if title := g.TitleText(); title != "" {
+			fmt.Fprintf(w, "\n%s\n", title)
+		}
+		if desc := g.DescriptionText(); desc != "" {
+			fmt.Fprintln(w, wrapText(desc, width))
+		}
+
+		ids := g.Instances()
+		if len(ids) == 0 {
+			// still print static flag layout if there’s no instance
+			ids = []string{"<id>"}
+		}
+
+		for _, id := range ids {
+			flags := g.Flags()
+			if g.IsFlagSorted() {
+				sort.Slice(flags, func(i, j int) bool {
+					return flags[i].Name < flags[j].Name
+				})
+			}
+
+			tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
+			for _, fl := range flags {
+				fmt.Fprintf(tw, "      --%s.%s.%s", name, id, fl.Name)
+				if meta := getPlaceholder(fl); meta != "" {
+					fmt.Fprintf(tw, " %s", meta)
+				}
+				desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
+				fmt.Fprintf(tw, "\t%s\n", desc)
+			}
+			tw.Flush()
+		}
+
+		if note := g.NoteText(); note != "" {
+			fmt.Fprintln(w, wrapText(note, width))
+		}
+	}
 }
