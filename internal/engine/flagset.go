@@ -14,7 +14,7 @@ import (
 type FlagSet struct {
 	name               string                    // name of the application or command (used in usage output).
 	errorHandling      ErrorHandling             // errorHandling determines what happens when parsing fails.
-	flags              map[string]*core.BaseFlag // flags holds all registered named flags by their long name.
+	staticFlags        map[string]*core.BaseFlag // holds all registered named flags by their long name.
 	registered         []*core.BaseFlag          // registered keeps the order in which flags were added (for ordered output).
 	groups             []*core.MutualGroup       // groups holds mutual exclusion groups (e.g. only one of a set of flags is allowed).
 	dynamicGroups      map[string]*dynamic.Group // dynamicGroups holds all dynamically defined groups.
@@ -46,7 +46,7 @@ type FlagSet struct {
 func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 	fs := &FlagSet{
 		name:             name,
-		flags:            make(map[string]*core.BaseFlag),
+		staticFlags:      make(map[string]*core.BaseFlag),
 		getEnv:           os.Getenv,
 		errorHandling:    errorHandling,
 		ignoreInvalidEnv: false,
@@ -68,7 +68,6 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		fs.PrintAuthors(out)
 		fs.PrintDescription(out, fs.descMaxLen)
 		fs.PrintDefaults(out, fs.descMaxLen)
-		fs.PrintDynamicDefaults(out, fs.descMaxLen)
 		fs.PrintNotes(out, fs.descMaxLen)
 	}
 
@@ -152,7 +151,7 @@ func (f *FlagSet) DefaultDelimiter() string { return f.defaultDelimiter }
 
 // RegisterFlag registers a static flag.
 func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
-	f.flags[name] = bf
+	f.staticFlags[name] = bf
 	f.registered = append(f.registered, bf)
 }
 
@@ -211,18 +210,18 @@ func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
 }
 
 func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
-	return f.flags[name]
+	return f.staticFlags[name]
 }
 
 // maybeAddBuiltinFlags adds --help and --version if enabled and not already defined.
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
-		if _, exists := f.flags["help"]; !exists {
+		if _, exists := f.staticFlags["help"]; !exists {
 			f.showHelp = f.Bool("help", false, "show help").Short("h").DisableEnv().Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
-		if _, exists := f.flags["version"]; !exists {
+		if _, exists := f.staticFlags["version"]; !exists {
 			f.showVersion = f.Bool("version", false, "show version").DisableEnv().Value()
 		}
 	}

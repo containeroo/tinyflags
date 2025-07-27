@@ -36,31 +36,31 @@ func NewSliceValue[T any](
 }
 
 // Set parses and stores the slice from a delimited string for a given ID.
-func (f *SliceValue[T]) Set(s string) error {
-	if !f.changed {
-		*f.ptr = nil
+func (v *SliceValue[T]) Set(s string) error {
+	if !v.changed {
+		*v.ptr = nil
 	}
-	parts := strings.Split(s, f.delimiter)
+	parts := strings.Split(s, v.delimiter)
 	for _, raw := range parts {
-		val, err := f.parse(strings.TrimSpace(raw))
+		val, err := v.parse(strings.TrimSpace(raw))
 		if err != nil {
 			return fmt.Errorf("invalid slice item %q: %w", raw, err)
 		}
-		if f.validate != nil {
-			if err := f.validate(val); err != nil {
+		if v.validate != nil {
+			if err := v.validate(val); err != nil {
 				return fmt.Errorf("invalid value %q: %w", raw, err)
 			}
 		}
-		*f.ptr = append(*f.ptr, val)
+		*v.ptr = append(*v.ptr, val)
 	}
-	f.value = *f.ptr
-	f.changed = true
+	v.value = *v.ptr
+	v.changed = true
 	return nil
 }
 
 // Get returns the parsed slice for the given ID.
-func (f *SliceValue[T]) Get() any {
-	return *f.ptr
+func (v *SliceValue[T]) Get() any {
+	return *v.ptr
 }
 
 // Default returns the default value as string.
@@ -73,12 +73,15 @@ func (f *SliceValue[T]) Default() string {
 }
 
 // Changed returns true if the value was changed.
-func (f *SliceValue[T]) Changed() bool {
-	return f.changed
+func (v *SliceValue[T]) Changed() bool {
+	return v.changed
 }
 
 // setValidate sets a per-item validation function.
-func (f *SliceValue[T]) setValidate(fn func(T) error) { f.validate = fn }
+func (v *SliceValue[T]) setValidate(fn func(T) error) { v.validate = fn }
 
 // Base returns the underlying value.
-func (f *SliceValue[T]) Base() *SliceValue[T] { return f }
+func (v *SliceValue[T]) Base() *SliceValue[T] { return v }
+
+// isSlice is a no-op marker method to implement core.SliceMarker.
+func (v *SliceValue[T]) IsSlice() {}

@@ -7,6 +7,11 @@ import (
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
+type dynamicValueProvider[T any] interface {
+	core.Value
+	Base() *DynamicScalarValue[T]
+}
+
 // registerDynamicScalar registers a scalar field under the group.
 func registerDynamicScalar[T any](
 	g *Group,
@@ -20,11 +25,13 @@ func registerDynamicScalar[T any](
 
 	bf := &core.BaseFlag{
 		Name:  field,
-		Value: &dynamicHelpValue[T]{def: format(def)},
 		Usage: usage,
 	}
-	g.items[field] = item
-	g.fs.RegisterFlag(field, bf)
+
+	g.items[field] = core.GroupItem{
+		Value: item,
+		Flag:  bf,
+	}
 
 	return &ScalarFlag[T]{
 		DynamicFlag: builder.NewDynamicFlag[T](g.fs, bf),
@@ -50,12 +57,14 @@ func registerDynamicSlice[T any](
 
 	bf := &core.BaseFlag{
 		Name:  field,
-		Value: &dynamicHelpValue[[]T]{def: strings.Join(formatted, ",")},
+		Value: &dynamicSliceValue[[]T]{def: strings.Join(formatted, ",")},
 		Usage: usage,
 	}
 
-	g.items[field] = item
-	g.fs.RegisterFlag(field, bf)
+	g.items[field] = core.GroupItem{
+		Value: item,
+		Flag:  bf,
+	}
 
 	return &SliceFlag[T]{
 		DynamicFlag: builder.NewDynamicFlag[T](g.fs, bf),
@@ -72,17 +81,31 @@ func registerDynamicBool(
 	parse func(string) (bool, error),
 	format func(bool) string,
 ) *BoolFlag {
-	item := NewDynamicScalarValue(field, def, parse, format)
+	strict := new(bool)
 
+	// Wrap base value
+	val := &BoolValue{
+		DynamicScalarValue: NewDynamicScalarValue(field, def, parse, format),
+		Strict:             strict,
+	}
+
+	// Register BaseFlag
 	bf := &core.BaseFlag{
 		Name:  field,
 		Usage: usage,
+		Value: &dynamicBoolValue[bool]{def: format(def), strictMode: strict}, // dummy CLI value
 	}
-	g.items[field] = &BoolValue{DynamicScalarValue: item, strictMode: false}
-	g.fs.RegisterFlag(field, bf)
 
+	// Store in dynamic group
+	g.items[field] = core.GroupItem{
+		Value: val,
+		Flag:  bf,
+	}
+
+	// Return fluent builder
 	return &BoolFlag{
 		DynamicFlag: builder.NewDynamicFlag[bool](g.fs, bf),
-		item:        item,
+		item:        val.Base(),
+		strictMode:  strict,
 	}
 }

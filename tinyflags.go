@@ -129,7 +129,7 @@ func (f *FlagSet) DescriptionIndent(n int) { f.impl.DescriptionIndent(n) }
 // PrintDefaults prints all defined flags and their defaults.
 func (f *FlagSet) PrintDefaults(w io.Writer, width int) { f.impl.PrintDefaults(w, width) }
 
-func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) { f.impl.PrintDynamicDefaults(w, width) }
+// func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) { f.impl.PrintDynamicDefaults(w, width) }
 
 // PrintUsage writes usage text in the specified mode.
 func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) { f.impl.PrintUsage(w, mode) }
@@ -151,17 +151,17 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return f.impl.DynamicGroup(name)
 }
 
-// GetDynamic retrieves a dynamic field value for a given ID with the correct type.
+// // GetDynamic retrieves a dynamic field value for a given ID with the correct type.
 func GetDynamic[T any](group *dynamic.Group, id string, flag string) (T, error) {
 	return dynamic.Get[T](group, id, flag)
 }
 
-// MustGetDynamic panics if the field or id is missing.
+// // MustGetDynamic panics if the field or id is missing.
 func MustGetDynamic[T any](group *dynamic.Group, id string, flag string) T {
 	return dynamic.MustGet[T](group, id, flag)
 }
 
-// GetOrDefaultDynamic returns the default value if the field or id is missing.
+// // GetOrDefaultDynamic returns the default value if the field or id is missing.
 func GetOrDefaultDynamic[T any](group *dynamic.Group, id, flag string) T {
 	return dynamic.GetOrDefault[T](group, id, flag)
 }

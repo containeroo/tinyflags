@@ -16,6 +16,11 @@ type Value interface {
 	Default() string  // default value as string
 }
 
+type GroupItem struct {
+	Value DynamicValue
+	Flag  *BaseFlag
+}
+
 // DynamicValue accepts keyed values (e.g. --http.alpha.port).
 type DynamicValue interface {
 	Set(id, val string) error
@@ -35,7 +40,7 @@ type StrictBool interface {
 
 // SliceMarker tags slice-type flags (no methods).
 type SliceMarker interface {
-	isSlice()
+	IsSlice()
 }
 
 // Incrementable allows repeated use to increment a counter flag.

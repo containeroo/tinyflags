@@ -13,21 +13,26 @@ func main() {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
 	fs.Version("1.0.1")
 
+	fs.Bool("debug", false, "debug mode").Strict()
+
 	http := fs.DynamicGroup("http")
 	http.String("address", "", "API address")
+	http.String("log-level", "info", "log level").
+		Choices("debug", "info", "warn", "error")
 	http.Int("port", 8080, "API port")
-	http.Bool("verbose", false, "verbose mode")
+	http.Bool("verbose", false, "verbose mode").Strict()
 
 	tcp := fs.DynamicGroup("tcp")
-	tcp.String("address", "", "API address")
+	tcp.StringSlice("addresses", []string{}, "API address")
 	tcp.Int("port", 8080, "API port")
+	tcp.Bool("verbose", false, "verbose mode")
 
 	// parse two dynamic flags
 	args := []string{
 		"--http.alpha.address=127.0.0.1",
 		"--http.alpha.port=8080",
 		"--http.beta.address=10.0.0.1",
-		"--tcp.beta.address=10.0.0.1",
+		"--tcp.beta.addresses=10.0.0.1",
 		"--tcp.beta.port=9090",
 	}
 	args = append(args, os.Args[1:]...)

@@ -155,7 +155,7 @@ func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool
 
 func handleStatic(name, val string, hasVal bool) stateFn {
 	return func(p *parser) stateFn {
-		fl := p.fs.flags[name]
+		fl := p.fs.staticFlags[name]
 
 		// Handle non-strict bools like -v
 		if handled := tryBool(fl); handled {
@@ -221,7 +221,7 @@ func stateShort(arg string) stateFn {
 }
 
 func findShortFlag(fs *FlagSet, short string) *core.BaseFlag {
-	for _, fl := range fs.flags {
+	for _, fl := range fs.staticFlags {
 		if fl.Short == short {
 			return fl
 		}
@@ -313,26 +313,30 @@ func isDynamicFlag(name string) bool {
 }
 
 func isKnownStaticFlag(p *parser, name string) bool {
-	_, ok := p.fs.flags[name]
+	_, ok := p.fs.staticFlags[name]
 	return ok
 }
 
+// lookupDynamic locates the dynamic item and returns its parser and ID.
 func lookupDynamic(p *parser, name string) (core.DynamicValue, string) {
 	parts := strings.Split(name, ".")
 	if len(parts) != 3 {
 		p.err = fmt.Errorf("invalid dynamic flag: --%s", name)
 		return nil, ""
 	}
-	group, id, field := parts[0], parts[1], parts[2]
-	g, ok := p.fs.dynamicGroups[group]
+	groupName, id, field := parts[0], parts[1], parts[2]
+
+	group, ok := p.fs.dynamicGroups[groupName]
 	if !ok {
 		p.err = fmt.Errorf("unknown dynamic group: --%s", name)
 		return nil, ""
 	}
-	item, ok := g.Items()[field]
+
+	item, ok := group.Items()[field]
 	if !ok {
 		p.err = fmt.Errorf("unknown dynamic field: --%s", name)
 		return nil, ""
 	}
-	return item, id
+
+	return item.Value, id
 }

@@ -1,18 +1,20 @@
 package dynamic
 
-import (
-	"github.com/containeroo/tinyflags/internal/builder"
-)
+import "github.com/containeroo/tinyflags/internal/builder"
 
 // BoolValue wraps a DynamicScalarValue[bool] and exposes strict-mode information.
 type BoolValue struct {
 	*DynamicScalarValue[bool]
-	strictMode bool
+	Strict *bool
 }
 
-// IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
+func (b *BoolValue) Base() *DynamicScalarValue[bool] {
+	return b.DynamicScalarValue
+}
+
+// IsStrictBool reports whether the flag requires --flag=true|false.
 func (b *BoolValue) IsStrictBool() bool {
-	return b.strictMode
+	return b.Strict != nil && *b.Strict
 }
 
 // BoolFlag provides fluent builder methods for dynamic boolean flags.

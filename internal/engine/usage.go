@@ -15,23 +15,23 @@ import (
 type FlagPrintMode int
 
 const (
-	PrintShort FlagPrintMode = iota // Only short flags (e.g., -v)
-	PrintLong                       // Only long flags (e.g., --verbose)
-	PrintBoth                       // Combined short|long (e.g., -v|--verbose)
-	PrintFlags                      // Just "Usage: [flags]"
-	PrintNone                       // No usage tokens shown
+	PrintShort FlagPrintMode = iota
+	PrintLong
+	PrintBoth
+	PrintFlags
+	PrintNone
 )
 
-// PrintUsage prints a usage line including flags depending on mode.
+// PrintUsage prints a usage line depending on mode.
 func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
-	fmt.Fprint(w, "Usage: "+f.name) // nolint:errcheck
+	fmt.Fprint(w, "Usage: "+f.name)
 
 	switch mode {
 	case PrintNone:
-		fmt.Fprintln(w) // nolint:errcheck
+		fmt.Fprintln(w)
 		return
 	case PrintFlags:
-		fmt.Fprintln(w, " [flags]") // nolint:errcheck
+		fmt.Fprintln(w, " [flags]")
 		return
 	}
 
@@ -49,48 +49,135 @@ func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
 	if helpFlag != nil {
 		printUsageToken(w, helpFlag, mode)
 	}
-	fmt.Fprintln(w) // nolint:errcheck
+	fmt.Fprintln(w)
 }
 
-// PrintTitle writes the usage title heading.
+// PrintTitle writes usage title heading.
 func (f *FlagSet) PrintTitle(w io.Writer) {
 	if f.title != "" {
-		fmt.Fprintln(w, f.title) // nolint:errcheck
+		fmt.Fprintln(w, f.title)
 	}
 }
 
-// PrintAuthors writes the usage authors heading.
+// PrintAuthors writes usage author heading.
 func (f *FlagSet) PrintAuthors(w io.Writer) {
 	if f.authors != "" {
-		fmt.Fprintln(w, "Authors: "+f.authors) // nolint:errcheck
+		fmt.Fprintln(w, "Authors: "+f.authors)
 	}
 }
 
-// PrintDescription renders the prolog text above flags.
+// PrintDescription renders description block above flags.
 func (f *FlagSet) PrintDescription(w io.Writer, width int) {
 	if f.desc != "" {
-		fmt.Fprintln(w, wrapText(f.desc, width)) // nolint:errcheck
+		fmt.Fprintln(w, wrapText(f.desc, width))
 	}
 }
 
-// PrintNotes renders the epilog text below flags.
+// PrintNotes renders notes block below flags.
 func (f *FlagSet) PrintNotes(w io.Writer, width int) {
 	if f.notes != "" {
-		fmt.Fprintln(w, wrapText(f.notes, width)) // nolint:errcheck
+		fmt.Fprintln(w, wrapText(f.notes, width))
 	}
 }
 
-// PrintDefaults prints all visible flags with their descriptions.
-func (f *FlagSet) PrintDefaults(out io.Writer, width int) {
-	w := tabwriter.NewWriter(out, 2, 4, 2, ' ', 0)
-	userFlags, versionFlag, helpFlag := f.splitFlags()
+// PrintDefaults prints both static and dynamic flags.
+func (f *FlagSet) PrintDefaults(w io.Writer, width int) {
+	f.printStaticDefaults(w, width)
+	f.printDynamicDefaults(w, width)
+}
+
+// printStaticDefaults renders all statically registered flags.
+func (f *FlagSet) printStaticDefaults(w io.Writer, width int) {
+	tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
+
+	staticFlags := f.orderedFlags()
 
 	if f.sortFlags {
-		f.printSortedFlags(w, userFlags, versionFlag, helpFlag)
-	} else {
-		f.printUnsortedFlags(w, userFlags, versionFlag, helpFlag)
+		sort.Slice(staticFlags, func(i, j int) bool {
+			return staticFlags[i].Name < staticFlags[j].Name
+		})
 	}
-	w.Flush() // nolint:errcheck
+
+	for _, fl := range staticFlags {
+		printFlagUsage(tw, f.descIndent, f.descMaxLen, f.hideEnvs, fl, f.envPrefix)
+	}
+	tw.Flush() // nolint:errcheck
+}
+
+// printDynamicDefaults renders all dynamic groups.
+func (f *FlagSet) printDynamicDefaults(w io.Writer, width int) {
+	type dynGroup struct {
+		name string
+		g    *dynamic.Group
+	}
+	var groups []dynGroup
+	for name, g := range f.dynamicGroups {
+		if g.IsHidden() {
+			continue
+		}
+		groups = append(groups, dynGroup{name: name, g: g})
+	}
+
+	sort.SliceStable(groups, func(i, j int) bool {
+		if groups[i].g.IsGroupSorted() && groups[j].g.IsGroupSorted() {
+			return groups[i].name < groups[j].name
+		}
+		return false
+	})
+
+	for _, group := range groups {
+		name := group.name
+		g := group.g
+
+		// Title
+		if title := g.TitleText(); title != "" {
+			fmt.Fprintf(w, "\n%s\n", title)
+		}
+
+		// Description
+		if desc := g.DescriptionText(); desc != "" {
+			fmt.Fprintln(w, wrapText(desc, width))
+		}
+
+		// Placeholder for ID
+		idPlaceholder := g.GetPlaceholder()
+		if idPlaceholder == "" {
+			idPlaceholder = "<ID>"
+		}
+
+		// Flag definitions (not instances)
+		flags := g.Flags()
+		if g.IsFlagSorted() {
+			sort.Slice(flags, func(i, j int) bool {
+				return flags[i].Name < flags[j].Name
+			})
+		}
+
+		tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
+		for _, fl := range flags {
+			// Build flag path: --group.<ID>.flagname
+			var b strings.Builder
+			b.WriteString("      --")
+			b.WriteString(name)
+			b.WriteString(".")
+			b.WriteString(idPlaceholder)
+			b.WriteString(".")
+			b.WriteString(fl.Name)
+			if meta := getPlaceholder(fl); meta != "" {
+				b.WriteString(" ")
+				b.WriteString(meta)
+			}
+			flagLine := b.String()
+			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
+			fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, flagLine, desc)
+		}
+		tw.Flush() // nolint:errcheck
+
+		// Group note
+		if note := g.NoteText(); note != "" {
+			fmt.Fprintln(w, wrapText(note, width))
+		}
+	}
 }
 
 // splitFlags separates user-defined and built-in flags.
@@ -108,61 +195,48 @@ func (f *FlagSet) splitFlags() (userFlags []*core.BaseFlag, versionFlag, helpFla
 	return
 }
 
-// printSortedFlags prints all flags alphabetically.
-func (f *FlagSet) printSortedFlags(w io.Writer, userFlags []*core.BaseFlag, versionFlag, helpFlag *core.BaseFlag) {
-	all := append([]*core.BaseFlag{}, userFlags...)
-	if versionFlag != nil {
-		all = append(all, versionFlag)
+// orderedFlags returns all static flags in desired order.
+func (f *FlagSet) orderedFlags() []*core.BaseFlag {
+	if f.sortFlags {
+		var all []*core.BaseFlag
+		for _, fl := range f.staticFlags {
+			all = append(all, fl)
+		}
+		sort.Slice(all, func(i, j int) bool {
+			return all[i].Name < all[j].Name
+		})
+		return all
 	}
-	if helpFlag != nil {
-		all = append(all, helpFlag)
-	}
-	sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
-	for _, fl := range all {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, fl, f.envPrefix)
-	}
+	return f.registered
 }
 
-// printUnsortedFlags prints flags in registration order.
-func (f *FlagSet) printUnsortedFlags(w io.Writer, userFlags []*core.BaseFlag, versionFlag, helpFlag *core.BaseFlag) {
-	for _, fl := range userFlags {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, fl, f.envPrefix)
-	}
-	if versionFlag != nil {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, versionFlag, f.envPrefix)
-	}
-	if helpFlag != nil {
-		printFlagUsage(w, f.descIndent, f.descMaxLen, f.hideEnvs, helpFlag, f.envPrefix)
-	}
-}
-
-// printFlagUsage renders a single flag's full usage line.
+// printFlagUsage renders a single usage line.
 func printFlagUsage(w io.Writer, descIndent, maxDesc int, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
 	var b strings.Builder
 
-	//	formatFlagNames(&b, flag)
+	formatFlagNames(&b, flag)
+
 	if meta := getPlaceholder(flag); meta != "" {
 		b.WriteString(" ")
 		b.WriteString(meta)
 	}
 	flagLine := b.String()
-
 	desc := buildFlagDescription(flag, globalHideEnvs, prefix)
 
 	if len(flagLine)+len(desc) <= maxDesc {
-		fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, desc) // nolint:errcheck
+		fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, desc)
 		return
 	}
 
 	wrapped := wrapText(desc, maxDesc-descIndent-1)
 	lines := strings.Split(wrapped, "\n")
-
-	fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, lines[0]) // nolint:errcheck
+	fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, lines[0])
 	for _, l := range lines[1:] {
-		fmt.Fprintf(w, "%-*s %s\n", descIndent, "", l) // nolint:errcheck
+		fmt.Fprintf(w, "%-*s %s\n", descIndent, "", l)
 	}
 }
 
+// formatFlagNames builds flag names (e.g. -v, --verbose).
 func formatFlagNames(b *strings.Builder, flag *core.BaseFlag) {
 	if flag.Short != "" {
 		b.WriteString("  -")
@@ -175,9 +249,39 @@ func formatFlagNames(b *strings.Builder, flag *core.BaseFlag) {
 	b.WriteString(flag.Name)
 }
 
+// getPlaceholder returns help placeholder for a flag value.
+func getPlaceholder(flag *core.BaseFlag) string {
+	isBool := false
+	isStrict := false
+
+	if bv, ok := flag.Value.(core.StrictBool); ok {
+		isBool = true
+		isStrict = bv.IsStrictBool()
+	}
+
+	if isBool && !isStrict {
+		return ""
+	}
+
+	if flag.Placeholder != "" {
+		return flag.Placeholder
+	}
+	if len(flag.Allowed) > 0 {
+		return "<" + strings.Join(flag.Allowed, "|") + ">"
+	}
+	if isStrict {
+		return "<true|false>"
+	}
+	placeholder := strings.ToUpper(flag.Name)
+	if _, ok := flag.Value.(core.SliceMarker); ok {
+		placeholder += "..."
+	}
+	return placeholder
+}
+
+// buildFlagDescription renders the description of a flag.
 func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix string) string {
 	desc := flag.Usage
-
 	if len(flag.Allowed) > 0 {
 		desc += " (Allowed: " + strings.Join(flag.Allowed, ", ") + ")"
 	}
@@ -230,143 +334,30 @@ func buildGroupInfo(group *core.MutualGroup) string {
 	return b.String()
 }
 
-// getPlaceholder returns the placeholder for a flag value shown in help.
-func getPlaceholder(flag *core.BaseFlag) string {
-	isBool := false
-	isStrict := false
-
-	if bv, ok := flag.Value.(core.StrictBool); ok {
-		isBool = true
-		isStrict = bv.IsStrictBool()
-	}
-
-	if isBool && !isStrict {
-		return ""
-	}
-
-	var placeholder string
-	if flag.Placeholder != "" {
-		placeholder = flag.Placeholder
-	} else if len(flag.Allowed) > 0 {
-		placeholder = "<" + strings.Join(flag.Allowed, "|") + ">"
-	} else if isStrict {
-		placeholder = "<true|false>"
-	} else {
-		placeholder = strings.ToUpper(flag.Name)
-	}
-
-	if _, ok := flag.Value.(core.SliceMarker); ok {
-		placeholder += "..."
-	}
-	return placeholder
-}
-
-// printUsageToken writes a short usage token (e.g. -v, --verbose) to the usage line.
+// printUsageToken prints usage token like `-v`, `--verbose`, or both.
 func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 	meta := getPlaceholder(fl)
-
 	switch mode {
 	case PrintShort:
 		if fl.Short != "" {
-			fmt.Fprintf(w, " -%s", fl.Short) // nolint:errcheck
+			fmt.Fprintf(w, " -%s", fl.Short)
 			if meta != "" {
-				fmt.Fprintf(w, " %s", meta) // nolint:errcheck
+				fmt.Fprintf(w, " %s", meta)
 			}
 		}
 	case PrintLong:
-		fmt.Fprintf(w, " --%s", fl.Name) // nolint:errcheck
+		fmt.Fprintf(w, " --%s", fl.Name)
 		if meta != "" {
-			fmt.Fprintf(w, " %s", meta) // nolint:errcheck
+			fmt.Fprintf(w, " %s", meta)
 		}
 	case PrintBoth:
 		if fl.Short != "" {
-			fmt.Fprintf(w, " -%s|--%s", fl.Short, fl.Name) // nolint:errcheck
+			fmt.Fprintf(w, " -%s|--%s", fl.Short, fl.Name)
 		} else {
-			fmt.Fprintf(w, " --%s", fl.Name) // nolint:errcheck
+			fmt.Fprintf(w, " --%s", fl.Name)
 		}
 		if meta != "" {
-			fmt.Fprintf(w, " %s", meta) // nolint:errcheck
-		}
-	}
-}
-
-// orderedFlags returns all registered flags in desired display order.
-func (f *FlagSet) orderedFlags() []*core.BaseFlag {
-	var all []*core.BaseFlag
-
-	if f.sortFlags {
-		for _, fl := range f.flags {
-			all = append(all, fl)
-		}
-		sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
-	} else {
-		all = f.registered
-	}
-
-	return all
-}
-
-// PrintDynamicDefaults renders all dynamic groups and their flags.
-func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) {
-	type dynGroup struct {
-		name string
-		g    *dynamic.Group
-	}
-
-	var groups []dynGroup
-	for name, g := range f.dynamicGroups {
-		if g.IsHidden() {
-			continue
-		}
-		groups = append(groups, dynGroup{name: name, g: g})
-	}
-
-	sort.SliceStable(groups, func(i, j int) bool {
-		if groups[i].g.IsGroupSorted() && groups[j].g.IsGroupSorted() {
-			return groups[i].name < groups[j].name
-		}
-		return false
-	})
-
-	for _, group := range groups {
-		name := group.name
-		g := group.g
-
-		if title := g.TitleText(); title != "" {
-			fmt.Fprintf(w, "\n%s\n", title)
-		}
-		if desc := g.DescriptionText(); desc != "" {
-			fmt.Fprintln(w, wrapText(desc, width))
-		}
-
-		ids := g.Instances()
-		if len(ids) == 0 {
-			// still print static flag layout if there’s no instance
-			ids = []string{"<id>"}
-		}
-
-		for _, id := range ids {
-			flags := g.Flags()
-			if g.IsFlagSorted() {
-				sort.Slice(flags, func(i, j int) bool {
-					return flags[i].Name < flags[j].Name
-				})
-			}
-
-			tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
-			for _, fl := range flags {
-				fmt.Fprintf(tw, "      --%s.%s.%s", name, id, fl.Name)
-				if meta := getPlaceholder(fl); meta != "" {
-					fmt.Fprintf(tw, " %s", meta)
-				}
-				desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-				fmt.Fprintf(tw, "\t%s\n", desc)
-			}
-			tw.Flush()
-		}
-
-		if note := g.NoteText(); note != "" {
-			fmt.Fprintln(w, wrapText(note, width))
+			fmt.Fprintf(w, " %s", meta)
 		}
 	}
 }
