@@ -32,7 +32,7 @@ func main() {
 	a.Title("HTTP")
 	a.Description("this is a group description")
 
-	fs.SortedGroups(false)
+	fs.SortedGroups()
 
 	// parse two dynamic flags
 	args := []string{

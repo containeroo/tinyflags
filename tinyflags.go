@@ -91,10 +91,10 @@ func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
 func (f *FlagSet) DisableVersion() { f.impl.DisableVersion() }
 
 // SortedFlags enables or disables sorted flag output.
-func (f *FlagSet) SortedFlags(b bool) { f.impl.SortedFlags(b) }
+func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
 
 // SortedGroups enables or disables sorted group output.
-func (f *FlagSet) SortedGroups(b bool) { f.impl.SortedGroups(b) }
+func (f *FlagSet) SortedGroups() { f.impl.SortedGroups(true) }
 
 // SetOutput redirects all help and error output.
 func (f *FlagSet) SetOutput(w io.Writer) { f.impl.SetOutput(w) }
