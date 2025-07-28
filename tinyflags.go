@@ -90,8 +90,11 @@ func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
 // DisableVersion turns off automatic version flag registration.
 func (f *FlagSet) DisableVersion() { f.impl.DisableVersion() }
 
-// Sorted enables or disables sorted flag output.
-func (f *FlagSet) Sorted(b bool) { f.impl.Sorted(b) }
+// SortedFlags enables or disables sorted flag output.
+func (f *FlagSet) SortedFlags(b bool) { f.impl.SortedFlags(b) }
+
+// SortedGroups enables or disables sorted group output.
+func (f *FlagSet) SortedGroups(b bool) { f.impl.SortedGroups(b) }
 
 // SetOutput redirects all help and error output.
 func (f *FlagSet) SetOutput(w io.Writer) { f.impl.SetOutput(w) }
@@ -129,7 +132,6 @@ func (f *FlagSet) DescriptionIndent(n int) { f.impl.DescriptionIndent(n) }
 // PrintDefaults prints all defined flags and their defaults.
 func (f *FlagSet) PrintDefaults(w io.Writer, width int) { f.impl.PrintDefaults(w, width) }
 
-// func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) { f.impl.PrintDynamicDefaults(w, width) }
 // PrintUsage writes usage text in the specified mode.
 func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) { f.impl.PrintUsage(w, mode) }
 

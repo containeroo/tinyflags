@@ -17,20 +17,22 @@ func main() {
 
 	fs.Bool("debug", false, "debug mode").Strict()
 
-	http := fs.DynamicGroup("http")
-	http.String("address", "", "API address")
-	http.Bool("verbose", false, "verbose mode").Strict()
-	http.String("log-level", "info", "log level").
-		Choices("debug", "info", "warn", "error")
-	http.Int("port", 8080, "API port")
-	http.SortFlags()
-	http.Title("HTTP")
-	http.Description("this is a group description")
-	tcp := fs.DynamicGroup("tcp").Title("TCP").Note("this is a group note")
+	z := fs.DynamicGroup("tcp").Title("TCP").Note("this is a group note")
+	z.Bool("verbose", false, "verbose mode").Strict()
+	z.StringSlice("addresses", []string{}, "API address")
+	z.Int("port", 8080, "API port")
 
-	tcp.Bool("verbose", false, "verbose mode").Strict()
-	tcp.StringSlice("addresses", []string{}, "API address")
-	tcp.Int("port", 8080, "API port")
+	a := fs.DynamicGroup("http")
+	a.String("address", "", "API address")
+	a.Bool("verbose", false, "verbose mode").Strict()
+	a.String("log-level", "info", "log level").
+		Choices("debug", "info", "warn", "error")
+	a.Int("port", 8080, "API port")
+	a.SortFlags()
+	a.Title("HTTP")
+	a.Description("this is a group description")
+
+	fs.SortedGroups(false)
 
 	// parse two dynamic flags
 	args := []string{
@@ -58,7 +60,7 @@ func main() {
 
 	var httpCheckers []HTTPChecker
 
-	i, _ := http.Lookup("verbose")
+	i, _ := a.Lookup("verbose")
 	if i == nil {
 		panic("verbose not set")
 	}

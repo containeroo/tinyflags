@@ -110,8 +110,11 @@ func (f *FlagSet) DisableVersion() {
 // HideEnvs disables environment variable display in help.
 func (f *FlagSet) HideEnvs() { f.hideEnvs = true }
 
-// Sorted enables or disables sorted help output.
-func (f *FlagSet) Sorted(enable bool) { f.sortFlags = enable }
+// SortedFlags enables or disables sorted help output.
+func (f *FlagSet) SortedFlags(enable bool) { f.sortFlags = enable }
+
+// SortedGroups enables or disables sorted group output.
+func (f *FlagSet) SortedGroups(enable bool) { f.sortGroups = enable }
 
 // SetOutput sets the writer for help output.
 func (f *FlagSet) SetOutput(w io.Writer) { f.output = w }
