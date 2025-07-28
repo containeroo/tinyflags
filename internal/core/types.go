@@ -16,6 +16,7 @@ type Value interface {
 	Default() string  // default value as string
 }
 
+// GroupItem holds a single flag and its value for a dynamic group.
 type GroupItem struct {
 	Value DynamicValue
 	Flag  *BaseFlag

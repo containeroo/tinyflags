@@ -1,6 +1,5 @@
 package dynamic
 
-// DynamicScalarValue parses and stores one value per ID.
 type DynamicScalarValue[T any] struct {
 	field    string
 	def      T
@@ -10,23 +9,10 @@ type DynamicScalarValue[T any] struct {
 	values   map[string]T
 }
 
-// NewDynamicScalarValue creates a per-ID scalar parser.
-func NewDynamicScalarValue[T any](
-	field string,
-	def T,
-	parse func(string) (T, error),
-	format func(T) string,
-) *DynamicScalarValue[T] {
-	return &DynamicScalarValue[T]{
-		field:  field,
-		def:    def,
-		parse:  parse,
-		format: format,
-		values: map[string]T{},
-	}
+func NewDynamicScalarValue[T any](field string, def T, parse func(string) (T, error), format func(T) string) *DynamicScalarValue[T] {
+	return &DynamicScalarValue[T]{field: field, def: def, parse: parse, format: format, values: make(map[string]T)}
 }
 
-// Set parses and stores one entry.
 func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	val, err := d.parse(raw)
 	if err != nil {
@@ -41,10 +27,7 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	return nil
 }
 
-func (d *DynamicScalarValue[T]) FieldName() string {
-	return d.field
-}
-
+func (d *DynamicScalarValue[T]) FieldName() string { return d.field }
 func (d *DynamicScalarValue[T]) GetAny(id string) (any, bool) {
 	val, ok := d.values[id]
 	if ok {
@@ -53,15 +36,12 @@ func (d *DynamicScalarValue[T]) GetAny(id string) (any, bool) {
 	return d.def, false
 }
 
-// setValidate sets a per-item validation function.
-func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
-	d.validate = fn
-}
-
 func (d *DynamicScalarValue[T]) ValuesAny() map[string]any {
-	m := make(map[string]any, len(d.values))
+	out := make(map[string]any)
 	for k, v := range d.values {
-		m[k] = v
+		out[k] = v
 	}
-	return m
+	return out
 }
+func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) { d.validate = fn }
+func (d *DynamicScalarValue[T]) Base() *DynamicScalarValue[T] { return d }

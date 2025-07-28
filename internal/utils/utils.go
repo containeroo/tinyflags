@@ -9,16 +9,34 @@ import (
 	"time"
 )
 
-// FormatAllowed returns a comma-separated list of allowed values.
-func FormatAllowed[T any](allowed []T, format func(T) string) string {
+func AllowOnly[T any](format func(T) string, allowed []T) func(T) error {
+	return func(v T) error {
+		for _, a := range allowed {
+			if format(a) == format(v) {
+				return nil
+			}
+		}
+		return fmt.Errorf("must be one of [%v]", allowed)
+	}
+}
+
+func FormatList[T any](format func(T) string, values []T) []string {
+	out := make([]string, len(values))
+	for i, v := range values {
+		out[i] = format(v)
+	}
+	return out
+}
+
+func JoinFormatted[T any](values []T, format func(T) string) string {
 	if format == nil {
-		return fmt.Sprintf("%v", allowed) // fallback
+		return fmt.Sprintf("%v", values) // fallback
 	}
-	formatted := make([]string, len(allowed))
-	for i, a := range allowed {
-		formatted[i] = format(a) // format each value
+	parts := make([]string, len(values))
+	for i, v := range values {
+		parts[i] = format(v)
 	}
-	return strings.Join(formatted, ", ")
+	return strings.Join(parts, ",")
 }
 
 // PluralSuffix returns "s" if the given number is not 1, otherwise it returns an empty string.

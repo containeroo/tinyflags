@@ -1,25 +1,31 @@
 package dynamic
 
-type dynamicSliceValue[T any] struct {
-	def     string
-	changed bool
+type placeholderValue struct {
+	def string
 }
 
-func (v *dynamicSliceValue[T]) Set(string) error { return nil } // not used
-func (v *dynamicSliceValue[T]) Get() any         { return nil } // not used
-func (v *dynamicSliceValue[T]) Changed() bool    { return v.changed }
-func (v *dynamicSliceValue[T]) Default() string  { return v.def }
+func (p *placeholderValue) Set(string) error { return nil }
+func (p *placeholderValue) Get() any         { return nil }
+func (p *placeholderValue) Changed() bool    { return false }
+func (p *placeholderValue) Default() string  { return p.def }
 
-func (v *dynamicSliceValue[T]) IsSlice() {}
-
-type dynamicBoolValue[T any] struct {
-	def        string
-	changed    bool
-	strictMode *bool
+type slicePlaceholder struct {
+	def string
 }
 
-func (v *dynamicBoolValue[T]) Changed() bool      { return v.changed }
-func (v *dynamicBoolValue[T]) Default() string    { return v.def }
-func (v *dynamicBoolValue[T]) Set(string) error   { return nil }
-func (v *dynamicBoolValue[T]) Get() any           { return nil }
-func (v *dynamicBoolValue[T]) IsStrictBool() bool { return v.strictMode != nil && *v.strictMode }
+func (v *slicePlaceholder) Set(string) error { return nil }
+func (v *slicePlaceholder) Get() any         { return nil }
+func (v *slicePlaceholder) Changed() bool    { return false }
+func (v *slicePlaceholder) Default() string  { return v.def }
+func (v *slicePlaceholder) IsSlice()         {}
+
+type boolPlaceholder struct {
+	def    string
+	strict *bool
+}
+
+func (v *boolPlaceholder) Set(string) error   { return nil }
+func (v *boolPlaceholder) Get() any           { return nil }
+func (v *boolPlaceholder) Changed() bool      { return false }
+func (v *boolPlaceholder) Default() string    { return v.def }
+func (v *boolPlaceholder) IsStrictBool() bool { return v.strict != nil && *v.strict }

@@ -3,17 +3,17 @@ package dynamic
 import (
 	"fmt"
 	"slices"
+	"sort"
 
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
 // Group manages a set of dynamic flags under one prefix.
 type Group struct {
-	fs     FlagSetRef // parent flagset
-	prefix string     // e.g. "http"
-	//	items  map[string]core.DynamicValue // field → parser
-	items map[string]core.GroupItem
-
+	fs          FlagSetRef // parent flagset
+	prefix      string     // e.g. "http"
+	items       map[string]core.GroupItem
+	itemOrder   []*core.BaseFlag
 	sortGroup   bool   // sort group items
 	sortFlags   bool   // sort flags
 	hidden      bool   // hide group from
@@ -32,14 +32,6 @@ func NewGroup(fs FlagSetRef, prefix string) *Group {
 	}
 }
 
-func (g *Group) SortGroup() *Group {
-	if g.sortFlags {
-		panic("cannot call SortGroup after SortFlags")
-	}
-	g.sortGroup = true
-	return g
-}
-
 func (g *Group) SortFlags() *Group {
 	if g.sortGroup {
 		panic("cannot call SortFlags after SortGroup")
@@ -49,10 +41,15 @@ func (g *Group) SortFlags() *Group {
 }
 
 func (g *Group) Flags() []*core.BaseFlag {
-	out := make([]*core.BaseFlag, 0, len(g.items))
-	for _, item := range g.items {
-		out = append(out, item.Flag)
-	}
+	return g.itemOrder
+}
+
+func (g *Group) OrderedFlags() []*core.BaseFlag {
+	out := make([]*core.BaseFlag, len(g.itemOrder))
+	copy(out, g.itemOrder)
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Name < out[j].Name
+	})
 	return out
 }
 

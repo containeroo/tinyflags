@@ -62,7 +62,7 @@ func (f *FlagSet) parseArgs(args []string) error {
 
 // parseEnv loads unset flags from environment variables.
 func (f *FlagSet) parseEnv() error {
-	for _, fl := range f.staticFlags {
+	for _, fl := range f.staticFlagsMap {
 		if fl.Value == nil {
 			// dynamically‐registered flags aren’t loaded from ENV
 			continue
@@ -106,7 +106,7 @@ func (f *FlagSet) checkMutualExclusion() error {
 
 // checkRequired ensures all required flags were set.
 func (f *FlagSet) checkRequired() error {
-	for _, fl := range f.staticFlags {
+	for _, fl := range f.staticFlagsMap {
 		if fl.Required && !fl.Value.Changed() {
 			return fmt.Errorf("flag --%s is required", fl.Name)
 		}

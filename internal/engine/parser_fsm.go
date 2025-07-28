@@ -155,7 +155,7 @@ func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool
 
 func handleStatic(name, val string, hasVal bool) stateFn {
 	return func(p *parser) stateFn {
-		fl := p.fs.staticFlags[name]
+		fl := p.fs.staticFlagsMap[name]
 
 		// Handle non-strict bools like -v
 		if handled := tryBool(fl); handled {
@@ -221,7 +221,7 @@ func stateShort(arg string) stateFn {
 }
 
 func findShortFlag(fs *FlagSet, short string) *core.BaseFlag {
-	for _, fl := range fs.staticFlags {
+	for _, fl := range fs.staticFlagsMap {
 		if fl.Short == short {
 			return fl
 		}
@@ -313,7 +313,7 @@ func isDynamicFlag(name string) bool {
 }
 
 func isKnownStaticFlag(p *parser, name string) bool {
-	_, ok := p.fs.staticFlags[name]
+	_, ok := p.fs.staticFlagsMap[name]
 	return ok
 }
 
@@ -326,7 +326,7 @@ func lookupDynamic(p *parser, name string) (core.DynamicValue, string) {
 	}
 	groupName, id, field := parts[0], parts[1], parts[2]
 
-	group, ok := p.fs.dynamicGroups[groupName]
+	group, ok := p.fs.dynamicGroupsMap[groupName]
 	if !ok {
 		p.err = fmt.Errorf("unknown dynamic group: --%s", name)
 		return nil, ""

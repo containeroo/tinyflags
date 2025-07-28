@@ -3,8 +3,7 @@ package engine
 import (
 	"io"
 	"os"
-	"slices"
-	"strings"
+	"sort"
 
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/dynamic"
@@ -14,10 +13,11 @@ import (
 type FlagSet struct {
 	name               string                    // name of the application or command (used in usage output).
 	errorHandling      ErrorHandling             // errorHandling determines what happens when parsing fails.
-	staticFlags        map[string]*core.BaseFlag // holds all registered named flags by their long name.
-	registered         []*core.BaseFlag          // registered keeps the order in which flags were added (for ordered output).
+	staticFlagsMap     map[string]*core.BaseFlag // holds all registered named flags by their long name.
+	staticFlagsOrder   []*core.BaseFlag          // registered keeps the order in which flags were added (for ordered output).
+	dynamicGroupsOrder []*dynamic.Group
+	dynamicGroupsMap   map[string]*dynamic.Group // dynamicGroups holds all dynamically defined groups.
 	groups             []*core.MutualGroup       // groups holds mutual exclusion groups (e.g. only one of a set of flags is allowed).
-	dynamicGroups      map[string]*dynamic.Group // dynamicGroups holds all dynamically defined groups.
 	positional         []string                  // positional stores remaining positional arguments after flag parsing.
 	requiredPositional int                       // requiredPositional defines how many positional arguments must be provided.
 	envPrefix          string                    // envPrefix is the optional prefix applied to environment variable lookups (e.g. "APP_").
@@ -38,6 +38,7 @@ type FlagSet struct {
 	showVersion        *bool                     // showVersion is a pointer to the parsed --version flag value, if enabled.
 	Usage              func()                    // Usage is the customizable function for printing usage. Defaults to printing title, description, flags, and notes.
 	sortFlags          bool                      // sortFlags determines whether flags are printed in sorted order.
+	sortGroups         bool
 	authors            string
 	hideEnvs           bool
 }
@@ -46,7 +47,7 @@ type FlagSet struct {
 func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 	fs := &FlagSet{
 		name:             name,
-		staticFlags:      make(map[string]*core.BaseFlag),
+		staticFlagsMap:   make(map[string]*core.BaseFlag),
 		getEnv:           os.Getenv,
 		errorHandling:    errorHandling,
 		ignoreInvalidEnv: false,
@@ -151,33 +152,37 @@ func (f *FlagSet) DefaultDelimiter() string { return f.defaultDelimiter }
 
 // RegisterFlag registers a static flag.
 func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
-	f.staticFlags[name] = bf
-	f.registered = append(f.registered, bf)
+	f.staticFlagsMap[name] = bf
+	f.staticFlagsOrder = append(f.staticFlagsOrder, bf)
+}
+
+func (f *FlagSet) OrderedStaticFlags() []*core.BaseFlag {
+	var all []*core.BaseFlag
+	for _, fl := range f.staticFlagsMap {
+		all = append(all, fl)
+	}
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].Name < all[j].Name
+	})
+	return all
 }
 
 // DynamicGroup creates a new dynamic group with the given prefix.
 func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
-	if f.dynamicGroups == nil {
-		f.dynamicGroups = make(map[string]*dynamic.Group)
+	if f.dynamicGroupsMap == nil {
+		f.dynamicGroupsMap = make(map[string]*dynamic.Group)
 	}
-	if g, ok := f.dynamicGroups[name]; ok {
+	if g, ok := f.dynamicGroupsMap[name]; ok {
 		return g
 	}
-	// create new group
 	g := dynamic.NewGroup(f, name)
-	f.dynamicGroups[name] = g
+	f.dynamicGroupsMap[name] = g
+	f.dynamicGroupsOrder = append(f.dynamicGroupsOrder, g) // track order
 	return g
 }
 
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
-	out := make([]*dynamic.Group, 0, len(f.dynamicGroups))
-	for _, g := range f.dynamicGroups {
-		out = append(out, g)
-	}
-	slices.SortFunc(out, func(a, b *dynamic.Group) int {
-		return strings.Compare(a.Name(), b.Name())
-	})
-	return out
+	return f.dynamicGroupsOrder
 }
 
 // GetGroup returns a mutual exclusion group by name (creating it if necessary).
@@ -210,18 +215,18 @@ func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
 }
 
 func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
-	return f.staticFlags[name]
+	return f.staticFlagsMap[name]
 }
 
 // maybeAddBuiltinFlags adds --help and --version if enabled and not already defined.
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
-		if _, exists := f.staticFlags["help"]; !exists {
+		if _, exists := f.staticFlagsMap["help"]; !exists {
 			f.showHelp = f.Bool("help", false, "show help").Short("h").DisableEnv().Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
-		if _, exists := f.staticFlags["version"]; !exists {
+		if _, exists := f.staticFlagsMap["version"]; !exists {
 			f.showVersion = f.Bool("version", false, "show version").DisableEnv().Value()
 		}
 	}

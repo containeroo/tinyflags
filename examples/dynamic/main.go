@@ -17,10 +17,11 @@ func main() {
 
 	http := fs.DynamicGroup("http")
 	http.String("address", "", "API address")
+	http.Bool("verbose", false, "verbose mode").Strict()
 	http.String("log-level", "info", "log level").
 		Choices("debug", "info", "warn", "error")
 	http.Int("port", 8080, "API port")
-	http.Bool("verbose", false, "verbose mode").Strict()
+	http.SortFlags()
 
 	tcp := fs.DynamicGroup("tcp")
 	tcp.StringSlice("addresses", []string{}, "API address")

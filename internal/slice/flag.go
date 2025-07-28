@@ -1,8 +1,6 @@
 package slice
 
 import (
-	"fmt"
-
 	"github.com/containeroo/tinyflags/internal/builder"
 	"github.com/containeroo/tinyflags/internal/utils"
 )
@@ -21,21 +19,8 @@ func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 
 // Choices restricts allowed slice elements.
 func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
-	f.val.setValidate(func(v T) error {
-		for _, a := range allowed {
-			if f.val.format(a) == f.val.format(v) {
-				return nil
-			}
-		}
-		return fmt.Errorf("must be one of [%s]", utils.FormatAllowed(allowed, f.val.format))
-	})
-
-	formatted := make([]string, len(allowed))
-	for i, a := range allowed {
-		formatted[i] = f.val.format(a)
-	}
-
-	f.Allowed(formatted...)
+	f.val.setValidate(utils.AllowOnly(f.val.format, allowed))
+	f.Allowed(utils.FormatList(f.val.format, allowed)...)
 
 	return f
 }

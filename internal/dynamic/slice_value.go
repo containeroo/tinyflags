@@ -5,46 +5,29 @@ import (
 	"strings"
 )
 
-// DynamicSliceValue parses comma (or custom-sep) lists per ID.
-// For example: --http.alpha.tags=a,b
 type DynamicSliceValue[T any] struct {
-	field     string                  // field name (e.g. "tags")
-	def       []T                     // default value
-	parse     func(string) (T, error) // parser for each item
-	format    func(T) string          // formatter for output and help
-	delimiter string                  // input separator (default: ",")
-	validate  func(T) error           // per-item validation function
-	values    map[string][]T          // instance ID → parsed slice values
+	field     string
+	def       []T
+	parse     func(string) (T, error)
+	format    func(T) string
+	delimiter string
+	validate  func(T) error
+	values    map[string][]T
 }
 
-// NewDynamicSliceValue builds a per-ID slice parser.
-func NewDynamicSliceValue[T any](
-	field string,
-	def []T,
-	parse func(string) (T, error),
-	format func(T) string,
-	delimiter string,
-) *DynamicSliceValue[T] {
-	return &DynamicSliceValue[T]{
-		def:       def,
-		field:     field,
-		parse:     parse,
-		format:    format,
-		delimiter: delimiter,
-		values:    make(map[string][]T),
-	}
+func NewDynamicSliceValue[T any](field string, def []T, parse func(string) (T, error), format func(T) string, delimiter string) *DynamicSliceValue[T] {
+	return &DynamicSliceValue[T]{field: field, def: def, parse: parse, format: format, delimiter: delimiter, values: make(map[string][]T)}
 }
 
-// Set parses and stores the slice from a delimited string for a given ID.
-func (d *DynamicSliceValue[T]) Set(id, input string) error {
-	for _, raw := range strings.Split(input, d.delimiter) {
-		val, err := d.parse(strings.TrimSpace(raw))
+func (d *DynamicSliceValue[T]) Set(id, raw string) error {
+	for _, chunk := range strings.Split(raw, d.delimiter) {
+		val, err := d.parse(strings.TrimSpace(chunk))
 		if err != nil {
-			return fmt.Errorf("invalid item %q: %w", raw, err)
+			return fmt.Errorf("invalid %q: %w", chunk, err)
 		}
 		if d.validate != nil {
 			if err := d.validate(val); err != nil {
-				return fmt.Errorf("invalid value %q: %w", raw, err)
+				return fmt.Errorf("invalid value %q: %w", chunk, err)
 			}
 		}
 		d.values[id] = append(d.values[id], val)
@@ -52,10 +35,7 @@ func (d *DynamicSliceValue[T]) Set(id, input string) error {
 	return nil
 }
 
-func (d *DynamicSliceValue[T]) FieldName() string {
-	return d.field
-}
-
+func (d *DynamicSliceValue[T]) FieldName() string { return d.field }
 func (d *DynamicSliceValue[T]) GetAny(id string) (any, bool) {
 	val, ok := d.values[id]
 	if ok {
@@ -63,21 +43,12 @@ func (d *DynamicSliceValue[T]) GetAny(id string) (any, bool) {
 	}
 	return d.def, false
 }
-
-// SetValidator sets a per-item validation function.
-func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) {
-	d.validate = fn
-}
-
-// SetDelimiter sets a custom delimiter for parsing the slice.
-func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
-	d.delimiter = sep
-}
-
 func (d *DynamicSliceValue[T]) ValuesAny() map[string]any {
-	m := make(map[string]any, len(d.values))
+	out := make(map[string]any)
 	for k, v := range d.values {
-		m[k] = v
+		out[k] = v
 	}
-	return m
+	return out
 }
+func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) { d.validate = fn }
+func (d *DynamicSliceValue[T]) setDelimiter(sep string)      { d.delimiter = sep }
