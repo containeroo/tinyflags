@@ -130,7 +130,6 @@ func (f *FlagSet) DescriptionIndent(n int) { f.impl.DescriptionIndent(n) }
 func (f *FlagSet) PrintDefaults(w io.Writer, width int) { f.impl.PrintDefaults(w, width) }
 
 // func (f *FlagSet) PrintDynamicDefaults(w io.Writer, width int) { f.impl.PrintDynamicDefaults(w, width) }
-
 // PrintUsage writes usage text in the specified mode.
 func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) { f.impl.PrintUsage(w, mode) }
 
@@ -179,4 +178,14 @@ func (f *FlagSet) DefaultDelimiter() string {
 // Groups returns all mutual-exclusion groups.
 func (f *FlagSet) Groups() []*core.MutualGroup {
 	return f.impl.Groups()
+}
+
+// AttachToGroup connects a flag to a mutual-exclusion group.
+func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
+	f.impl.AttachToGroup(bf, group)
+}
+
+// LookupFlag retrieves a registered static flag.
+func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
+	return f.impl.LookupFlag(name)
 }

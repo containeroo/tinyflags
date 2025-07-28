@@ -11,36 +11,36 @@ import (
 
 // FlagSet manages the definition, parsing, and usage output of command-line flags.
 type FlagSet struct {
-	name               string                    // name of the application or command (used in usage output).
-	errorHandling      ErrorHandling             // errorHandling determines what happens when parsing fails.
-	staticFlagsMap     map[string]*core.BaseFlag // holds all registered named flags by their long name.
-	staticFlagsOrder   []*core.BaseFlag          // registered keeps the order in which flags were added (for ordered output).
-	dynamicGroupsOrder []*dynamic.Group
-	dynamicGroupsMap   map[string]*dynamic.Group // dynamicGroups holds all dynamically defined groups.
-	groups             []*core.MutualGroup       // groups holds mutual exclusion groups (e.g. only one of a set of flags is allowed).
-	positional         []string                  // positional stores remaining positional arguments after flag parsing.
-	requiredPositional int                       // requiredPositional defines how many positional arguments must be provided.
-	envPrefix          string                    // envPrefix is the optional prefix applied to environment variable lookups (e.g. "APP_").
-	getEnv             func(string) string       // getEnv is the function used to look up environment variables (default: os.Getenv).
-	ignoreInvalidEnv   bool                      // ignoreInvalidEnv skips unknown or invalid environment overrides.
-	defaultDelimiter   string                    // defaultDelimiter is the global delimiter for slice flags (default: ",").
-	title              string                    // title is printed before the list of flags in usage output.
-	desc               string                    // desc is printed as a prolog above the flags.
-	notes              string                    // notes is printed as an epilog below the flags.
-	versionString      string                    // versionString is shown when --version is triggered.
-	usagePrintMode     FlagPrintMode             // usagePrintMode controls what is printed in PrintUsage.
-	descMaxLen         int                       // descMaxLen controls the max line length before wrapping.
-	descIndent         int                       // descIndent controls the left indent of flag descriptions.
-	output             io.Writer                 // output is where usage output is written (default: os.Stdout).
-	enableHelp         bool                      // enableHelp toggles whether the built-in --help flag is added automatically.
-	enableVer          bool                      // enableVer toggles whether the built-in --version flag is added automatically.
-	showHelp           *bool                     // showHelp is a pointer to the parsed --help flag value, if enabled.
-	showVersion        *bool                     // showVersion is a pointer to the parsed --version flag value, if enabled.
-	Usage              func()                    // Usage is the customizable function for printing usage. Defaults to printing title, description, flags, and notes.
-	sortFlags          bool                      // sortFlags determines whether flags are printed in sorted order.
-	sortGroups         bool
-	authors            string
-	hideEnvs           bool
+	name               string                    // Application or command name (used in usage)
+	errorHandling      ErrorHandling             // Behavior when parsing fails
+	staticFlagsMap     map[string]*core.BaseFlag // All registered static flags by name
+	staticFlagsOrder   []*core.BaseFlag          // Registration order of static flags
+	dynamicGroupsOrder []*dynamic.Group          // Ordered list of dynamic groups
+	dynamicGroupsMap   map[string]*dynamic.Group // All dynamic groups by name
+	groups             []*core.MutualGroup       // Registered mutual exclusion groups
+	positional         []string                  // Remaining non-flag arguments
+	requiredPositional int                       // Required positional argument count
+	envPrefix          string                    // Optional ENV prefix (e.g. "APP_")
+	getEnv             func(string) string       // Function used to read ENV vars (default: os.Getenv)
+	ignoreInvalidEnv   bool                      // Whether to ignore unknown ENV overrides
+	defaultDelimiter   string                    // Global slice delimiter (default: ",")
+	title              string                    // Printed above flags in usage
+	desc               string                    // Prolog before flag list
+	notes              string                    // Epilog after flag list
+	versionString      string                    // --version output string
+	usagePrintMode     FlagPrintMode             // Usage output mode
+	descMaxLen         int                       // Max length before description wrapping
+	descIndent         int                       // Left indent for wrapped lines
+	output             io.Writer                 // Destination for help output
+	enableHelp         bool                      // Whether --help is enabled
+	enableVer          bool                      // Whether --version is enabled
+	showHelp           *bool                     // Parsed value of --help
+	showVersion        *bool                     // Parsed value of --version
+	Usage              func()                    // Custom usage function
+	sortFlags          bool                      // Sort static flags
+	sortGroups         bool                      // Sort dynamic groups
+	authors            string                    // Optional authors string
+	hideEnvs           bool                      // Hide environment info in help
 }
 
 // NewFlagSet creates a new FlagSet with the given name and error handling policy.
@@ -50,7 +50,6 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		staticFlagsMap:   make(map[string]*core.BaseFlag),
 		getEnv:           os.Getenv,
 		errorHandling:    errorHandling,
-		ignoreInvalidEnv: false,
 		enableHelp:       true,
 		enableVer:        true,
 		descIndent:       40,
@@ -90,6 +89,7 @@ func (f *FlagSet) EnvPrefix(prefix string) { f.envPrefix = prefix }
 // Title sets the usage section title.
 func (f *FlagSet) Title(s string) { f.title = s }
 
+// Authors sets the usage author block.
 func (f *FlagSet) Authors(s string) { f.authors = s }
 
 // Description sets the prolog text shown above the flags.
@@ -107,6 +107,7 @@ func (f *FlagSet) DisableVersion() {
 	f.versionString = ""
 }
 
+// HideEnvs disables environment variable display in help.
 func (f *FlagSet) HideEnvs() { f.hideEnvs = true }
 
 // Sorted enables or disables sorted help output.
@@ -156,6 +157,7 @@ func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
 	f.staticFlagsOrder = append(f.staticFlagsOrder, bf)
 }
 
+// OrderedStaticFlags returns all static flags in sorted order.
 func (f *FlagSet) OrderedStaticFlags() []*core.BaseFlag {
 	var all []*core.BaseFlag
 	for _, fl := range f.staticFlagsMap {
@@ -165,6 +167,17 @@ func (f *FlagSet) OrderedStaticFlags() []*core.BaseFlag {
 		return all[i].Name < all[j].Name
 	})
 	return all
+}
+
+func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
+	var groups []*dynamic.Group
+	for _, g := range f.dynamicGroupsOrder {
+		groups = append(groups, g)
+	}
+	sort.SliceStable(groups, func(i, j int) bool {
+		return groups[i].Name() < groups[j].Name()
+	})
+	return groups
 }
 
 // DynamicGroup creates a new dynamic group with the given prefix.
@@ -181,6 +194,7 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return g
 }
 
+// DynamicGroups returns all dynamic groups in registration order.
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.dynamicGroupsOrder
 }
@@ -197,7 +211,7 @@ func (f *FlagSet) GetGroup(name string) *core.MutualGroup {
 	return group
 }
 
-// AddGroup manually adds a mutual group.
+// AddGroup manually adds a mutual exclusion group.
 func (f *FlagSet) AddGroup(name string, g *core.MutualGroup) {
 	f.groups = append(f.groups, g)
 }
@@ -214,6 +228,7 @@ func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
 	bf.Group = g
 }
 
+// LookupFlag returns a registered static flag by name.
 func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
 	return f.staticFlagsMap[name]
 }

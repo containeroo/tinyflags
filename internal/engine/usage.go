@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -15,11 +14,11 @@ import (
 type FlagPrintMode int
 
 const (
-	PrintShort FlagPrintMode = iota
-	PrintLong
-	PrintBoth
-	PrintFlags
-	PrintNone
+	PrintShort FlagPrintMode = iota // e.g. -v
+	PrintLong                       // e.g. --verbose
+	PrintBoth                       // e.g. -v|--verbose
+	PrintFlags                      // prints only [flags]
+	PrintNone                       // prints nothing
 )
 
 // PrintUsage prints a usage line depending on mode.
@@ -90,47 +89,37 @@ func (f *FlagSet) PrintDefaults(w io.Writer, width int) {
 func (f *FlagSet) printStaticDefaults(w io.Writer, width int) {
 	tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
 
-	staticFlags := f.orderedStaticFlags()
-
-	if f.sortFlags {
-		sort.Slice(staticFlags, func(i, j int) bool {
-			return staticFlags[i].Name < staticFlags[j].Name
-		})
-	}
-
-	for _, fl := range staticFlags {
-		printFlagUsage(tw, f.descIndent, f.descMaxLen, f.hideEnvs, fl, f.envPrefix)
+	for _, fl := range f.staticFlags() {
+		printFlagUsage(tw, f.descIndent, width, f.hideEnvs, fl, f.envPrefix)
 	}
 	tw.Flush() // nolint:errcheck
 }
 
 // printDynamicDefaults renders all dynamic groups.
 func (f *FlagSet) printDynamicDefaults(w io.Writer, width int) {
-	for _, group := range f.orderedDynamicGroups() {
-		name := group.Name()
-		g := group
-
-		if g.IsHidden() {
+	for _, group := range f.dynamicGroups() {
+		if group.IsHidden() {
 			continue
 		}
+		name := group.Name()
 
 		// Title
-		if title := g.TitleText(); title != "" {
+		if title := group.TitleText(); title != "" {
 			fmt.Fprintf(w, "\n%s\n", title)
 		}
 
 		// Description
-		if desc := g.DescriptionText(); desc != "" {
+		if desc := group.DescriptionText(); desc != "" {
 			fmt.Fprintln(w, wrapText(desc, width))
 		}
 
-		idPlaceholder := g.GetPlaceholder()
+		idPlaceholder := group.GetPlaceholder()
 		if idPlaceholder == "" {
 			idPlaceholder = "<ID>"
 		}
 
 		tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
-		for _, fl := range f.orderedGroupFlags(g) {
+		for _, fl := range group.DynamicFlags() {
 			var b strings.Builder
 			b.WriteString("      --")
 			b.WriteString(name)
@@ -144,45 +133,31 @@ func (f *FlagSet) printDynamicDefaults(w io.Writer, width int) {
 			}
 			flagLine := b.String()
 			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-			fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, flagLine, desc)
+
+			if len(flagLine)+len(desc) <= width {
+				fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, flagLine, desc)
+				continue
+			}
+
+			wrapped := wrapText(desc, width-f.descIndent-1)
+			lines := strings.Split(wrapped, "\n")
+			fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, flagLine, lines[0])
+			for _, l := range lines[1:] {
+				fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, "", l)
+			}
 		}
+
 		tw.Flush() // nolint:errcheck
 
-		if note := g.NoteText(); note != "" {
+		if note := group.NoteText(); note != "" {
 			fmt.Fprintln(w, wrapText(note, width))
 		}
 	}
 }
 
-func (f *FlagSet) orderedDynamicGroups() []*dynamic.Group {
-	var groups []*dynamic.Group
-	for _, g := range f.dynamicGroupsOrder {
-		if g.IsHidden() {
-			continue
-		}
-		groups = append(groups, g)
-	}
-
-	sort.SliceStable(groups, func(i, j int) bool {
-		if groups[i].IsGroupSorted() && groups[j].IsGroupSorted() {
-			return groups[i].Name() < groups[j].Name()
-		}
-		return false
-	})
-
-	return groups
-}
-
-func (f *FlagSet) orderedGroupFlags(g *dynamic.Group) []*core.BaseFlag {
-	if g.IsFlagSorted() {
-		return g.OrderedFlags()
-	}
-	return g.Flags()
-}
-
 // splitFlags separates user-defined and built-in flags.
 func (f *FlagSet) splitFlags() (userFlags []*core.BaseFlag, versionFlag, helpFlag *core.BaseFlag) {
-	for _, fl := range f.orderedStaticFlags() {
+	for _, fl := range f.staticFlags() {
 		switch {
 		case fl.Name == "version" && f.enableVer:
 			versionFlag = fl
@@ -196,7 +171,15 @@ func (f *FlagSet) splitFlags() (userFlags []*core.BaseFlag, versionFlag, helpFla
 }
 
 // orderedStaticFlags returns all static flags in desired order.
-func (f *FlagSet) orderedStaticFlags() []*core.BaseFlag {
+func (f *FlagSet) dynamicGroups() []*dynamic.Group {
+	if f.sortGroups {
+		return f.OrderedDynamicGroups()
+	}
+	return f.dynamicGroupsOrder
+}
+
+// orderedStaticFlags returns all static flags in desired order.
+func (f *FlagSet) staticFlags() []*core.BaseFlag {
 	if f.sortFlags {
 		return f.OrderedStaticFlags()
 	}
@@ -278,15 +261,15 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 	if len(flag.Allowed) > 0 {
 		desc += " (Allowed: " + strings.Join(flag.Allowed, ", ") + ")"
 	}
+	if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
+		desc += " (Allowed: true, false)"
+	}
 	if flag.Deprecated != "" {
 		desc += " [DEPRECATED: " + flag.Deprecated + "]"
 	}
 	if flag.Value != nil {
 		if def := flag.Value.Default(); def != "" {
 			desc += " (Default: " + def + ")"
-			if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
-				desc += " (Strict)"
-			}
 		}
 	}
 	if shouldInjectEnvKey(flag, globalHideEnvs, prefix) {
@@ -304,14 +287,17 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 	return desc
 }
 
+// shouldInjectEnvKey decides whether to compute EnvKey from prefix.
 func shouldInjectEnvKey(flag *core.BaseFlag, globalHideEnvs bool, prefix string) bool {
 	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey == "" && prefix != ""
 }
 
+// shouldShowEnv decides whether to include EnvKey in help.
 func shouldShowEnv(flag *core.BaseFlag, globalHideEnvs bool) bool {
 	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey != ""
 }
 
+// buildGroupInfo returns group info suffix if flag belongs to a mutual group.
 func buildGroupInfo(group *core.MutualGroup) string {
 	var b strings.Builder
 	b.WriteString(" (Group: ")
