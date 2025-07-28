@@ -9,18 +9,18 @@ import (
 // BoolValue holds the internal state of a boolean flag and whether it is strict.
 type BoolValue struct {
 	*ScalarValue[bool]
-	Strict *bool
+	strictMode *bool
 }
 
 // Strict marks this boolean flag as requiring an explicit value.
 func (b *BoolFlag) Strict() *BoolFlag {
-	*b.val.Strict = true
+	*b.val.strictMode = true
 	return b
 }
 
 // IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
 func (b *BoolValue) IsStrictBool() bool {
-	return b.Strict != nil && *b.Strict
+	return b.strictMode != nil && *b.strictMode
 }
 
 // BoolFlag provides fluent builder methods for boolean flags,
@@ -40,7 +40,7 @@ func NewBoolValue(ptr *bool, def bool) *BoolValue {
 			strconv.ParseBool,
 			strconv.FormatBool,
 		),
-		Strict: strict,
+		strictMode: strict,
 	}
 }
 

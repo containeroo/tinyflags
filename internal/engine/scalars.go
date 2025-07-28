@@ -11,6 +11,21 @@ import (
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
+// BoolVar defines a bool flag.
+func (f *FlagSet) BoolVar(ptr *bool, name string, def bool, usage string) *scalar.BoolFlag {
+	return scalar.NewBool(f, ptr, name, def, usage)
+}
+
+// Bool defines a bool flag.
+func (f *FlagSet) Bool(name string, def bool, usage string) *scalar.BoolFlag {
+	return scalar.NewBool(f, new(bool), name, def, usage)
+}
+
+// CounterVar defines a counter flag.
+func (f *FlagSet) CounterVar(ptr *int, name string, def int, usage string) *scalar.CounterFlag {
+	return scalar.NewCounter(f, ptr, name, def, usage)
+}
+
 // StringVar defines a string flag.
 func (f *FlagSet) StringVar(ptr *string, name string, def string, usage string) *scalar.ScalarFlag[string] {
 	return registerScalar(f, ptr, name, usage, def,

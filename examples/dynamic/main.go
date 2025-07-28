@@ -12,6 +12,8 @@ func main() {
 
 	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
 	fs.Version("1.0.1")
+	fs.DescriptionIndent(55)
+	fs.DescriptionMaxLen(100)
 
 	fs.Bool("debug", false, "debug mode").Strict()
 
@@ -22,11 +24,13 @@ func main() {
 		Choices("debug", "info", "warn", "error")
 	http.Int("port", 8080, "API port")
 	http.SortFlags()
+	http.Title("HTTP")
+	http.Description("this is a group description")
+	tcp := fs.DynamicGroup("tcp").Title("TCP").Note("this is a group note")
 
-	tcp := fs.DynamicGroup("tcp")
+	tcp.Bool("verbose", false, "verbose mode").Strict()
 	tcp.StringSlice("addresses", []string{}, "API address")
 	tcp.Int("port", 8080, "API port")
-	tcp.Bool("verbose", false, "verbose mode")
 
 	// parse two dynamic flags
 	args := []string{
