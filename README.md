@@ -3,20 +3,20 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/containeroo/tinyflags.svg)](https://pkg.go.dev/github.com/containeroo/tinyflags)
 
 A minimal, fast, and extensible CLI flag-parsing library for Go.
-Zero dependencies, full generics support, advanced features.
+Zero dependencies. Full generics support. Rich usage output.
 
 ## Features
 
 - **Short & long flags** (`-d`, `--debug`)
 - **Boolean strict mode** (`--flag=true/false`, `--no-flag`)
-- **Environment overrides** (per-flag or `EnvPrefix`)
-- **Required & deprecated flags**
+- **Environment variable overrides** (`EnvPrefix`, per-flag opt-out)
+- **Required, deprecated, and grouped flags**
 - **Slice flags** (`[]T`) with custom delimiters
-- **Choices & validation**
+- **Allowed choices & validation**
 - **Mutual-exclusion groups**
-- **Custom Placeholders** and **rich help** formatting
+- **Custom placeholders & help sections**
 - **Dynamic flags** (`--group.id.field=value`)
-- **TCP-addr**, **URL**, **IP**, **File**, **Duration**, and more built-in types
+- **Typed values** (`*os.File`, `*net.TCPAddr`, `url.URL`, `time.Duration`, etc.)
 
 ## Install
 
@@ -30,38 +30,30 @@ go get github.com/containeroo/tinyflags
 package main
 
 import (
-  "fmt"
-  "os"
-  "github.com/containeroo/tinyflags"
+	"fmt"
+	"os"
+	"github.com/containeroo/tinyflags"
 )
 
 func main() {
-  fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-  fs.EnvPrefix("MYAPP")   // use MYAPP_… env vars
-  fs.Version("v1.0.0")    // enable -v/--version
+	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+	fs.EnvPrefix("MYAPP")
+	fs.Version("v1.2.3")
 
-  // builder returns the flag – call .Value() to get corresponding value
-  host := fs.String("host", "localhost", "server host").
-              Required().
-              Value()
-  port := fs.Int("port", 8080, "server port").
-              Short("p").
-              Value()
-  debug := fs.Bool("debug", false, "enable debug").
-               Short("d").
-               Value()
-  tags  := fs.StringSlice("tag", nil, "tags list").
-               Value()
+	host := fs.String("host", "localhost", "Server hostname").Required().Value()
+	port := fs.Int("port", 8080, "Port to bind").Short("p").Value()
+	debug := fs.Bool("debug", false, "Enable debug logging").Short("d").Value()
+	tags  := fs.StringSlice("tag", nil, "Optional tags").Value()
 
-  if err := fs.Parse(os.Args[1:]); err != nil {
-    fmt.Fprintln(os.Stderr, err)
-    os.Exit(1)
-  }
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
-  fmt.Println("Host:", *host)
-  fmt.Println("Port:", *port)
-  fmt.Println("Debug:", *debug)
-  fmt.Println("Tags:", *tags)
+	fmt.Println("Host:", *host)
+	fmt.Println("Port:", *port)
+	fmt.Println("Debug:", *debug)
+	fmt.Println("Tags:", *tags)
 }
 ```
 
@@ -71,56 +63,51 @@ func main() {
 MYAPP_HOST=example.com MYAPP_PORT=9090 ./app --debug
 ```
 
-Disable per-flag with:
+You can disable env binding per-flag:
 
 ```go
-fs.Bool("internal", false, "").DisableEnv()
+fs.Bool("internal", false, "internal use only").DisableEnv()
 ```
 
 ## Dynamic Flags
 
-````go
+```go
 package main
 
 import (
-  "fmt"
-  "os"
-  "github.com/containeroo/tinyflags"
+	"fmt"
+	"os"
+	"github.com/containeroo/tinyflags"
 )
 
 func main() {
-  fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-  dg := fs.DynamicGroup("http")
+	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+	http := fs.DynamicGroup("http")
 
-  // define per-instance flags; builder returned until you call Get()/MustGet()
-  portFlag    := dg.Int("port", "backend port")
-  timeoutFlag := dg.Duration("timeout", "request timeout")
+	port    := http.Int("port", "Backend port")
+	timeout := http.Duration("timeout", "Request timeout")
 
-  if err := fs.Parse(os.Args[1:]); err != nil {
-    fmt.Fprintln(os.Stderr, err)
-    os.Exit(1)
-  }
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
-  // iterate over all IDs seen
-  for _, id := range dg.Instances() {
-    port, _    := portFlag.Get(id)
-    timeout, _ := timeoutFlag.Get(id)
-    fmt.Printf("%s → port=%d, timeout=%s\n", id, port, timeout)
-  }
+	for _, id := range http.Instances() {
+		p, _ := port.Get(id)
+		t, _ := timeout.Get(id)
+		fmt.Printf("%s: port=%d, timeout=%s\n", id, p, t)
+	}
 }
-
-Call it like:
+```
 
 ```bash
-./app --http.alpha.port=8080 --http.alpha.timeout=30s \
-      --http.beta.port=9090 --http.beta.timeout=1m
-````
-
-Outputs:
+./app --http.a.port=8080 --http.a.timeout=30s \
+      --http.b.port=9090 --http.b.timeout=1m
+```
 
 ```text
-alpha → port=8080, timeout=30s
-beta → port=9090, timeout=1m
+a: port=8080, timeout=30s
+b: port=9090, timeout=1m
 ```
 
 ## Help Output
@@ -128,65 +115,112 @@ beta → port=9090, timeout=1m
 ```text
 Usage: app [flags]
 
-  --host HOST         server host (Default: localhost) (Env: MYAPP_HOST) (Required)
-  -p, --port PORT     server port (Default: 8080) (Env: MYAPP_PORT)
-  -d, --debug         enable debug (Env: MYAPP_DEBUG)
-      --tag TAG...    tags list
-  -v, --version       show version
+Flags:
+  --host HOST         Server hostname (Default: localhost) (Env: MYAPP_HOST) (Required)
+  -p, --port PORT     Port to bind (Default: 8080) (Env: MYAPP_PORT)
+  -d, --debug         Enable debug logging (Env: MYAPP_DEBUG)
+      --tag TAG...    Optional tags
+  -v, --version       Show version
 ```
 
 ## Supported Types
 
-| Go Type               | Methods                                |
-| --------------------- | -------------------------------------- |
-| `bool`                | `Bool`, `BoolVar`                      |
-| `counter`\*           | `Counter`, `CounterVar`                |
-| `int`                 | `Int`, `IntVar`                        |
-| `string`              | `String`, `StringVar`                  |
-| `[]string`            | `StringSlice`, `StringSliceVar`        |
-| `time.Duration`       | `Duration`, `DurationVar`              |
-| `net.IP` / `[]net.IP` | `IP`, `IPVar`, `IPSlice`, `IPSliceVar` |
-| `*net.TCPAddr`        | `TCPAddr`, `TCPAddrVar`                |
-| `url.URL`             | `URL`, `URLVar`                        |
-| `*os.File`            | `File`, `FileVar`                      |
+| Type            | Methods                                  |
+| --------------- | ---------------------------------------- |
+| `bool`          | `Bool`, `BoolVar`                        |
+| `int`           | `Int`, `IntVar`                          |
+| `string`        | `String`, `StringVar`                    |
+| `[]string`      | `StringSlice`, `StringSliceVar`          |
+| `counter`       | `Counter`, `CounterVar` (auto-increment) |
+| `time.Duration` | `Duration`, `DurationVar`                |
+| `net.IP`        | `IP`, `IPVar`                            |
+| `[]net.IP`      | `IPSlice`, `IPSliceVar`                  |
+| `*net.TCPAddr`  | `TCPAddr`, `TCPAddrVar`                  |
+| `url.URL`       | `URL`, `URLVar`                          |
+| `*os.File`      | `File`, `FileVar`                        |
 
-\* _Counter_ flags are special: they increment on each occurrence, `-vv` → `2`, `-vvv` → `3`, etc.
+> Slice flags accept repeated use or custom-delimited strings.
 
-> All slice flags also support repeated usage and custom delimiters.
+## FlagSet API
 
-## FlagSet Methods
+### Core Methods
 
-| Method                                                                | Description                           |
-| --------------------------------------------------------------------- | ------------------------------------- |
-| `NewFlagSet(name, mode)`                                              | create a new named FlagSet            |
-| `Parse(args)`                                                         | parse flags and env vars              |
-| `Version(s)`                                                          | set version string for `--version`    |
-| `EnvPrefix(s)`                                                        | set global env-var prefix             |
-| `Authors(s)`                                                          | add author info to help               |
-| `Title(s)`                                                            | set help title                        |
-| `Description(s)`                                                      | add a description paragraph           |
-| `Note(s)`                                                             | append a note paragraph               |
-| `DisableHelp()`, `DisableVersion()`                                   | disable built-in help/version flags   |
-| `Sorted(bool)`                                                        | enable/disable sorted flag output     |
-| `SetOutput(w)`, `Output()`                                            | set/get output writer                 |
-| `IgnoreInvalidEnv(bool)`                                              | skip invalid env-var values           |
-| `SetGetEnvFn(fn)`                                                     | customize env-var lookup              |
-| `Globaldelimiter(s)`                                                  | set default slice-delimiter           |
-| `RequirePositional(n)`                                                | require at least n positional args    |
-| `Args()`, `Arg(i)`                                                    | retrieve positional args              |
-| `GetGroup(name)`                                                      | create/get a mutual-exclusion group   |
-| `PrintDefaults()`                                                     | print all flags with defaults         |
-| `PrintUsage(w, mode)`                                                 | print usage in specified mode         |
-| `PrintTitle(w)`, `PrintNotes(w, width)`, `PrintDescription(w, width)` | various help sections                 |
-| `PrintAuthors(w)`                                                     | print author info                     |
-| `DynamicGroup(name)`                                                  | create/get a dynamic-flag group       |
-| `DefaultDelimiter()`                                                  | get default delimiter for slice flags |
+| Method                   | Description            |
+| ------------------------ | ---------------------- |
+| `NewFlagSet(name, mode)` | Create new flag set    |
+| `Parse(args)`            | Parse CLI args + env   |
+| `Usage func()`           | Custom usage handler   |
+| `Version(s)`             | Set `--version` string |
+| `DisableHelp()`          | Disable `--help`       |
+| `DisableVersion()`       | Disable `--version`    |
 
-> **Note**
-> Every _static_ flag method returns the builder so you can chain calls (e.g. `.Required()`, `.Choices()`, `.Short("x")`).
-> Only when you call `.Value()` do you actually get back the `*T`.
->
-> _Dynamic_ flags work differently: you define them on a `Group`, but after parsing you must fetch values with `Get(id)`, `MustGet(id)`, or `Values()`.
+### Help & Output
+
+| Method                                             | Description               |
+| -------------------------------------------------- | ------------------------- |
+| `SetOutput(io.Writer)`                             | Set help output writer    |
+| `Output()`                                         | Get current output writer |
+| `Title(s)`                                         | Set usage title           |
+| `Authors(s)`                                       | Set author section        |
+| `Description(s)`                                   | Set help description      |
+| `Note(s)`                                          | Set help footer           |
+| `PrintUsage(w, mode)`                              | Print `Usage:` line       |
+| `PrintTitle(w)`                                    | Print title header        |
+| `PrintAuthors(w)`                                  | Print authors             |
+| `PrintDescription(w, indent, width)`               | Print description block   |
+| `PrintNotes(w, indent, width)`                     | Print footer block        |
+| `PrintStaticDefaults(w, indent, startCol, width)`  | Static flag help          |
+| `PrintDynamicDefaults(w, indent, startCol, width)` | Dynamic flag help         |
+
+### Help Formatting
+
+| Method                        | Description                     |
+| ----------------------------- | ------------------------------- |
+| `SetDescIndent(n)`            | Indent description lines        |
+| `SetDescWidth(n)`             | Max description width           |
+| `SetNoteIndent(n)`            | Indent for footer               |
+| `SetNoteWidth(n)`             | Width for footer                |
+| `SetUsageIndent(n)`           | Left padding for all flags      |
+| `SetUsageColumn(n)`           | Column where description starts |
+| `SetUsageWidth(n)`            | Max flag help line width        |
+| `StaticAutoUsageColumn(pad)`  | Auto-calculate static col       |
+| `DynamicAutoUsageColumn(pad)` | Auto-calculate dynamic col      |
+
+### Environment
+
+| Method                   | Description                    |
+| ------------------------ | ------------------------------ |
+| `EnvPrefix(s)`           | Prefix for all env vars        |
+| `IgnoreInvalidEnv(true)` | Skip unknown envs              |
+| `SetGetEnvFn(fn)`        | Custom `os.Getenv`             |
+| `Globaldelimiter(s)`     | Slice delimiter (default: ",") |
+| `DefaultDelimiter()`     | Get current delimiter          |
+
+### Positional & Groups
+
+| Method                      | Description               |
+| --------------------------- | ------------------------- |
+| `RequirePositional(n)`      | Require at least N args   |
+| `Args()`                    | Get all args              |
+| `Arg(i)`                    | Get i-th arg              |
+| `GetGroup(name)`            | Create or get mutex group |
+| `Groups()`                  | List all groups           |
+| `AttachToGroup(flag, name)` | Assign flag to group      |
+
+### Dynamic Flags
+
+| Method               | Description                 |
+| -------------------- | --------------------------- |
+| `DynamicGroup(name)` | Define a dynamic flag group |
+| `DynamicGroups()`    | Get all registered groups   |
+
+Also exposed:
+
+```go
+GetDynamic[T any](group, id, flag string) (T, error)
+MustGetDynamic[T any](group, id, flag string) T
+GetOrDefaultDynamic[T any](group, id, flag string) T
+```
 
 ## License
 
