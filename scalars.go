@@ -37,7 +37,7 @@ func (f *FlagSet) Bool(name string, def bool, usage string) *scalar.BoolFlag {
 
 // BoolVar defines a bool flag and binds it to the given pointer.
 // If Strict() is enabled, it must be set explicitly (--flag=true/false).
-func (f *FlagSet) BoolVar(ptr *bool, name, short string, def bool, usage string) *scalar.BoolFlag {
+func (f *FlagSet) BoolVar(ptr *bool, name string, def bool, usage string) *scalar.BoolFlag {
 	return f.impl.BoolVar(ptr, name, def, usage)
 }
 
