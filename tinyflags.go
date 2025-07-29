@@ -43,6 +43,11 @@ const (
 	PrintBoth  = engine.PrintBoth  // Prints: -v|--verbose
 )
 
+type (
+	DynamicGroup = dynamic.Group // For accessing .Instances(), .Flags(), .NoteText(), etc.
+	StaticFlag   = core.BaseFlag // For help renderers, custom GUIs, etc.)
+)
+
 // FlagSet is the user-facing flag parser and usage configurator.
 type FlagSet struct {
 	impl  *engine.FlagSet
