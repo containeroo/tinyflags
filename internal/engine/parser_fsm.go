@@ -336,13 +336,13 @@ func lookupDynamic(p *parser, name string) (core.DynamicValue, string) {
 
 	group, ok := p.fs.dynamicGroupsMap[groupName]
 	if !ok {
-		p.err = fmt.Errorf("unknown dynamic group: %s", name)
+		p.err = fmt.Errorf("unknown dynamic group: %s", groupName)
 		return nil, ""
 	}
 
 	item, ok := group.Items()[field]
 	if !ok {
-		p.err = fmt.Errorf("unknown dynamic field: %s", name)
+		p.err = fmt.Errorf("unknown dynamic field: %s", field)
 		return nil, ""
 	}
 
