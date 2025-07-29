@@ -40,8 +40,8 @@ func (p *parser) peek() (arg string, ok bool) {
 	return
 }
 
-// run executes the parser state machine starting from stateStartFn
-// It continues until there are no more states (state == nil).
+// run executes the parser state machine starting from stateStart.
+// It continues until no further state is returned or an error is encountered.
 func (p *parser) run() error {
 	state := stateStart
 	for state != nil {
@@ -54,7 +54,7 @@ func (p *parser) run() error {
 }
 
 // parseArgsWithFSM initializes the parser and runs it.
-// It returns any positional arguments and the first error encountered.
+// It returns any remaining positional arguments and a parsing error if any.
 func parseArgsWithFSM(fs *FlagSet, args []string) ([]string, error) {
 	p := &parser{
 		fs:   fs,
@@ -114,6 +114,7 @@ func stateLong(arg string) stateFn {
 	}
 }
 
+// handleDynamic processes a dynamic flag using the provided name, value, and format.
 func handleDynamic(name, val string, hasVal bool) stateFn {
 	return func(p *parser) stateFn {
 		item, id := lookupDynamic(p, name)
@@ -121,7 +122,7 @@ func handleDynamic(name, val string, hasVal bool) stateFn {
 			return nil
 		}
 
-		// Handle non-strict bools like --group.id.flag
+		// Support non-strict bools like --group.id.flag
 		if handled := tryDynBool(item, id); handled {
 			return stateStart
 		}
@@ -132,7 +133,7 @@ func handleDynamic(name, val string, hasVal bool) stateFn {
 			return stateStart
 		}
 
-		// Hanlde --group.id.flag value
+		// Handle --group.id.flag value
 		if handled := handleDynamicValue(p, item, id, name); !handled {
 			return nil
 		}
@@ -141,6 +142,7 @@ func handleDynamic(name, val string, hasVal bool) stateFn {
 	}
 }
 
+// handleDynamicValue parses and sets the next token as the value of a dynamic flag.
 func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
@@ -153,6 +155,7 @@ func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool
 	return true
 }
 
+// handleStatic processes a known static flag by name.
 func handleStatic(name, val string, hasVal bool) stateFn {
 	return func(p *parser) stateFn {
 		fl := p.fs.staticFlagsMap[name]
@@ -161,18 +164,15 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 		if handled := tryBool(fl); handled {
 			return stateStart
 		}
-
 		// Support implicit increment if applicable
 		if handled := tryCounter(p, fl); handled {
 			return stateStart
 		}
-
 		// Handle --flag=value
 		if hasVal {
 			p.err = trySet(fl.Value, val, "invalid value for flag --%s: %s.", name)
 			return stateStart
 		}
-
 		// Handle --flag value
 		if handled := tryLongValue(p, fl, name); handled {
 			return stateStart
@@ -183,7 +183,7 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 	}
 }
 
-// stateShort handles grouped short flags like -abc or single ones like -f value.
+// stateShort handles grouped short flags like -abc or -p8080.
 func stateShort(arg string) stateFn {
 	return func(p *parser) stateFn {
 		shorts := strings.TrimPrefix(arg, "-")
@@ -200,12 +200,10 @@ func stateShort(arg string) stateFn {
 			if handled := tryBool(flag); handled {
 				continue
 			}
-
 			// Handle counters like -vvvv
 			if handled := tryCounter(p, flag); handled {
 				continue
 			}
-
 			// Handle -p8080 (combined)
 			if handled := tryShortCombined(p, flag, i, shorts, char); handled {
 				break
@@ -220,6 +218,7 @@ func stateShort(arg string) stateFn {
 	}
 }
 
+// findShortFlag searches for a flag matching the given short letter.
 func findShortFlag(fs *FlagSet, short string) *core.BaseFlag {
 	for _, fl := range fs.staticFlagsMap {
 		if fl.Short == short {
@@ -229,6 +228,7 @@ func findShortFlag(fs *FlagSet, short string) *core.BaseFlag {
 	return nil
 }
 
+// tryBool attempts to set a non-strict boolean flag to true.
 func tryBool(flag *core.BaseFlag) bool {
 	if b, ok := flag.Value.(core.StrictBool); ok && !b.IsStrictBool() {
 		flag.Value.Set("true") // nolint:errcheck
@@ -237,6 +237,7 @@ func tryBool(flag *core.BaseFlag) bool {
 	return false
 }
 
+// tryDynBool attempts to set a non-strict dynamic boolean flag to true.
 func tryDynBool(item core.DynamicValue, id string) bool {
 	if b, ok := item.(core.StrictBool); ok && !b.IsStrictBool() {
 		item.Set(id, "true") // nolint
@@ -245,6 +246,7 @@ func tryDynBool(item core.DynamicValue, id string) bool {
 	return false
 }
 
+// tryCounter calls Increment on a flag if it supports it.
 func tryCounter(p *parser, flag *core.BaseFlag) bool {
 	if inc, ok := flag.Value.(core.Incrementable); ok {
 		p.err = inc.Increment()
@@ -253,6 +255,7 @@ func tryCounter(p *parser, flag *core.BaseFlag) bool {
 	return false
 }
 
+// tryShortCombined parses short flag with immediate value like -p8080.
 func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char string) bool {
 	if i < len(shorts)-1 {
 		val := shorts[i+1:]
@@ -262,6 +265,7 @@ func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char
 	return false
 }
 
+// tryLongValue consumes the next argument as a value for a long flag.
 func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
@@ -273,6 +277,7 @@ func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 	return true
 }
 
+// tryShortValue consumes the next argument as a value for a short flag.
 func tryShortValue(p *parser, flag *core.BaseFlag, short string) error {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
@@ -282,8 +287,7 @@ func tryShortValue(p *parser, flag *core.BaseFlag, short string) error {
 	return trySet(flag.Value, next, "invalid value for flag -%s: %w", short)
 }
 
-// trySet attempts to set the given value using input.
-// If setting fails, it wraps the error using the provided format and label.
+// trySet attempts to set a value and wraps any error using the format string.
 func trySet(value core.Value, input string, format string, label string) error {
 	if err := value.Set(input); err != nil {
 		return fmt.Errorf(format, label, err)
@@ -291,6 +295,7 @@ func trySet(value core.Value, input string, format string, label string) error {
 	return nil
 }
 
+// trySetDynamic attempts to set a dynamic flag value and wraps any error.
 func trySetDynamic(item core.DynamicValue, id, val, label string) error {
 	if err := item.Set(id, val); err != nil {
 		return fmt.Errorf("invalid value for dynamic flag --%s: %w", label, err)
@@ -298,8 +303,8 @@ func trySetDynamic(item core.DynamicValue, id, val, label string) error {
 	return nil
 }
 
-// splitFlagArg splits a string like "flag=value" into ("flag", "value", true).
-// If there's no '=', it returns ("flag", "", false).
+// splitFlagArg splits --flag=value into ("flag", "value", true).
+// Returns ("flag", "", false) if no '=' is present.
 func splitFlagArg(s string) (name, val string, hasVal bool) {
 	if i := strings.Index(s, "="); i >= 0 {
 		return s[:i], s[i+1:], true
@@ -307,17 +312,20 @@ func splitFlagArg(s string) (name, val string, hasVal bool) {
 	return s, "", false
 }
 
+// isDynamicFlag checks if the flag name follows the group.id.flag pattern.
 func isDynamicFlag(name string) bool {
 	parts := strings.Split(name, ".")
 	return len(parts) == 3 // group.id.field
 }
 
+// isKnownStaticFlag reports whether a flag is registered statically.
 func isKnownStaticFlag(p *parser, name string) bool {
 	_, ok := p.fs.staticFlagsMap[name]
 	return ok
 }
 
-// lookupDynamic locates the dynamic item and returns its parser and ID.
+// lookupDynamic locates a dynamic flag and its instance ID from the full name.
+// Returns the dynamic value and ID, or sets p.err if lookup fails.
 func lookupDynamic(p *parser, name string) (core.DynamicValue, string) {
 	parts := strings.Split(name, ".")
 	if len(parts) != 3 {
