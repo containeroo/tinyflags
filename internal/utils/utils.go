@@ -20,7 +20,7 @@ func AllowOnly[T any](format func(T) string, allowed []T) func(T) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("must be one of [%s]", JoinFormatted(allowed, format))
+		return fmt.Errorf("must be one of: %s", JoinFormatted(allowed, format))
 	}
 }
 
@@ -45,7 +45,7 @@ func JoinFormatted[T any](values []T, format func(T) string) string {
 	for i, v := range values {
 		parts[i] = format(v)
 	}
-	return strings.Join(parts, ",")
+	return strings.Join(parts, ", ")
 }
 
 // PluralSuffix returns "s" if the given number is not 1, otherwise it returns an empty string.
