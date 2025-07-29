@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// AllowOnly returns a validator function that permits only values from the given list.
+// Each value is compared using the provided formatting function.
+// The format function is used to normalize or stringify values for comparison,
+// which is useful for case-insensitive or structured types.
 func AllowOnly[T any](format func(T) string, allowed []T) func(T) error {
 	return func(v T) error {
 		for _, a := range allowed {
@@ -16,10 +20,13 @@ func AllowOnly[T any](format func(T) string, allowed []T) func(T) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("must be one of [%v]", allowed)
+		return fmt.Errorf("must be one of [%s]", JoinFormatted(allowed, format))
 	}
 }
 
+// FormatList applies the given format function to each element of the slice
+// and returns a new slice of formatted strings.
+// This is useful for preparing human-readable output from a slice of structured types.
 func FormatList[T any](format func(T) string, values []T) []string {
 	out := make([]string, len(values))
 	for i, v := range values {
@@ -28,6 +35,8 @@ func FormatList[T any](format func(T) string, values []T) []string {
 	return out
 }
 
+// JoinFormatted applies the given format function to each value and joins them with commas.
+// If format is nil, it falls back to using fmt.Sprintf("%v", values).
 func JoinFormatted[T any](values []T, format func(T) string) string {
 	if format == nil {
 		return fmt.Sprintf("%v", values) // fallback
