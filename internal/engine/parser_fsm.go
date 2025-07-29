@@ -273,7 +273,7 @@ func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 	}
 
 	p.next()
-	p.err = trySet(flag.Value, next, "invalid value for flag --%s: got %s.", name)
+	p.err = trySet(flag.Value, next, "invalid value for flag --%s: %s.", name)
 	return true
 }
 

@@ -150,8 +150,8 @@ func TestSmoke_ParseArgs(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, `Usage: app [flags]
 Flags:
-      --version                          show version (Default: false)
-  -h, --help                             show help (Default: false)
+    -h, --help     show help (Default: false)
+        --version  show version (Default: false)
 `)
 	})
 
@@ -265,7 +265,7 @@ Flags:
 		err := fs.Parse([]string{
 			"--list=a|b|c", "--list", "d",
 		})
-		require.EqualError(t, err, "invalid value for flag --list: got invalid value \"d\": must be one of [a, b, c].")
+		require.EqualError(t, err, "invalid value for flag --list: invalid value \"d\": must be one of: a, b, c.")
 		assert.Equal(t, []string{"a", "b", "c"}, *list) // defaults
 	})
 
@@ -284,7 +284,7 @@ Flags:
 			"--port", "80",
 		})
 		require.Error(t, err)
-		require.EqualError(t, err, "invalid value for flag --port: got port must be greater than 1000.")
+		require.EqualError(t, err, "invalid value for flag --port: port must be greater than 1000.")
 	})
 
 	t.Run("smoke dyn validator error", func(t *testing.T) {
@@ -391,6 +391,7 @@ Flags:
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.SetDynamicUsageIndent(8)
 		http := fs.DynamicGroup("http")
 		http.String("address", "", "API address").
 			Validate(func(s string) error {
@@ -401,7 +402,6 @@ Flags:
 			})
 		http.Int("port", 0, "API port")
 		http.Bool("enabled", true, "Enable service").Strict()
-
 		http.Bool("verbose", true, "Enable verbose mode")
 
 		err := fs.Parse([]string{
@@ -414,6 +414,13 @@ Flags:
 			"--help",
 		})
 		require.Error(t, err)
-		assert.EqualError(t, err, "Usage: app [flags]\n")
+		assert.EqualError(t, err, `Usage: app [flags]
+Flags:
+    -h, --help  show help (Default: false)
+        --http.<ID>.address ADDRESS       API address
+        --http.<ID>.port PORT             API port (Default: 0)
+        --http.<ID>.enabled <true|false>  Enable service (Allowed: true, false) (Default: true)
+        --http.<ID>.verbose               Enable verbose mode (Default: true)
+`)
 	})
 }
