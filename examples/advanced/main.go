@@ -29,7 +29,6 @@ func parseArgs(args []string) (*Config, error) {
 	tf.EnvPrefix("MYAPP") // optional, enables --env-key for all flags
 	tf.Version("v1.2.3")  // optional, enables -v, --version
 	tf.DisableHelp()      // optional, disables automatic help flag registration
-	tf.SetUsageColumn(45) // optional, sets indentation for descriptions
 
 	// Since we disabled help, we need to define our own usage function
 	tf.Usage = func() {
@@ -37,7 +36,8 @@ func parseArgs(args []string) (*Config, error) {
 		tf.PrintUsage(out, tinyflags.PrintBoth)
 		tf.PrintTitle(out)
 		tf.PrintDescription(out, tf.DescIndent(), tf.DescWidth())
-		tf.PrintDefaults(out, tf.UsageIndent(), tf.UsageColumn(), tf.UsageWidth())
+		tf.PrintStaticDefaults(out, tf.StaticUsageIndent(), tf.StaticUsageColumn(), tf.StaticUsageWidth())
+		tf.PrintDynamicDefaults(out, tf.DynamicUsageIndent(), tf.DynamicUsageColumn(), tf.DynamicUsageWidth())
 		tf.PrintNotes(out, tf.NoteIndent(), tf.NoteWidth())
 		tf.PrintAuthors(out)
 	}

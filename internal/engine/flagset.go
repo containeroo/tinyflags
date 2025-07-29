@@ -142,19 +142,27 @@ func (f *FlagSet) DescIndent() int      { return f.descIndent }
 func (f *FlagSet) SetDescWidth(max int) { f.descWidth = max }
 func (f *FlagSet) DescWidth() int       { return f.descWidth }
 
-func (f *FlagSet) SetUsageIndent(n int)   { f.usageStaticIndent = n }
-func (f *FlagSet) UsageIndent() int       { return f.usageStaticIndent }
-func (f *FlagSet) SetUsageColumn(col int) { f.usageStaticCol = col }
-func (f *FlagSet) UsageColumn() int       { return f.usageStaticCol }
-func (f *FlagSet) SetUsageWidth(max int)  { f.usageStaticWidth = max }
-func (f *FlagSet) UsageWidth() int        { return f.usageStaticWidth }
+func (f *FlagSet) SetStaticUsageIndent(n int)   { f.usageStaticIndent = n }
+func (f *FlagSet) StaticUsageIndent() int       { return f.usageStaticIndent }
+func (f *FlagSet) SetStaticUsageColumn(col int) { f.usageStaticCol = col }
+func (f *FlagSet) StaticUsageColumn() int       { return f.usageStaticCol }
+func (f *FlagSet) SetStaticUsageWidth(max int)  { f.usageStaticWidth = max }
+func (f *FlagSet) StaticUsageWidth() int        { return f.usageStaticWidth }
 func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
 	return f.calcStaticUsageColumn(padding)
 }
-
 func (f *FlagSet) SetStaticUsageNote(s string) { f.usageStaticNote = s }
 func (f *FlagSet) StaticUsageNote() string     { return f.usageStaticNote }
 
+func (f *FlagSet) SetDynamicUsageIndent(n int)   { f.usageDynamicIndent = n }
+func (f *FlagSet) DynamicUsageIndent() int       { return f.usageDynamicIndent }
+func (f *FlagSet) SetDynamicUsageColumn(col int) { f.usageDynamicCol = col }
+func (f *FlagSet) DynamicUsageColumn() int       { return f.usageDynamicCol }
+func (f *FlagSet) SetDynamicUsageWidth(max int)  { f.usageDynamicWidth = max }
+func (f *FlagSet) DynamicUsageWidth() int        { return f.usageDynamicWidth }
+func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
+	return f.calcDynamicUsageColumn(padding)
+}
 func (f *FlagSet) SetDynamicUsageNote(s string) { f.usageDynamicNote = s }
 func (f *FlagSet) DynamicUsageNote() string     { return f.usageDynamicNote }
 
@@ -162,10 +170,6 @@ func (f *FlagSet) SetNoteIndent(n int)  { f.noteIndent = n }
 func (f *FlagSet) NoteIndent() int      { return f.noteIndent }
 func (f *FlagSet) SetNoteWidth(max int) { f.noteWidth = max }
 func (f *FlagSet) NoteWidth() int       { return f.noteWidth }
-
-func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
-	return f.calcDynamicUsageColumn(padding)
-}
 
 // --- Flag & Group Registration ---
 

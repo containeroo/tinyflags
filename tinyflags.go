@@ -43,9 +43,10 @@ const (
 	PrintBoth  = engine.PrintBoth  // Prints: -v|--verbose
 )
 
+// Exported types for advanced access.
 type (
-	DynamicGroup = dynamic.Group // For accessing .Instances(), .Flags(), .NoteText(), etc.
-	StaticFlag   = core.BaseFlag // For help renderers, custom GUIs, etc.)
+	DynamicGroup = dynamic.Group // Dynamic group of instance-scoped flags
+	StaticFlag   = core.BaseFlag // Static flag definition metadata
 )
 
 // FlagSet is the user-facing flag parser and usage configurator.
@@ -94,7 +95,7 @@ func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
 // DisableVersion disables the automatic --version flag.
 func (f *FlagSet) DisableVersion() { f.impl.DisableVersion() }
 
-// HideEnvs hides all environment variable info in help output.
+// HideEnvs disables all env-var annotations in help output.
 func (f *FlagSet) HideEnvs() { f.impl.HideEnvs() }
 
 // SortedFlags enables sorted help output for static flags.
@@ -156,70 +157,6 @@ func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.impl.DynamicGroups()
 }
 
-// SetDescIndent sets the left indent for the description block.
-func (f *FlagSet) SetDescIndent(n int) { f.impl.SetDescIndent(n) }
-
-// DescIndent returns the left indent for the description block.
-func (f *FlagSet) DescIndent() int { return f.impl.DescIndent() }
-
-// SetDescWidth sets the maximum line width for the description.
-func (f *FlagSet) SetDescWidth(n int) { f.impl.SetDescWidth(n) }
-
-// DescWidth returns the maximum line width for the description.
-func (f *FlagSet) DescWidth() int { return f.impl.DescWidth() }
-
-// SetUsageIndent sets the left indent for usage lines.
-func (f *FlagSet) SetUsageIndent(n int) { f.impl.SetUsageIndent(n) }
-
-// UsageIndent returns the left indent for usage lines.
-func (f *FlagSet) UsageIndent() int { return f.impl.UsageIndent() }
-
-// SetUsageColumn sets the column where descriptions start.
-func (f *FlagSet) SetUsageColumn(col int) { f.impl.SetUsageColumn(col) }
-
-// UsageColumn returns the column where descriptions start.
-func (f *FlagSet) UsageColumn() int { return f.impl.UsageColumn() }
-
-// SetUsageWidth sets the maximum line width for usage output.
-func (f *FlagSet) SetUsageWidth(n int) { f.impl.SetUsageWidth(n) }
-
-// UsageWidth returns the maximum line width for usage output.
-func (f *FlagSet) UsageWidth() int { return f.impl.UsageWidth() }
-
-// StaticAutoUsageColumn calculates the recommended usage column for static flags.
-func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
-	return f.impl.StaticAutoUsageColumn(padding)
-}
-
-// DynamicAutoUsageColumn calculates the recommended usage column for dynamic flags.
-func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
-	return f.impl.DynamicAutoUsageColumn(padding)
-}
-
-// SetNoteIndent sets the left indent for the note block.
-func (f *FlagSet) SetNoteIndent(n int) { f.impl.SetNoteIndent(n) }
-
-// NoteIndent returns the left indent for the note block.
-func (f *FlagSet) NoteIndent() int { return f.impl.NoteIndent() }
-
-// SetNoteWidth sets the maximum width for the note block.
-func (f *FlagSet) SetNoteWidth(n int) { f.impl.SetNoteWidth(n) }
-
-// NoteWidth returns the maximum width for the note block.
-func (f *FlagSet) NoteWidth() int { return f.impl.NoteWidth() }
-
-// SetStaticUsageNote sets an optional note for the static usage section.
-func (f *FlagSet) SetStaticUsageNote(s string) { f.impl.SetStaticUsageNote(s) }
-
-// StaticUsageNote returns the static usage note text.
-func (f *FlagSet) StaticUsageNote() string { return f.impl.StaticUsageNote() }
-
-// SetDynamicUsageNote sets an optional note for the dynamic usage section.
-func (f *FlagSet) SetDynamicUsageNote(s string) { f.impl.SetDynamicUsageNote(s) }
-
-// DynamicUsageNote returns the dynamic usage note text.
-func (f *FlagSet) DynamicUsageNote() string { return f.impl.DynamicUsageNote() }
-
 // PrintUsage renders the top usage line.
 func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
 	f.impl.PrintUsage(w, mode)
@@ -250,6 +187,88 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, col, width int) {
 func (f *FlagSet) PrintNotes(w io.Writer, indent, width int) {
 	f.impl.PrintNotes(w, indent, width)
 }
+
+// SetDescIndent sets the indentation for the description block.
+func (f *FlagSet) SetDescIndent(n int) { f.impl.SetDescIndent(n) }
+
+// DescIndent returns the current indent used for the description block.
+func (f *FlagSet) DescIndent() int { return f.impl.DescIndent() }
+
+// SetDescWidth sets the wrapping width for the description block.
+func (f *FlagSet) SetDescWidth(max int) { f.impl.SetDescWidth(max) }
+
+// DescWidth returns the wrapping width for the description block.
+func (f *FlagSet) DescWidth() int { return f.impl.DescWidth() }
+
+// SetStaticUsageIndent sets the indentation for static flag usage lines.
+func (f *FlagSet) SetStaticUsageIndent(n int) { f.impl.SetStaticUsageIndent(n) }
+
+// StaticUsageIndent returns the static usage indentation.
+func (f *FlagSet) StaticUsageIndent() int { return f.impl.StaticUsageIndent() }
+
+// SetStaticUsageColumn sets the column at which static flag descriptions begin.
+func (f *FlagSet) SetStaticUsageColumn(col int) { f.impl.SetStaticUsageColumn(col) }
+
+// StaticUsageColumn returns the description column for static flags.
+func (f *FlagSet) StaticUsageColumn() int { return f.impl.StaticUsageColumn() }
+
+// SetStaticUsageWidth sets the max wrapping width for static flag descriptions.
+func (f *FlagSet) SetStaticUsageWidth(max int) { f.impl.SetStaticUsageWidth(max) }
+
+// StaticUsageWidth returns the wrapping width for static flag descriptions.
+func (f *FlagSet) StaticUsageWidth() int { return f.impl.StaticUsageWidth() }
+
+// StaticAutoUsageColumn computes a good usage column for static flags.
+func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
+	return f.impl.StaticAutoUsageColumn(padding)
+}
+
+// SetStaticUsageNote adds a note after the static flag block.
+func (f *FlagSet) SetStaticUsageNote(s string) { f.impl.SetStaticUsageNote(s) }
+
+// StaticUsageNote returns the static flag section note.
+func (f *FlagSet) StaticUsageNote() string { return f.impl.StaticUsageNote() }
+
+// SetDynamicUsageIndent sets the indentation for dynamic flag usage lines.
+func (f *FlagSet) SetDynamicUsageIndent(n int) { f.impl.SetDynamicUsageIndent(n) }
+
+// DynamicUsageIndent returns the dynamic flag usage indent.
+func (f *FlagSet) DynamicUsageIndent() int { return f.impl.DynamicUsageIndent() }
+
+// SetDynamicUsageColumn sets the column at which dynamic flag descriptions begin.
+func (f *FlagSet) SetDynamicUsageColumn(col int) { f.impl.SetDynamicUsageColumn(col) }
+
+// DynamicUsageColumn returns the description column for dynamic flags.
+func (f *FlagSet) DynamicUsageColumn() int { return f.impl.DynamicUsageColumn() }
+
+// SetDynamicUsageWidth sets the max wrapping width for dynamic flags.
+func (f *FlagSet) SetDynamicUsageWidth(max int) { f.impl.SetDynamicUsageWidth(max) }
+
+// DynamicUsageWidth returns the wrapping width for dynamic flag descriptions.
+func (f *FlagSet) DynamicUsageWidth() int { return f.impl.DynamicUsageWidth() }
+
+// DynamicAutoUsageColumn computes a good usage column for dynamic flags.
+func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
+	return f.impl.DynamicAutoUsageColumn(padding)
+}
+
+// SetDynamicUsageNote adds a note after the dynamic flag block.
+func (f *FlagSet) SetDynamicUsageNote(s string) { f.impl.SetDynamicUsageNote(s) }
+
+// DynamicUsageNote returns the dynamic flag section note.
+func (f *FlagSet) DynamicUsageNote() string { return f.impl.DynamicUsageNote() }
+
+// SetNoteIndent sets the indentation for help notes.
+func (f *FlagSet) SetNoteIndent(n int) { f.impl.SetNoteIndent(n) }
+
+// NoteIndent returns the note section indentation.
+func (f *FlagSet) NoteIndent() int { return f.impl.NoteIndent() }
+
+// SetNoteWidth sets the wrapping width for help notes.
+func (f *FlagSet) SetNoteWidth(max int) { f.impl.SetNoteWidth(max) }
+
+// NoteWidth returns the wrapping width for help notes.
+func (f *FlagSet) NoteWidth() int { return f.impl.NoteWidth() }
 
 // GetDynamic retrieves the value for a dynamic flag by group, id, and field name.
 func GetDynamic[T any](group *dynamic.Group, id, flag string) (T, error) {

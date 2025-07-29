@@ -76,8 +76,8 @@ func TestNewFlagSet(t *testing.T) {
 
 		fs.PrintAuthors(fs.Output())
 		fs.PrintTitle(fs.Output())
-		fs.PrintDescription(fs.Output(), 40)
-		fs.PrintNotes(fs.Output(), 40)
+		fs.PrintDescription(fs.Output(), 0, 40)
+		fs.PrintNotes(fs.Output(), 0, 40)
 
 		out := buf.String()
 		assert.Contains(t, out, "A & B")
@@ -98,8 +98,8 @@ func TestNewFlagSet(t *testing.T) {
 	t.Run("Sorted", func(t *testing.T) {
 		t.Parallel()
 		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
-		fs.Sorted(true)
-		fs.Sorted(false)
+		fs.SortedFlags()
+		fs.SortedGroups()
 	})
 
 	t.Run("Output setter/getter", func(t *testing.T) {
@@ -134,20 +134,13 @@ func TestNewFlagSet(t *testing.T) {
 		assert.False(t, ok)
 	})
 
-	t.Run("Formatting controls", func(t *testing.T) {
-		t.Parallel()
-		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
-		fs.DescriptionMaxLen(50)
-		fs.DescriptionIndent(10)
-	})
-
 	t.Run("PrintDefaults and Usage", func(t *testing.T) {
 		var buf bytes.Buffer
 		t.Parallel()
 		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
 		fs.SetOutput(&buf)
 		fs.String("x", "def", "desc")
-		fs.PrintDefaults()
+		fs.PrintStaticDefaults(fs.Output(), 2, 40, 200)
 		fs.PrintUsage(fs.Output(), tinyflags.PrintShort)
 		out := buf.String()
 		assert.Contains(t, out, "--x")
