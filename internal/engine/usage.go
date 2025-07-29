@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/dynamic"
@@ -66,37 +65,32 @@ func (f *FlagSet) PrintAuthors(w io.Writer) {
 }
 
 // PrintDescription renders description block above flags.
-func (f *FlagSet) PrintDescription(w io.Writer, width int) {
+func (f *FlagSet) PrintDescription(w io.Writer, indent, maxWidth int) {
 	if f.desc != "" {
-		fmt.Fprintln(w, wrapText(f.desc, width))
+		writeIndented(w, wrapText(f.desc, maxWidth-indent), indent)
 	}
 }
 
 // PrintNotes renders notes block below flags.
-func (f *FlagSet) PrintNotes(w io.Writer, width int) {
+func (f *FlagSet) PrintNotes(w io.Writer, indent, maxWidth int) {
 	if f.notes != "" {
-		fmt.Fprintln(w, wrapText(f.notes, width))
+		writeIndented(w, wrapText(f.notes, maxWidth-indent), indent)
 	}
 }
 
-// PrintDefaults prints both static and dynamic flags.
-func (f *FlagSet) PrintDefaults(w io.Writer, width int) {
-	f.printStaticDefaults(w, width)
-	f.printDynamicDefaults(w, width)
-}
-
-// printStaticDefaults renders all statically registered flags.
-func (f *FlagSet) printStaticDefaults(w io.Writer, width int) {
-	tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
-
+// PrintStaticDefaults renders all statically registered flags.
+func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth int) {
 	for _, fl := range f.staticFlags() {
-		printFlagUsage(tw, f.descIndent, width, f.hideEnvs, fl, f.envPrefix)
+		printFlagUsage(w, indent, startCol, maxWidth, f.hideEnvs, fl, f.envPrefix)
 	}
-	tw.Flush() // nolint:errcheck
+
+	if f.StaticUsageNote() != "" {
+		fmt.Println(f.StaticUsageNote())
+	}
 }
 
-// printDynamicDefaults renders all dynamic groups.
-func (f *FlagSet) printDynamicDefaults(w io.Writer, width int) {
+// PrintDynamicDefaults renders all dynamic groups.
+func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth int) {
 	for _, group := range f.dynamicGroups() {
 		if group.IsHidden() {
 			continue
@@ -107,10 +101,9 @@ func (f *FlagSet) printDynamicDefaults(w io.Writer, width int) {
 		if title := group.TitleText(); title != "" {
 			fmt.Fprintf(w, "\n%s\n", title)
 		}
-
 		// Description
 		if desc := group.DescriptionText(); desc != "" {
-			fmt.Fprintln(w, wrapText(desc, width))
+			writeIndented(w, wrapText(desc, maxWidth-indent), 0)
 		}
 
 		idPlaceholder := group.GetPlaceholder()
@@ -118,40 +111,29 @@ func (f *FlagSet) printDynamicDefaults(w io.Writer, width int) {
 			idPlaceholder = "<ID>"
 		}
 
-		tw := tabwriter.NewWriter(w, 2, 4, 2, ' ', 0)
 		for _, fl := range group.DynamicFlags() {
-			var b strings.Builder
-			b.WriteString("      --")
-			b.WriteString(name)
-			b.WriteString(".")
-			b.WriteString(idPlaceholder)
-			b.WriteString(".")
-			b.WriteString(fl.Name)
-			if meta := getPlaceholder(fl); meta != "" {
-				b.WriteString(" ")
-				b.WriteString(meta)
-			}
-			flagLine := b.String()
+			flagLine := formatDynamicFlagLine(name, idPlaceholder, fl)
 			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-
-			if len(flagLine)+len(desc) <= width {
-				fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, flagLine, desc)
+			if len(flagLine)+len(desc) <= maxWidth-startCol {
+				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc)
 				continue
 			}
 
-			wrapped := wrapText(desc, width-f.descIndent-1)
+			wrapped := wrapText(desc, maxWidth-indent-startCol-1)
 			lines := strings.Split(wrapped, "\n")
-			fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, flagLine, lines[0])
+			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0])
 			for _, l := range lines[1:] {
-				fmt.Fprintf(tw, "%-*s %s\n", f.descIndent, "", l)
+				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l)
 			}
 		}
 
-		tw.Flush() // nolint:errcheck
-
 		if note := group.NoteText(); note != "" {
-			fmt.Fprintln(w, wrapText(note, width))
+			writeIndented(w, wrapText(note, maxWidth-indent), 0)
 		}
+	}
+
+	if f.DynamicUsageNote() != "" {
+		fmt.Println(f.DynamicUsageNote())
 	}
 }
 
@@ -186,11 +168,10 @@ func (f *FlagSet) staticFlags() []*core.BaseFlag {
 	return f.staticFlagsOrder
 }
 
-// printFlagUsage renders a single usage line.
-func printFlagUsage(w io.Writer, descIndent, maxDesc int, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
+// printFlagUsage renders a single usage line with wrapping and alignment.
+func printFlagUsage(w io.Writer, indent, startCol, maxWidth int, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
 	var b strings.Builder
-
-	formatFlagNames(&b, flag)
+	formatStaticFlagNames(&b, flag)
 
 	if meta := getPlaceholder(flag); meta != "" {
 		b.WriteString(" ")
@@ -199,33 +180,52 @@ func printFlagUsage(w io.Writer, descIndent, maxDesc int, globalHideEnvs bool, f
 	flagLine := b.String()
 	desc := buildFlagDescription(flag, globalHideEnvs, prefix)
 
-	if len(flagLine)+len(desc) <= maxDesc {
-		fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, desc)
+	if len(flagLine)+len(desc) <= maxWidth-startCol {
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc)
 		return
 	}
 
-	wrapped := wrapText(desc, maxDesc-descIndent-1)
+	wrapped := wrapText(desc, maxWidth-indent-startCol-1)
 	lines := strings.Split(wrapped, "\n")
-	fmt.Fprintf(w, "%-*s %s\n", descIndent, flagLine, lines[0])
+	fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0])
 	for _, l := range lines[1:] {
-		fmt.Fprintf(w, "%-*s %s\n", descIndent, "", l)
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l)
 	}
 }
 
-// formatFlagNames builds flag names (e.g. -v, --verbose).
-func formatFlagNames(b *strings.Builder, flag *core.BaseFlag) {
+// formatStaticFlagNames builds the flag name string for help output.
+func formatStaticFlagNames(b *strings.Builder, flag *core.BaseFlag) {
 	if flag.Short != "" {
-		b.WriteString("  -")
+		b.WriteString("-")
 		b.WriteString(flag.Short)
 		b.WriteString(", ")
 	} else {
-		b.WriteString("      ")
+		b.WriteString("    ")
 	}
 	b.WriteString("--")
 	b.WriteString(flag.Name)
 }
 
-// getPlaceholder returns help placeholder for a flag value.
+// formatDynamicFlagLine builds the full flag line string for a dynamic flag.
+func formatDynamicFlagLine(groupName, idPlaceholder string, fl *core.BaseFlag) string {
+	var b strings.Builder
+
+	b.WriteString("--")
+	b.WriteString(groupName)
+	b.WriteString(".")
+	b.WriteString(idPlaceholder)
+	b.WriteString(".")
+	b.WriteString(fl.Name)
+
+	if meta := getPlaceholder(fl); meta != "" {
+		b.WriteString(" ")
+		b.WriteString(meta)
+	}
+
+	return b.String()
+}
+
+// getPlaceholder returns the appropriate help placeholder string.
 func getPlaceholder(flag *core.BaseFlag) string {
 	isBool := false
 	isStrict := false
@@ -238,7 +238,6 @@ func getPlaceholder(flag *core.BaseFlag) string {
 	if isBool && !isStrict {
 		return ""
 	}
-
 	if flag.Placeholder != "" {
 		return flag.Placeholder
 	}
@@ -255,8 +254,8 @@ func getPlaceholder(flag *core.BaseFlag) string {
 	return placeholder
 }
 
-// buildFlagDescription renders the description of a flag.
-func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix string) string {
+// buildFlagDescription creates the descriptive string for a flag.
+func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string) string {
 	desc := flag.Usage
 	if len(flag.Allowed) > 0 {
 		desc += " (Allowed: " + strings.Join(flag.Allowed, ", ") + ")"
@@ -272,8 +271,8 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 			desc += " (Default: " + def + ")"
 		}
 	}
-	if shouldInjectEnvKey(flag, globalHideEnvs, prefix) {
-		flag.EnvKey = strings.ToUpper(prefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
+	if shouldInjectEnvKey(flag, globalHideEnvs, name) {
+		flag.EnvKey = strings.ToUpper(name + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
 	}
 	if shouldShowEnv(flag, globalHideEnvs) {
 		desc += " (Env: " + flag.EnvKey + ")"
@@ -297,6 +296,41 @@ func shouldShowEnv(flag *core.BaseFlag, globalHideEnvs bool) bool {
 	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey != ""
 }
 
+// calcStaticUsageColumn calculates the maximum length of a flag line.
+func (f *FlagSet) calcStaticUsageColumn(padding int) int {
+	maxFlagLen := 0
+	for _, fl := range f.staticFlags() {
+		b := new(strings.Builder)
+		formatStaticFlagNames(b, fl)
+		if meta := getPlaceholder(fl); meta != "" {
+			b.WriteString(" ")
+			b.WriteString(meta)
+		}
+		line := b.String()
+		if len(line) > maxFlagLen {
+			maxFlagLen = len(line)
+		}
+	}
+	return maxFlagLen + padding
+}
+
+func (f *FlagSet) calcDynamicUsageColumn(padding int) int {
+	maxLen := 0
+	for _, group := range f.dynamicGroups() {
+		idPlaceholder := group.GetPlaceholder()
+		if idPlaceholder == "" {
+			idPlaceholder = "<ID>"
+		}
+		for _, fl := range group.DynamicFlags() {
+			line := formatDynamicFlagLine(group.Name(), idPlaceholder, fl)
+			if len(line) > maxLen {
+				maxLen = len(line)
+			}
+		}
+	}
+	return maxLen + padding
+}
+
 // buildGroupInfo returns group info suffix if flag belongs to a mutual group.
 func buildGroupInfo(group *core.MutualGroup) string {
 	var b strings.Builder
@@ -313,7 +347,7 @@ func buildGroupInfo(group *core.MutualGroup) string {
 	return b.String()
 }
 
-// printUsageToken prints usage token like `-v`, `--verbose`, or both.
+// printUsageToken prints short, long, or combined flag usage.
 func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 	meta := getPlaceholder(fl)
 	switch mode {
@@ -338,5 +372,14 @@ func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 		if meta != "" {
 			fmt.Fprintf(w, " %s", meta)
 		}
+	}
+}
+
+// writeIndented prints each line with the given indentation.
+func writeIndented(w io.Writer, text string, indent int) {
+	lines := strings.Split(text, "\n")
+	prefix := strings.Repeat(" ", indent)
+	for _, line := range lines {
+		fmt.Fprintf(w, "%s%s\n", prefix, line)
 	}
 }

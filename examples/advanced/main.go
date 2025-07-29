@@ -26,19 +26,19 @@ type Config struct {
 func parseArgs(args []string) (*Config, error) {
 	tf := tinyflags.NewFlagSet("test.exe", tinyflags.ContinueOnError)
 	tf.Authors("me@containeroo.ch")
-	tf.EnvPrefix("MYAPP")    // optional, enables --env-key for all flags
-	tf.Version("v1.2.3")     // optional, enables -v, --version
-	tf.DisableHelp()         // optional, disables automatic help flag registration
-	tf.DescriptionIndent(45) // optional, sets indentation for descriptions
+	tf.EnvPrefix("MYAPP") // optional, enables --env-key for all flags
+	tf.Version("v1.2.3")  // optional, enables -v, --version
+	tf.DisableHelp()      // optional, disables automatic help flag registration
+	tf.SetUsageColumn(45) // optional, sets indentation for descriptions
 
 	// Since we disabled help, we need to define our own usage function
 	tf.Usage = func() {
 		out := tf.Output()
 		tf.PrintUsage(out, tinyflags.PrintBoth)
 		tf.PrintTitle(out)
-		tf.PrintDescription(out, 80)
-		tf.PrintDefaults(out, 80)
-		tf.PrintNotes(out, 80)
+		tf.PrintDescription(out, tf.DescIndent(), tf.DescWidth())
+		tf.PrintDefaults(out, tf.UsageIndent(), tf.UsageColumn(), tf.UsageWidth())
+		tf.PrintNotes(out, tf.NoteIndent(), tf.NoteWidth())
 		tf.PrintAuthors(out)
 	}
 	showHelp := tf.Bool("help", false, "show help"). // Register own without shorthand

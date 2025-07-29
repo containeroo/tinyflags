@@ -10,29 +10,19 @@ import (
 	"github.com/containeroo/tinyflags/internal/engine"
 )
 
-// ErrorHandling is re-exported from internal engine.
+// ErrorHandling defines how parsing errors are handled.
 type ErrorHandling = engine.ErrorHandling
 
 const (
-	ContinueOnError = engine.ContinueOnError
-	ExitOnError     = engine.ExitOnError
-	PanicOnError    = engine.PanicOnError
+	ContinueOnError = engine.ContinueOnError // Continue and return error
+	ExitOnError     = engine.ExitOnError     // Exit with error message
+	PanicOnError    = engine.PanicOnError    // Panic on error
 )
 
-// Common user errors.
+// Common user-triggered exit conditions.
 type (
 	HelpRequested    = engine.HelpRequested
 	VersionRequested = engine.VersionRequested
-)
-
-type FlagPrintMode = engine.FlagPrintMode
-
-const (
-	PrintNone  = engine.PrintNone
-	PrintFlags = engine.PrintFlags
-	PrintShort = engine.PrintShort
-	PrintLong  = engine.PrintLong
-	PrintBoth  = engine.PrintBoth
 )
 
 var (
@@ -42,22 +32,29 @@ var (
 	RequestVersion     = engine.RequestVersion
 )
 
-// FlagSet is the public wrapper around the internal flag engine.
-// It provides the main API for defining flags and parsing CLI input.
-type FlagSet struct {
-	impl *engine.FlagSet
+// FlagPrintMode controls how the usage line is rendered.
+type FlagPrintMode = engine.FlagPrintMode
 
-	// Usage is an optional function that overrides default help output.
-	// It is called automatically when --help is requested.
-	Usage func()
+const (
+	PrintNone  = engine.PrintNone  // Omits usage line entirely
+	PrintFlags = engine.PrintFlags // Prints: [flags]
+	PrintShort = engine.PrintShort // Prints: -v
+	PrintLong  = engine.PrintLong  // Prints: --verbose
+	PrintBoth  = engine.PrintBoth  // Prints: -v|--verbose
+)
+
+// FlagSet is the user-facing flag parser and usage configurator.
+type FlagSet struct {
+	impl  *engine.FlagSet
+	Usage func() // Optional custom usage function
 }
 
-// NewFlagSet creates a new FlagSet with the given name and error handling mode.
+// NewFlagSet creates a new flag set with the given name and error handling mode.
 func NewFlagSet(name string, handling ErrorHandling) *FlagSet {
 	return &FlagSet{impl: engine.NewFlagSet(name, handling)}
 }
 
-// Parse parses the provided CLI args and environment variables.
+// Parse processes the given CLI args and populates all registered flags.
 func (f *FlagSet) Parse(args []string) error {
 	if f.Usage != nil {
 		f.impl.Usage = f.Usage
@@ -65,131 +62,201 @@ func (f *FlagSet) Parse(args []string) error {
 	return f.impl.Parse(args)
 }
 
-// Name returns the program name.
+// Name returns the flag set's name.
 func (f *FlagSet) Name() string { return f.impl.Name() }
 
-// Version sets the --version output string.
+// Version sets the --version string.
 func (f *FlagSet) Version(s string) { f.impl.Version(s) }
 
-// EnvPrefix sets a prefix for resolving environment variables.
+// EnvPrefix sets a prefix for all environment variables.
 func (f *FlagSet) EnvPrefix(s string) { f.impl.EnvPrefix(s) }
 
-// Authors adds author information to the help header.
-func (f *FlagSet) Authors(s string) { f.impl.Authors(s) }
-
-// Title sets the program title for help output.
+// Title sets the main title shown in usage output.
 func (f *FlagSet) Title(s string) { f.impl.Title(s) }
 
-// Description adds a paragraph to the help description.
+// Authors sets the list of authors printed in help output.
+func (f *FlagSet) Authors(s string) { f.impl.Authors(s) }
+
+// Description sets the top description section of the help output.
 func (f *FlagSet) Description(s string) { f.impl.Description(s) }
 
-// Note appends a note to the bottom of the help output.
+// Note sets the bottom note section of the help output.
 func (f *FlagSet) Note(s string) { f.impl.Note(s) }
 
-// DisableHelp disables automatic registration of the --help flag.
+// DisableHelp disables the automatic --help flag.
 func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
 
-// DisableVersion disables automatic registration of the --version flag.
+// DisableVersion disables the automatic --version flag.
 func (f *FlagSet) DisableVersion() { f.impl.DisableVersion() }
 
-// SortedFlags enables sorting of static flag help output.
+// HideEnvs hides all environment variable info in help output.
+func (f *FlagSet) HideEnvs() { f.impl.HideEnvs() }
+
+// SortedFlags enables sorted help output for static flags.
 func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
 
-// SortedGroups enables sorting of dynamic groups in help output.
+// SortedGroups enables sorted help output for dynamic groups.
 func (f *FlagSet) SortedGroups() { f.impl.SortedGroups(true) }
 
-// SetOutput changes the writer used for help and error messages.
+// SetOutput changes the destination writer for usage and error messages.
 func (f *FlagSet) SetOutput(w io.Writer) { f.impl.SetOutput(w) }
 
 // Output returns the current output writer.
 func (f *FlagSet) Output() io.Writer { return f.impl.Output() }
 
-// IgnoreInvalidEnv skips invalid values from environment variables.
+// IgnoreInvalidEnv disables errors for unrecognized environment values.
 func (f *FlagSet) IgnoreInvalidEnv(b bool) { f.impl.IgnoreInvalidEnv(b) }
 
-// SetGetEnvFn overrides how environment variables are looked up.
+// SetGetEnvFn overrides the function used to look up environment variables.
 func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.impl.SetGetEnvFn(fn) }
 
-// Globaldelimiter sets the default slice delimiter for all slice flags.
+// Globaldelimiter sets the delimiter used for all slice flags.
 func (f *FlagSet) Globaldelimiter(s string) { f.impl.Globaldelimiter(s) }
 
-// DefaultDelimiter returns the current slice delimiter.
-func (f *FlagSet) DefaultDelimiter() string {
-	return f.impl.DefaultDelimiter()
-}
+// DefaultDelimiter returns the delimiter used for slice flags.
+func (f *FlagSet) DefaultDelimiter() string { return f.impl.DefaultDelimiter() }
 
-// RequirePositional enforces a minimum number of positional arguments.
+// RequirePositional sets how many positional arguments must be present.
 func (f *FlagSet) RequirePositional(n int) { f.impl.RequirePositional(n) }
 
 // Args returns all leftover positional arguments.
 func (f *FlagSet) Args() []string { return f.impl.Args() }
 
-// Arg returns the nth positional argument, if present.
+// Arg returns the i-th positional argument and whether it exists.
 func (f *FlagSet) Arg(i int) (string, bool) { return f.impl.Arg(i) }
 
-// GetGroup retrieves a named mutual-exclusion group.
+// GetGroup retrieves or creates a named mutual exclusion group.
 func (f *FlagSet) GetGroup(name string) *core.MutualGroup { return f.impl.GetGroup(name) }
 
-// Groups returns all defined mutual-exclusion groups.
-func (f *FlagSet) Groups() []*core.MutualGroup {
-	return f.impl.Groups()
+// Groups returns all registered mutual exclusion groups.
+func (f *FlagSet) Groups() []*core.MutualGroup { return f.impl.Groups() }
+
+// AttachToGroup attaches a static flag to a mutual exclusion group.
+func (f *FlagSet) AttachToGroup(flag *core.BaseFlag, group string) {
+	f.impl.AttachToGroup(flag, group)
 }
 
-// AttachToGroup assigns a static flag to a mutual-exclusion group.
-func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
-	f.impl.AttachToGroup(bf, group)
-}
-
-// LookupFlag returns the static flag registered under the given name.
+// LookupFlag retrieves a static flag by name.
 func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
 	return f.impl.LookupFlag(name)
 }
 
-// DescriptionMaxLen sets the wrapping width for help descriptions.
-func (f *FlagSet) DescriptionMaxLen(n int) { f.impl.DescriptionMaxLen(n) }
-
-// DescriptionIndent sets the indentation width for help descriptions.
-func (f *FlagSet) DescriptionIndent(n int) { f.impl.DescriptionIndent(n) }
-
-// PrintDefaults prints static and dynamic flags with their default values.
-func (f *FlagSet) PrintDefaults(w io.Writer, width int) { f.impl.PrintDefaults(w, width) }
-
-// PrintUsage writes help output in the given format mode.
-func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) { f.impl.PrintUsage(w, mode) }
-
-// PrintTitle writes the help title section.
-func (f *FlagSet) PrintTitle(w io.Writer) { f.impl.PrintTitle(w) }
-
-// PrintNotes writes additional help notes, wrapped at the given width.
-func (f *FlagSet) PrintNotes(w io.Writer, width int) { f.impl.PrintNotes(w, width) }
-
-// PrintDescription writes the description section, wrapped at the given width.
-func (f *FlagSet) PrintDescription(w io.Writer, width int) { f.impl.PrintDescription(w, width) }
-
-// PrintAuthors writes the authors section.
-func (f *FlagSet) PrintAuthors(w io.Writer) { f.impl.PrintAuthors(w) }
-
-// DynamicGroup creates or returns a dynamic flag group by name.
+// DynamicGroup registers or retrieves a dynamic group by name.
 func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return f.impl.DynamicGroup(name)
 }
 
-// DynamicGroups returns all registered dynamic flag groups.
+// DynamicGroups returns all dynamic groups in registration order.
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.impl.DynamicGroups()
 }
 
-// GetDynamic returns the typed value for a dynamic flag field by ID.
-func GetDynamic[T any](group *dynamic.Group, id string, flag string) (T, error) {
+// SetDescIndent sets the left indent for the description block.
+func (f *FlagSet) SetDescIndent(n int) { f.impl.SetDescIndent(n) }
+
+// DescIndent returns the left indent for the description block.
+func (f *FlagSet) DescIndent() int { return f.impl.DescIndent() }
+
+// SetDescWidth sets the maximum line width for the description.
+func (f *FlagSet) SetDescWidth(n int) { f.impl.SetDescWidth(n) }
+
+// DescWidth returns the maximum line width for the description.
+func (f *FlagSet) DescWidth() int { return f.impl.DescWidth() }
+
+// SetUsageIndent sets the left indent for usage lines.
+func (f *FlagSet) SetUsageIndent(n int) { f.impl.SetUsageIndent(n) }
+
+// UsageIndent returns the left indent for usage lines.
+func (f *FlagSet) UsageIndent() int { return f.impl.UsageIndent() }
+
+// SetUsageColumn sets the column where descriptions start.
+func (f *FlagSet) SetUsageColumn(col int) { f.impl.SetUsageColumn(col) }
+
+// UsageColumn returns the column where descriptions start.
+func (f *FlagSet) UsageColumn() int { return f.impl.UsageColumn() }
+
+// SetUsageWidth sets the maximum line width for usage output.
+func (f *FlagSet) SetUsageWidth(n int) { f.impl.SetUsageWidth(n) }
+
+// UsageWidth returns the maximum line width for usage output.
+func (f *FlagSet) UsageWidth() int { return f.impl.UsageWidth() }
+
+// StaticAutoUsageColumn calculates the recommended usage column for static flags.
+func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
+	return f.impl.StaticAutoUsageColumn(padding)
+}
+
+// DynamicAutoUsageColumn calculates the recommended usage column for dynamic flags.
+func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
+	return f.impl.DynamicAutoUsageColumn(padding)
+}
+
+// SetNoteIndent sets the left indent for the note block.
+func (f *FlagSet) SetNoteIndent(n int) { f.impl.SetNoteIndent(n) }
+
+// NoteIndent returns the left indent for the note block.
+func (f *FlagSet) NoteIndent() int { return f.impl.NoteIndent() }
+
+// SetNoteWidth sets the maximum width for the note block.
+func (f *FlagSet) SetNoteWidth(n int) { f.impl.SetNoteWidth(n) }
+
+// NoteWidth returns the maximum width for the note block.
+func (f *FlagSet) NoteWidth() int { return f.impl.NoteWidth() }
+
+// SetStaticUsageNote sets an optional note for the static usage section.
+func (f *FlagSet) SetStaticUsageNote(s string) { f.impl.SetStaticUsageNote(s) }
+
+// StaticUsageNote returns the static usage note text.
+func (f *FlagSet) StaticUsageNote() string { return f.impl.StaticUsageNote() }
+
+// SetDynamicUsageNote sets an optional note for the dynamic usage section.
+func (f *FlagSet) SetDynamicUsageNote(s string) { f.impl.SetDynamicUsageNote(s) }
+
+// DynamicUsageNote returns the dynamic usage note text.
+func (f *FlagSet) DynamicUsageNote() string { return f.impl.DynamicUsageNote() }
+
+// PrintUsage renders the top usage line.
+func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
+	f.impl.PrintUsage(w, mode)
+}
+
+// PrintTitle renders the title above all help content.
+func (f *FlagSet) PrintTitle(w io.Writer) { f.impl.PrintTitle(w) }
+
+// PrintAuthors renders the author line if set.
+func (f *FlagSet) PrintAuthors(w io.Writer) { f.impl.PrintAuthors(w) }
+
+// PrintDescription renders the full description block.
+func (f *FlagSet) PrintDescription(w io.Writer, indent, width int) {
+	f.impl.PrintDescription(w, indent, width)
+}
+
+// PrintStaticDefaults renders all static flag usage lines.
+func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, col, width int) {
+	f.impl.PrintStaticDefaults(w, indent, col, width)
+}
+
+// PrintDynamicDefaults renders all dynamic flag usage lines.
+func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, col, width int) {
+	f.impl.PrintDynamicDefaults(w, indent, col, width)
+}
+
+// PrintNotes renders the notes section, if configured.
+func (f *FlagSet) PrintNotes(w io.Writer, indent, width int) {
+	f.impl.PrintNotes(w, indent, width)
+}
+
+// GetDynamic retrieves the value for a dynamic flag by group, id, and field name.
+func GetDynamic[T any](group *dynamic.Group, id, flag string) (T, error) {
 	return dynamic.Get[T](group, id, flag)
 }
 
-// MustGetDynamic returns the typed value for a dynamic field or panics if unset.
-func MustGetDynamic[T any](group *dynamic.Group, id string, flag string) T {
+// MustGetDynamic retrieves the value for a dynamic flag or panics.
+func MustGetDynamic[T any](group *dynamic.Group, id, flag string) T {
 	return dynamic.MustGet[T](group, id, flag)
 }
 
-// GetOrDefaultDynamic returns the value for a dynamic field or its default.
+// GetOrDefaultDynamic returns the value for a dynamic flag or its default.
 func GetOrDefaultDynamic[T any](group *dynamic.Group, id, flag string) T {
 	return dynamic.GetOrDefault[T](group, id, flag)
 }

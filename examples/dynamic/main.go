@@ -8,21 +8,17 @@ import (
 )
 
 func main() {
-	fmt.Println("start")
+	tf := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+	tf.Version("1.0.1")
 
-	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-	fs.Version("1.0.1")
-	fs.DescriptionIndent(55)
-	fs.DescriptionMaxLen(100)
+	tf.Bool("debug", false, "debug mode").Strict()
 
-	fs.Bool("debug", false, "debug mode").Strict()
-
-	z := fs.DynamicGroup("tcp").Title("TCP").Note("this is a group note")
+	z := tf.DynamicGroup("tcp").Title("TCP").Note("this is a group note")
 	z.Bool("verbose", false, "verbose mode").Strict()
 	z.StringSlice("addresses", []string{}, "API address")
 	z.Int("port", 8080, "API port")
 
-	a := fs.DynamicGroup("http")
+	a := tf.DynamicGroup("http")
 	a.String("address", "", "API address")
 	a.Bool("verbose", false, "verbose mode").Strict()
 	a.String("log-level", "info", "log level").
@@ -32,7 +28,7 @@ func main() {
 	a.Title("HTTP")
 	a.Description("this is a group description")
 
-	fs.SortedGroups()
+	tf.SortedGroups()
 
 	// parse two dynamic flags
 	args := []string{
@@ -44,7 +40,7 @@ func main() {
 	}
 	args = append(args, os.Args[1:]...)
 
-	if err := fs.Parse(args); err != nil {
+	if err := tf.Parse(args); err != nil {
 		if tinyflags.IsHelpRequested(err) || tinyflags.IsVersionRequested(err) {
 			fmt.Println(err.Error()) // nolint:errcheck
 			os.Exit(0)
@@ -66,7 +62,7 @@ func main() {
 	}
 	fmt.Println(i.GetAny("alpha"))
 
-	for _, group := range fs.DynamicGroups() {
+	for _, group := range tf.DynamicGroups() {
 		for _, id := range group.Instances() {
 			name := group.Name()
 

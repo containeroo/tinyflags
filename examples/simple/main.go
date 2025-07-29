@@ -18,36 +18,36 @@ func main() {
 
 	args = append(args, os.Args[1:]...) // append remaining args
 
-	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-	fs.Version("v1.0")    // optional, enables -v, --version
-	fs.EnvPrefix("MYAPP") // optional, enables --env-key for all flags
+	tf := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+	tf.Version("v1.0")    // optional, enables -v, --version
+	tf.EnvPrefix("MYAPP") // optional, enables --env-key for all flags
 
-	host := fs.String("host", "localhost", "host to use").
+	host := tf.String("host", "localhost", "host to use").
 		Required().
 		Value()
 
-	port := fs.Int("port", 8080, "port to listen on").
+	port := tf.Int("port", 8080, "port to listen on").
 		Env("MYAPP_CUSTOM_PORT"). // overrides default env key (otherwise "MYAPP_PORT")
 		Required().
 		Value()
 
-	debug := fs.Bool("debug", false, "enable debug mode").
+	debug := tf.Bool("debug", false, "enable debug mode").
 		Strict(). // strict bools require explicit value (--debug=true | --debug=false)
 		Short("d").
 		Value()
 
-	log := fs.Bool("log", false, "enable logging").Group("logging").Short("l").Value()
-	noLog := fs.Bool("no-log", false, "disable logging").Group("logging").Short("L").Value()
-	fs.GetGroup("logging").Hidden()
+	log := tf.Bool("log", false, "enable logging").Group("logging").Short("l").Value()
+	noLog := tf.Bool("no-log", false, "disable logging").Group("logging").Short("L").Value()
+	tf.GetGroup("logging").Hidden()
 
-	tags := fs.StringSlice("tag", []string{}, "list of tags").
+	tags := tf.StringSlice("tag", []string{}, "list of tags").
 		Value()
 
-	loglevel := fs.String("log-level", "info", "log level to use").
+	loglevel := tf.String("log-level", "info", "log level to use").
 		Choices("debug", "info", "warn", "error").
 		Value()
 
-	if err := fs.Parse(args); err != nil {
+	if err := tf.Parse(args); err != nil {
 		if tinyflags.IsHelpRequested(err) || tinyflags.IsVersionRequested(err) {
 			fmt.Fprint(os.Stdout, err.Error()+"\n") // nolint:errcheck
 			os.Exit(0)

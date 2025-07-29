@@ -14,130 +14,120 @@ type FlagSet struct {
 	name               string                    // Application or command name (used in usage)
 	errorHandling      ErrorHandling             // Behavior when parsing fails
 	staticFlagsMap     map[string]*core.BaseFlag // All registered static flags by name
-	staticFlagsOrder   []*core.BaseFlag          // Registration order of static flags
-	dynamicGroupsOrder []*dynamic.Group          // Ordered list of dynamic groups
+	staticFlagsOrder   []*core.BaseFlag          // Static flags in registration order
 	dynamicGroupsMap   map[string]*dynamic.Group // All dynamic groups by name
-	groups             []*core.MutualGroup       // Registered mutual exclusion groups
+	dynamicGroupsOrder []*dynamic.Group          // Dynamic groups in registration order
+	groups             []*core.MutualGroup       // All mutual exclusion groups
 	positional         []string                  // Remaining non-flag arguments
 	requiredPositional int                       // Required positional argument count
 	envPrefix          string                    // Optional ENV prefix (e.g. "APP_")
 	getEnv             func(string) string       // Function used to read ENV vars (default: os.Getenv)
 	ignoreInvalidEnv   bool                      // Whether to ignore unknown ENV overrides
 	defaultDelimiter   string                    // Global slice delimiter (default: ",")
-	title              string                    // Printed above flags in usage
-	desc               string                    // Prolog before flag list
-	notes              string                    // Epilog after flag list
-	versionString      string                    // --version output string
-	usagePrintMode     FlagPrintMode             // Usage output mode
-	descMaxLen         int                       // Max length before description wrapping
-	descIndent         int                       // Left indent for wrapped lines
+	title              string                    // Title shown in usage output
+	desc               string                    // Prolog before flags
+	notes              string                    // Epilog after flags
+	versionString      string                    // Version string for --version
+	usagePrintMode     FlagPrintMode             // Usage print mode (short|long|both|flags|none)
 	output             io.Writer                 // Destination for help output
-	enableHelp         bool                      // Whether --help is enabled
-	enableVer          bool                      // Whether --version is enabled
+	enableHelp         bool                      // Whether built-in --help is enabled
+	enableVer          bool                      // Whether built-in --version is enabled
 	showHelp           *bool                     // Parsed value of --help
 	showVersion        *bool                     // Parsed value of --version
-	Usage              func()                    // Custom usage function
-	sortFlags          bool                      // Sort static flags
-	sortGroups         bool                      // Sort dynamic groups
-	authors            string                    // Optional authors string
-	hideEnvs           bool                      // Hide environment info in help
+	Usage              func()                    // Custom usage function (optional)
+	sortFlags          bool                      // Enable static flag sorting
+	sortGroups         bool                      // Enable dynamic group sorting
+	authors            string                    // Optional authors block
+	hideEnvs           bool                      // Globally hide environment key hints
+
+	// Indentation and width config for description
+	descIndent int
+	descWidth  int
+
+	// Indentation and width config for static flags
+	usageStaticNote   string
+	usageStaticIndent int
+	usageStaticCol    int
+	usageStaticWidth  int
+
+	// Indentation and width config for dynamic flags
+	usageDynamicNote   string
+	usageDynamicIndent int
+	usageDynamicCol    int
+	usageDynamicWidth  int
+
+	// Indentation and width config for notes
+	noteIndent int
+	noteWidth  int
 }
 
 // NewFlagSet creates a new FlagSet with the given name and error handling policy.
 func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 	fs := &FlagSet{
-		name:             name,
-		staticFlagsMap:   make(map[string]*core.BaseFlag),
-		getEnv:           os.Getenv,
-		errorHandling:    errorHandling,
-		enableHelp:       true,
-		enableVer:        true,
-		descIndent:       40,
-		descMaxLen:       100,
-		defaultDelimiter: ",",
-		usagePrintMode:   PrintFlags,
-		title:            "Flags:",
-		output:           os.Stdout,
+		name:               name,
+		errorHandling:      errorHandling,
+		staticFlagsMap:     make(map[string]*core.BaseFlag),
+		getEnv:             os.Getenv,
+		enableHelp:         true,
+		enableVer:          true,
+		defaultDelimiter:   ",",
+		output:             os.Stdout,
+		usagePrintMode:     PrintFlags,
+		descIndent:         0,
+		descWidth:          400,
+		usageStaticIndent:  4,
+		usageStaticWidth:   200,
+		usageDynamicIndent: 4,
+		usageDynamicWidth:  200,
+		noteIndent:         0,
+		noteWidth:          400,
+		title:              "Flags:",
 	}
 
-	// Define a default usage function
 	fs.Usage = func() {
 		out := fs.Output()
+		if fs.usageStaticCol == 0 {
+			fs.usageStaticCol = fs.StaticAutoUsageColumn(1)
+			fs.usageDynamicCol = fs.DynamicAutoUsageColumn(1)
+		}
+
 		fs.PrintUsage(out, fs.usagePrintMode)
 		fs.PrintTitle(out)
 		fs.PrintAuthors(out)
-		fs.PrintDescription(out, fs.descMaxLen)
-		fs.PrintDefaults(out, fs.descMaxLen)
-		fs.PrintNotes(out, fs.descMaxLen)
+		fs.PrintDescription(out, fs.descIndent, fs.descWidth)
+		fs.PrintStaticDefaults(out, fs.usageStaticIndent, fs.usageStaticCol, fs.usageStaticWidth)
+		fs.PrintDynamicDefaults(out, fs.usageDynamicIndent, fs.usageDynamicCol, fs.usageDynamicWidth)
+		fs.PrintNotes(out, fs.noteIndent, fs.noteWidth)
 	}
 
 	return fs
 }
 
-// Name returns the name of the application.
-func (f *FlagSet) Name() string { return f.name }
+// --- Metadata Configuration ---
 
-// Version sets the version string to enable the --version flag.
-func (f *FlagSet) Version(s string) {
-	f.versionString = s
-	f.enableVer = true
-}
-
-// EnvPrefix sets a prefix to be prepended to all environment variables.
-func (f *FlagSet) EnvPrefix(prefix string) { f.envPrefix = prefix }
-
-// Title sets the usage section title.
-func (f *FlagSet) Title(s string) { f.title = s }
-
-// Authors sets the usage author block.
-func (f *FlagSet) Authors(s string) { f.authors = s }
-
-// Description sets the prolog text shown above the flags.
-func (f *FlagSet) Description(s string) { f.desc = s }
-
-// Note sets the epilog text shown below the flags.
-func (f *FlagSet) Note(s string) { f.notes = s }
-
-// DisableHelp disables the automatic --help flag.
-func (f *FlagSet) DisableHelp() { f.enableHelp = false }
-
-// DisableVersion disables the automatic --version flag.
-func (f *FlagSet) DisableVersion() {
-	f.enableVer = false
-	f.versionString = ""
-}
-
-// HideEnvs disables environment variable display in help.
-func (f *FlagSet) HideEnvs() { f.hideEnvs = true }
-
-// SortedFlags enables or disables sorted help output.
-func (f *FlagSet) SortedFlags(enable bool) { f.sortFlags = enable }
-
-// SortedGroups enables or disables sorted group output.
-func (f *FlagSet) SortedGroups(enable bool) { f.sortGroups = enable }
-
-// SetOutput sets the writer for help output.
-func (f *FlagSet) SetOutput(w io.Writer) { f.output = w }
-
-// Output returns the configured help writer.
-func (f *FlagSet) Output() io.Writer { return f.output }
-
-// IgnoreInvalidEnv controls whether unknown environment values cause errors.
-func (f *FlagSet) IgnoreInvalidEnv(enable bool) { f.ignoreInvalidEnv = enable }
-
-// SetGetEnvFn sets a custom environment lookup function.
+func (f *FlagSet) Name() string                       { return f.name }
+func (f *FlagSet) EnvPrefix(prefix string)            { f.envPrefix = prefix }
+func (f *FlagSet) DefaultDelimiter() string           { return f.defaultDelimiter }
+func (f *FlagSet) Globaldelimiter(s string)           { f.defaultDelimiter = s }
+func (f *FlagSet) Version(s string)                   { f.versionString = s; f.enableVer = true }
+func (f *FlagSet) Title(s string)                     { f.title = s }
+func (f *FlagSet) Authors(s string)                   { f.authors = s }
+func (f *FlagSet) Description(s string)               { f.desc = s }
+func (f *FlagSet) Note(s string)                      { f.notes = s }
+func (f *FlagSet) HideEnvs()                          { f.hideEnvs = true }
+func (f *FlagSet) DisableHelp()                       { f.enableHelp = false }
+func (f *FlagSet) DisableVersion()                    { f.enableVer = false; f.versionString = "" }
+func (f *FlagSet) SortedFlags(enable bool)            { f.sortFlags = enable }
+func (f *FlagSet) SortedGroups(enable bool)           { f.sortGroups = enable }
+func (f *FlagSet) SetOutput(w io.Writer)              { f.output = w }
+func (f *FlagSet) Output() io.Writer                  { return f.output }
+func (f *FlagSet) IgnoreInvalidEnv(enable bool)       { f.ignoreInvalidEnv = enable }
 func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.getEnv = fn }
 
-// Globaldelimiter sets the delimiter used for slice flags.
-func (f *FlagSet) Globaldelimiter(s string) { f.defaultDelimiter = s }
+// --- Positional Arguments ---
 
-// RequirePositional sets how many positional arguments are required.
 func (f *FlagSet) RequirePositional(n int) { f.requiredPositional = n }
-
-// Args returns all remaining positional arguments.
-func (f *FlagSet) Args() []string { return f.positional }
-
-// Arg returns the positional argument at index i.
+func (f *FlagSet) Args() []string          { return f.positional }
 func (f *FlagSet) Arg(i int) (string, bool) {
 	if i >= 0 && i < len(f.positional) {
 		return f.positional[i], true
@@ -145,45 +135,58 @@ func (f *FlagSet) Arg(i int) (string, bool) {
 	return "", false
 }
 
-// DescriptionMaxLen sets the maximum line width for wrapped descriptions.
-func (f *FlagSet) DescriptionMaxLen(line int) { f.descMaxLen = line }
+// --- Usage Formatting Configuration ---
 
-// DescriptionIndent sets the number of spaces before descriptions.
-func (f *FlagSet) DescriptionIndent(indent int) { f.descIndent = indent }
+func (f *FlagSet) SetDescIndent(n int)  { f.descIndent = n }
+func (f *FlagSet) DescIndent() int      { return f.descIndent }
+func (f *FlagSet) SetDescWidth(max int) { f.descWidth = max }
+func (f *FlagSet) DescWidth() int       { return f.descWidth }
 
-// DefaultDelimiter returns the current default delimiter.
-func (f *FlagSet) DefaultDelimiter() string { return f.defaultDelimiter }
+func (f *FlagSet) SetUsageIndent(n int)   { f.usageStaticIndent = n }
+func (f *FlagSet) UsageIndent() int       { return f.usageStaticIndent }
+func (f *FlagSet) SetUsageColumn(col int) { f.usageStaticCol = col }
+func (f *FlagSet) UsageColumn() int       { return f.usageStaticCol }
+func (f *FlagSet) SetUsageWidth(max int)  { f.usageStaticWidth = max }
+func (f *FlagSet) UsageWidth() int        { return f.usageStaticWidth }
+func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
+	return f.calcStaticUsageColumn(padding)
+}
 
-// RegisterFlag registers a static flag.
+func (f *FlagSet) SetStaticUsageNote(s string) { f.usageStaticNote = s }
+func (f *FlagSet) StaticUsageNote() string     { return f.usageStaticNote }
+
+func (f *FlagSet) SetDynamicUsageNote(s string) { f.usageDynamicNote = s }
+func (f *FlagSet) DynamicUsageNote() string     { return f.usageDynamicNote }
+
+func (f *FlagSet) SetNoteIndent(n int)  { f.noteIndent = n }
+func (f *FlagSet) NoteIndent() int      { return f.noteIndent }
+func (f *FlagSet) SetNoteWidth(max int) { f.noteWidth = max }
+func (f *FlagSet) NoteWidth() int       { return f.noteWidth }
+
+func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
+	return f.calcDynamicUsageColumn(padding)
+}
+
+// --- Flag & Group Registration ---
+
 func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
 	f.staticFlagsMap[name] = bf
 	f.staticFlagsOrder = append(f.staticFlagsOrder, bf)
 }
 
-// OrderedStaticFlags returns all static flags in sorted order.
+func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
+	return f.staticFlagsMap[name]
+}
+
 func (f *FlagSet) OrderedStaticFlags() []*core.BaseFlag {
-	var all []*core.BaseFlag
+	all := make([]*core.BaseFlag, 0, len(f.staticFlagsMap))
 	for _, fl := range f.staticFlagsMap {
 		all = append(all, fl)
 	}
-	sort.Slice(all, func(i, j int) bool {
-		return all[i].Name < all[j].Name
-	})
+	sort.Slice(all, func(i, j int) bool { return all[i].Name < all[j].Name })
 	return all
 }
 
-func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
-	var groups []*dynamic.Group
-	for _, g := range f.dynamicGroupsOrder {
-		groups = append(groups, g)
-	}
-	sort.SliceStable(groups, func(i, j int) bool {
-		return groups[i].Name() < groups[j].Name()
-	})
-	return groups
-}
-
-// DynamicGroup creates a new dynamic group with the given prefix.
 func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	if f.dynamicGroupsMap == nil {
 		f.dynamicGroupsMap = make(map[string]*dynamic.Group)
@@ -193,16 +196,25 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	}
 	g := dynamic.NewGroup(f, name)
 	f.dynamicGroupsMap[name] = g
-	f.dynamicGroupsOrder = append(f.dynamicGroupsOrder, g) // track order
+	f.dynamicGroupsOrder = append(f.dynamicGroupsOrder, g)
 	return g
 }
 
-// DynamicGroups returns all dynamic groups in registration order.
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.dynamicGroupsOrder
 }
 
-// GetGroup returns a mutual exclusion group by name (creating it if necessary).
+func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
+	groups := make([]*dynamic.Group, len(f.dynamicGroupsOrder))
+	copy(groups, f.dynamicGroupsOrder)
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].Name() < groups[j].Name()
+	})
+	return groups
+}
+
+// --- Mutual Group Handling ---
+
 func (f *FlagSet) GetGroup(name string) *core.MutualGroup {
 	for _, g := range f.groups {
 		if g.Name == name {
@@ -214,29 +226,22 @@ func (f *FlagSet) GetGroup(name string) *core.MutualGroup {
 	return group
 }
 
-// AddGroup manually adds a mutual exclusion group.
 func (f *FlagSet) AddGroup(name string, g *core.MutualGroup) {
 	f.groups = append(f.groups, g)
 }
 
-// Groups returns all mutual exclusion groups.
 func (f *FlagSet) Groups() []*core.MutualGroup {
 	return f.groups
 }
 
-// AttachToGroup connects a flag to a mutual exclusion group.
 func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
 	g := f.GetGroup(group)
 	g.Flags = append(g.Flags, bf)
 	bf.Group = g
 }
 
-// LookupFlag returns a registered static flag by name.
-func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
-	return f.staticFlagsMap[name]
-}
+// --- Builtin Flags ---
 
-// maybeAddBuiltinFlags adds --help and --version if enabled and not already defined.
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.staticFlagsMap["help"]; !exists {
