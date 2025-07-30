@@ -77,8 +77,8 @@ func (v *SliceValue[T]) Changed() bool {
 	return v.changed
 }
 
-// setValidate sets a per-item validation function.
-func (v *SliceValue[T]) setValidate(fn func(T) error) { v.validate = fn }
+// setFinalize sets a per-item validation function.
+func (v *SliceValue[T]) setFinalize(fn func(T) error) { v.validate = fn }
 
 // Base returns the underlying value.
 func (v *SliceValue[T]) Base() *SliceValue[T] { return v }

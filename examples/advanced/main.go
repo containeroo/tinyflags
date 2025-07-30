@@ -62,7 +62,7 @@ func parseArgs(args []string) (*Config, error) {
 		Value()
 
 	schemaHostPort := tf.String("schema-host-port", "scheme://host:port", "schema://host:port").
-		Validate(func(s string) error {
+		Finalize(func(s string) error {
 			u, err := url.Parse(s)
 			if err != nil || u.Scheme == "" || u.Host == "" {
 				return fmt.Errorf("invalid scheme://host:port format")
@@ -71,7 +71,7 @@ func parseArgs(args []string) (*Config, error) {
 		}).Value()
 
 	hostip := tf.IP("host-ip", net.ParseIP("10.0.10.8"), "host ip to use. Must be in range 10.0.10.0/24").
-		Validate(func(ip net.IP) error {
+		Finalize(func(ip net.IP) error {
 			_, ipNet, _ := net.ParseCIDR("10.0.10.0/24")
 			if !ipNet.Contains(ip) {
 				return fmt.Errorf("must be in range %s", ipNet.String())

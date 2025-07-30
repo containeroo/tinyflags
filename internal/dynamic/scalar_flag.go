@@ -15,14 +15,14 @@ type ScalarFlag[T any] struct {
 
 // Choices restricts the allowed values to the provided list.
 func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
-	f.item.setValidate(utils.AllowOnly(f.item.format, allowed))
+	f.item.setFinalize(utils.AllowOnly(f.item.format, allowed))
 	f.Allowed(utils.FormatList(f.item.format, allowed)...)
 	return f
 }
 
-// Validate adds a custom validation function for values.
-func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
-	f.item.setValidate(fn)
+// Finalize adds a custom validation function for values.
+func (f *ScalarFlag[T]) Finalize(fn func(T) error) *ScalarFlag[T] {
+	f.item.setFinalize(fn)
 	return f
 }
 

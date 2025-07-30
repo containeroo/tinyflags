@@ -21,14 +21,14 @@ func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 
 // Choices restricts allowed slice values to the given list.
 func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
-	f.item.setValidate(utils.AllowOnly(f.item.format, allowed))
+	f.item.setFinalize(utils.AllowOnly(f.item.format, allowed))
 	f.Allowed(utils.FormatList(f.item.format, allowed)...)
 	return f
 }
 
-// Validate sets a custom validation function for each element.
-func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
-	f.item.setValidate(fn)
+// Finalize sets a custom validation function for each element.
+func (f *SliceFlag[T]) Finalize(fn func(T) error) *SliceFlag[T] {
+	f.item.setFinalize(fn)
 	return f
 }
 

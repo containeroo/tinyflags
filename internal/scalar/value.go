@@ -48,8 +48,8 @@ func (f *ScalarValue[T]) Default() string { return f.format(f.def) }
 // Changed returns true if the value was changed.
 func (f *ScalarValue[T]) Changed() bool { return f.changed }
 
-// setValidate sets a per-item validation function.
-func (f *ScalarValue[T]) setValidate(fn func(T) error) { f.validate = fn }
+// setFinalize sets a per-item validation function.
+func (f *ScalarValue[T]) setFinalize(fn func(T) error) { f.validate = fn }
 
 // Base returns the underlying value.
 func (f *ScalarValue[T]) Base() *ScalarValue[T] { return f }
