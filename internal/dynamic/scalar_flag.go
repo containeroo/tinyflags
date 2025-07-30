@@ -26,6 +26,12 @@ func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
 	return f
 }
 
+// Finalize adds a custom finalizer function for values.
+func (f *ScalarFlag[T]) Finalize(fn func(T) T) *ScalarFlag[T] {
+	f.item.setFinalize(fn)
+	return f
+}
+
 // Has reports whether a value was set for the given ID.
 func (f *ScalarFlag[T]) Has(id string) bool {
 	_, ok := f.item.values[id]

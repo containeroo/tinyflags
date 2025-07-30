@@ -7,6 +7,7 @@ type DynamicScalarValue[T any] struct {
 	parse    func(string) (T, error) // Parser from raw input
 	format   func(T) string          // Formatter to string
 	validate func(T) error           // Optional validation function
+	finalize (func(T) T)             // Optional finalizer function
 	values   map[string]T            // Parsed values per ID
 }
 
@@ -32,6 +33,9 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 			return err
 		}
 	}
+	if d.finalize != nil {
+		val = d.finalize(val)
+	}
 	d.values[id] = val
 	return nil
 }
@@ -39,6 +43,11 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 // setValidate sets the optional validation function.
 func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn
+}
+
+// setFinalize sets the optional finalizer function.
+func (d *DynamicScalarValue[T]) setFinalize(fn func(T) T) {
+	d.finalize = fn
 }
 
 // Base returns itself for generic access.

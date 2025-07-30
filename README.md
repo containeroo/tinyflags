@@ -12,7 +12,7 @@ Zero dependencies. Full generics support. Rich usage output.
 - **Environment variable overrides** (`EnvPrefix`, per-flag opt-out)
 - **Required, deprecated, and grouped flags**
 - **Slice flags** (`[]T`) with custom delimiters
-- **Allowed choices & validation**
+- **Allowed choices, validation and finalizers**
 - **Mutual-exclusion groups**
 - **Require-together groups**
 - **Custom placeholders & help sections**

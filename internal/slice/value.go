@@ -15,6 +15,7 @@ type SliceValue[T any] struct {
 	parse     func(string) (T, error)
 	format    func(T) string
 	validate  func(T) error
+	finalize  (func(T) T)
 }
 
 // NewSliceValue creates a new slice value.
@@ -51,6 +52,9 @@ func (v *SliceValue[T]) Set(s string) error {
 				return fmt.Errorf("invalid value %q: %w", raw, err)
 			}
 		}
+		if v.finalize != nil {
+			val = v.finalize(val)
+		}
 		*v.ptr = append(*v.ptr, val)
 	}
 	v.value = *v.ptr
@@ -79,6 +83,9 @@ func (v *SliceValue[T]) Changed() bool {
 
 // setValidate sets a per-item validation function.
 func (v *SliceValue[T]) setValidate(fn func(T) error) { v.validate = fn }
+
+// setFinalize sets a per-item finalizer function.
+func (v *SliceValue[T]) setFinalize(fn func(T) T) { v.finalize = fn }
 
 // Base returns the underlying value.
 func (v *SliceValue[T]) Base() *SliceValue[T] { return v }

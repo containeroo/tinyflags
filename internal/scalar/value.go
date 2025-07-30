@@ -9,6 +9,7 @@ type ScalarValue[T any] struct {
 	parse    func(string) (T, error)
 	format   func(T) string
 	validate func(T) error
+	finalize (func(T) T)
 }
 
 // NewScalarValue creates a new scalar value.
@@ -33,6 +34,9 @@ func (f *ScalarValue[T]) Set(s string) error {
 			return err
 		}
 	}
+	if f.finalize != nil {
+		val = f.finalize(val)
+	}
 	*f.ptr = val
 	f.value = val
 	f.changed = true
@@ -50,6 +54,9 @@ func (f *ScalarValue[T]) Changed() bool { return f.changed }
 
 // setValidate sets a per-item validation function.
 func (f *ScalarValue[T]) setValidate(fn func(T) error) { f.validate = fn }
+
+// setFinalize sets a per-item finalizer function.
+func (f *ScalarValue[T]) setFinalize(fn func(T) T) { f.finalize = fn }
 
 // Base returns the underlying value.
 func (f *ScalarValue[T]) Base() *ScalarValue[T] { return f }

@@ -21,6 +21,7 @@ type Config struct {
 	Insecure       bool
 	LogLevel       string
 	Paths          []string
+	URL            *url.URL
 }
 
 func parseArgs(args []string) (*Config, error) {
@@ -68,7 +69,8 @@ func parseArgs(args []string) (*Config, error) {
 				return fmt.Errorf("invalid scheme://host:port format")
 			}
 			return nil
-		}).Value()
+		}).
+		Value()
 
 	hostip := tf.IP("host-ip", net.ParseIP("10.0.10.8"), "host ip to use. Must be in range 10.0.10.0/24").
 		Validate(func(ip net.IP) error {
@@ -90,6 +92,25 @@ func parseArgs(args []string) (*Config, error) {
 
 	verbose := tf.Counter("verbose", -1, "verbose mode").
 		Short("v").
+		Value()
+
+	url := tf.URL("url", &url.URL{}, "Base REST API URL").
+		Finalize(func(u *url.URL) *url.URL {
+			// Clone to avoid mutating the original (optional, if needed)
+			u2 := *u
+			if len(u2.Path) > 0 && u2.Path[len(u2.Path)-1] != '/' {
+				u2.Path += "/"
+			}
+			return &u2
+		}).
+		Validate(func(u *url.URL) error {
+			switch u.Path {
+			case "/rest/api/2/", "/rest/api/3/":
+				return nil
+			default:
+				return fmt.Errorf("URL path must end with /rest/api/2 or /rest/api/3, got %q", u.Path)
+			}
+		}).
 		Value()
 
 	if err := tf.Parse(args); err != nil {
@@ -116,6 +137,7 @@ func parseArgs(args []string) (*Config, error) {
 		Insecure:       *insecure,
 		LogLevel:       *loglevel,
 		Paths:          paths,
+		URL:            *url,
 	}, nil
 }
 

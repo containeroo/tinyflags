@@ -13,6 +13,7 @@ type DynamicSliceValue[T any] struct {
 	format    func(T) string          // Function to format a single element
 	delimiter string                  // Separator used to split input
 	validate  func(T) error           // Optional validation function
+	finalize  (func(T) T)             // Optional finalizer function
 	values    map[string][]T          // Parsed values per ID
 }
 
@@ -46,6 +47,9 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 				return fmt.Errorf("invalid value %q: %w", chunk, err)
 			}
 		}
+		if d.finalize != nil {
+			val = d.finalize(val)
+		}
 		d.values[id] = append(d.values[id], val)
 	}
 	return nil
@@ -54,6 +58,11 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 // setValidate sets a validation function for individual elements.
 func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn
+}
+
+// setFinalize sets a per-item finalizer function.
+func (d *DynamicSliceValue[T]) setFinalize(fn func(T) T) {
+	d.finalize = fn
 }
 
 // setDelimiter sets the delimiter used to split input values.

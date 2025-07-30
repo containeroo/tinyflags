@@ -32,6 +32,12 @@ func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
 	return f
 }
 
+// Finalize sets a custom finalizer function for each element.
+func (f *SliceFlag[T]) Finalize(fn func(T) T) *SliceFlag[T] {
+	f.item.setFinalize(fn)
+	return f
+}
+
 // Has reports whether a value is set for the given ID.
 func (f *SliceFlag[T]) Has(id string) bool {
 	_, ok := f.item.values[id]

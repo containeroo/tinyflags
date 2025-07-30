@@ -14,7 +14,6 @@ func main() {
 		"--port=9000",
 		"--host=example.com",
 		"-dtrue",
-		"--user", "admin",
 	}
 
 	args = append(args, os.Args[1:]...) // append remaining args

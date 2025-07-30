@@ -23,3 +23,9 @@ func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
 	f.val.setValidate(fn)
 	return f
 }
+
+// Finalize sets a custom finalizer function for each
+func (f *ScalarFlag[T]) Finalize(fn func(T) T) *ScalarFlag[T] {
+	f.val.setFinalize(fn)
+	return f
+}
