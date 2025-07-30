@@ -36,8 +36,8 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	return nil
 }
 
-// setFinalize sets the optional validation function.
-func (d *DynamicScalarValue[T]) setFinalize(fn func(T) error) {
+// setValidate sets the optional validation function.
+func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn
 }
 

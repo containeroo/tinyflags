@@ -13,13 +13,13 @@ type ScalarFlag[T any] struct {
 
 // Choices restricts allowed scalar values.
 func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
-	f.val.setFinalize(utils.AllowOnly(f.val.format, allowed))
+	f.val.setValidate(utils.AllowOnly(f.val.format, allowed))
 	f.Allowed(utils.FormatList(f.val.format, allowed)...)
 	return f
 }
 
-// Finalize lets you plug in arbitrary per‐element checks.
-func (f *ScalarFlag[T]) Finalize(fn func(T) error) *ScalarFlag[T] {
-	f.val.setFinalize(fn)
+// Validate lets you plug in arbitrary per‐element checks.
+func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
+	f.val.setValidate(fn)
 	return f
 }

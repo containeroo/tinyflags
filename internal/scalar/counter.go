@@ -74,7 +74,7 @@ func NewCounter(r core.Registry, ptr *int, name string, def int, usage string) *
 
 // Max sets a maximum allowed value for the counter.
 func (c *CounterFlag) Max(n int) *CounterFlag {
-	c.val.setFinalize(func(v int) error {
+	c.val.setValidate(func(v int) error {
 		if v > n {
 			return fmt.Errorf("must not be greater than %d", n)
 		}

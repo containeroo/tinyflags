@@ -188,7 +188,7 @@ Flags:
 
 		http := fs.DynamicGroup("http")
 		addr := http.String("address", "", "API address").
-			Finalize(func(s string) error {
+			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
 				}
@@ -273,7 +273,7 @@ Flags:
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-		fs.Int("port", 8080, "API port").Finalize(func(p int) error {
+		fs.Int("port", 8080, "API port").Validate(func(p int) error {
 			if p < 1000 {
 				return fmt.Errorf("port must be greater than 1000")
 			}
@@ -295,7 +295,7 @@ Flags:
 		http.String("ip", "127.0.0.1", "ip address").Choices("127.0.0.1", "10.0.0.1")
 
 		http.String("address", "", "API address").
-			Finalize(func(s string) error {
+			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
 				}
@@ -344,7 +344,7 @@ Flags:
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 		http := fs.DynamicGroup("http")
 		addr := http.String("address", "", "API address").
-			Finalize(func(s string) error {
+			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
 				}
@@ -394,7 +394,7 @@ Flags:
 		fs.SetDynamicUsageIndent(8)
 		http := fs.DynamicGroup("http")
 		http.String("address", "", "API address").
-			Finalize(func(s string) error {
+			Validate(func(s string) error {
 				if s == "localhost" {
 					return fmt.Errorf("cannot use localhost")
 				}

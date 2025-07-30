@@ -51,8 +51,8 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 	return nil
 }
 
-// setFinalize sets a validation function for individual elements.
-func (d *DynamicSliceValue[T]) setFinalize(fn func(T) error) {
+// setValidate sets a validation function for individual elements.
+func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) {
 	d.validate = fn
 }
 
