@@ -14,6 +14,7 @@ func main() {
 		"--port=9000",
 		"--host=example.com",
 		"-dtrue",
+		"--user", "admin",
 	}
 
 	args = append(args, os.Args[1:]...) // append remaining args
@@ -36,9 +37,9 @@ func main() {
 		Short("d").
 		Value()
 
-	log := tf.Bool("log", false, "enable logging").Group("logging").Short("l").Value()
-	noLog := tf.Bool("no-log", false, "disable logging").Group("logging").Short("L").Value()
-	tf.GetGroup("logging").Hidden()
+	log := tf.Bool("log", false, "enable logging").MutualExlusive("logging").Short("l").Value()
+	noLog := tf.Bool("no-log", false, "disable logging").MutualExlusive("logging").Short("L").Value()
+	tf.GetMutualGroup("logging").Hidden()
 
 	tags := tf.StringSlice("tag", []string{}, "list of tags").
 		Value()
@@ -46,6 +47,9 @@ func main() {
 	loglevel := tf.String("log-level", "info", "log level to use").
 		Choices("debug", "info", "warn", "error").
 		Value()
+
+	user := tf.String("user", "admin", "user to use").RequireTogether("credentials").Value()
+	pw := tf.String("password", "", "password to use").RequireTogether("credentials").Value()
 
 	if err := tf.Parse(args); err != nil {
 		if tinyflags.IsHelpRequested(err) || tinyflags.IsVersionRequested(err) {
@@ -63,4 +67,6 @@ func main() {
 	fmt.Println("Loglevel:", *loglevel)
 	fmt.Println("Log:", *log)
 	fmt.Println("No Log:", *noLog)
+	fmt.Println("User:", *user)
+	fmt.Println("Password:", *pw)
 }

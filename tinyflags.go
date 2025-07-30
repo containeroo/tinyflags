@@ -131,15 +131,42 @@ func (f *FlagSet) Args() []string { return f.impl.Args() }
 // Arg returns the i-th positional argument and whether it exists.
 func (f *FlagSet) Arg(i int) (string, bool) { return f.impl.Arg(i) }
 
-// GetGroup retrieves or creates a named mutual exclusion group.
-func (f *FlagSet) GetGroup(name string) *core.MutualGroup { return f.impl.GetGroup(name) }
+// MutualGroups returns all registered mutual exclusion groups.
+func (f *FlagSet) MutualGroups() []*core.MutualExlusiveGroup { return f.impl.MutualGroups() }
 
-// Groups returns all registered mutual exclusion groups.
-func (f *FlagSet) Groups() []*core.MutualGroup { return f.impl.Groups() }
+// AddMutualGroup adds a mutual exclusion group.
+func (f *FlagSet) AddMutualGroup(name string, g *core.MutualExlusiveGroup) {
+	f.impl.AddMutualGroup(name, g)
+}
 
-// AttachToGroup attaches a static flag to a mutual exclusion group.
-func (f *FlagSet) AttachToGroup(flag *core.BaseFlag, group string) {
-	f.impl.AttachToGroup(flag, group)
+// GetMutualGroup retrieves or creates a named mutual exclusion group.
+func (f *FlagSet) GetMutualGroup(name string) *core.MutualExlusiveGroup {
+	return f.impl.GetMutualGroup(name)
+}
+
+// AttachToMutualGroup attaches a static flag to a mutual exclusion group.
+func (f *FlagSet) AttachToMutualGroup(flag *core.BaseFlag, group string) {
+	f.impl.AttachToMutualGroup(flag, group)
+}
+
+// RequireTogetherGroups returns all registered require-together groups.
+func (f *FlagSet) RequireTogetherGroups() []*core.RequiredTogetherGroup {
+	return f.impl.RequireTogetherGroups()
+}
+
+// AddRequireTogetherGroup adds a require-together group.
+func (f *FlagSet) AddRequireTogetherGroup(name string, g *core.RequiredTogetherGroup) {
+	f.impl.AddRequireTogetherGroup(name, g)
+}
+
+// GetRequireTogetherGroup retrieves or creates a named require-together group.
+func (f *FlagSet) GetRequireTogetherGroup(name string) *core.RequiredTogetherGroup {
+	return f.impl.GetRequireTogetherGroup(name)
+}
+
+// AttachToRequireTogetherGroup attaches a flag to a require-together group.
+func (f *FlagSet) AttachToRequireTogetherGroup(flag *core.BaseFlag, group string) {
+	f.impl.AttachToRequireTogetherGroup(flag, group)
 }
 
 // LookupFlag retrieves a static flag by name.

@@ -34,14 +34,24 @@ func (b *DynamicFlag[T]) Deprecated(reason string) *DynamicFlag[T] {
 	return b
 }
 
-// Group assigns this flag to an exclusive group.
-func (b *DynamicFlag[T]) Group(name string) *DynamicFlag[T] {
+// MutualExlusive assigns this flag to an exclusive group.
+func (b *DynamicFlag[T]) MutualExlusive(name string) *DynamicFlag[T] {
 	if name == "" {
 		return b
 	}
-	g := b.registry.GetGroup(name)
+	g := b.registry.GetMutualGroup(name)
 	g.Flags = append(g.Flags, b.bf)
-	b.bf.Group = g
+	b.bf.MutualGroup = g
+	return b
+}
+
+// RequireTogether assigns this flag to a require-together group.
+func (b *DynamicFlag[T]) RequireTogether(name string) *DynamicFlag[T] {
+	if name == "" {
+		return b
+	}
+	g := b.registry.GetRequireTogetherGroup(name)
+	g.Flags = append(g.Flags, b.bf)
 	return b
 }
 

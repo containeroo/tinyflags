@@ -1,44 +1,43 @@
 package core
 
-// MutualExlusiveGroup enforces exclusivity among a set of flags.
-// Only one flag in the group may be set.
-type MutualExlusiveGroup struct {
+// RequiredTogetherGroup enforces that all member flags must be set if any is set.
+type RequiredTogetherGroup struct {
 	Name      string      // Identifier for this group.
 	Flags     []*BaseFlag // Member flags.
 	titleText string      // Optional title to display in help.
 	hidden    bool        // Hide this group in help.
-	required  bool        // Require exactly one of the flags.
+	required  bool        // If true, at least one must be set.
 }
 
 // Title sets a custom help heading.
-func (g *MutualExlusiveGroup) Title(t string) *MutualExlusiveGroup {
+func (g *RequiredTogetherGroup) Title(t string) *RequiredTogetherGroup {
 	g.titleText = t
 	return g
 }
 
 // TitleText returns the custom heading, if any.
-func (g *MutualExlusiveGroup) TitleText() string {
+func (g *RequiredTogetherGroup) TitleText() string {
 	return g.titleText
 }
 
 // Hidden marks the group as omitted from help.
-func (g *MutualExlusiveGroup) Hidden() *MutualExlusiveGroup {
+func (g *RequiredTogetherGroup) Hidden() *RequiredTogetherGroup {
 	g.hidden = true
 	return g
 }
 
 // IsHidden reports whether the group is hidden.
-func (g *MutualExlusiveGroup) IsHidden() bool {
+func (g *RequiredTogetherGroup) IsHidden() bool {
 	return g.hidden
 }
 
-// Required enforces that one member must be set.
-func (g *MutualExlusiveGroup) Required() *MutualExlusiveGroup {
+// Required enforces that at least one of the group flags must be set.
+func (g *RequiredTogetherGroup) Required() *RequiredTogetherGroup {
 	g.required = true
 	return g
 }
 
 // IsRequired reports whether the group is required.
-func (g *MutualExlusiveGroup) IsRequired() bool {
+func (g *RequiredTogetherGroup) IsRequired() bool {
 	return g.required
 }

@@ -14,6 +14,7 @@ Zero dependencies. Full generics support. Rich usage output.
 - **Slice flags** (`[]T`) with custom delimiters
 - **Allowed choices & validation**
 - **Mutual-exclusion groups**
+- **Require-together groups**
 - **Custom placeholders & help sections**
 - **Dynamic flags** (`--group.id.field=value`)
 - **Typed values** (`*os.File`, `*net.TCPAddr`, `url.URL`, `time.Duration`, etc.)
@@ -196,16 +197,31 @@ Flags:
 | `Globaldelimiter(s)`     | Slice delimiter (default: ",") |
 | `DefaultDelimiter()`     | Get current delimiter          |
 
-### Positional & Groups
+### Positional
 
-| Method                      | Description               |
-| --------------------------- | ------------------------- |
-| `RequirePositional(n)`      | Require at least N args   |
-| `Args()`                    | Get all args              |
-| `Arg(i)`                    | Get i-th arg              |
-| `GetGroup(name)`            | Create or get mutex group |
-| `Groups()`                  | List all groups           |
-| `AttachToGroup(flag, name)` | Assign flag to group      |
+| Method                 | Description             |
+| ---------------------- | ----------------------- |
+| `RequirePositional(n)` | Require at least N args |
+| `Args()`               | Get all args            |
+| `Arg(i)`               | Get i-th arg            |
+
+### Mutual-Exclusive group
+
+| Method                            | Description                          |
+| --------------------------------- | ------------------------------------ |
+| `MutualGroups()`                  | List all mutual-exlusive groups      |
+| `AddMutualGroup(name, group)`     | Add mutual-exlusive group            |
+| `GetMutualGroup(name)`            | Get mutual-exlusive group            |
+| `AttachToMutualGroup(flag, name)` | Assign flag to mutual-exlusive group |
+
+### Require-Together group
+
+| Method                                 | Description                           |
+| -------------------------------------- | ------------------------------------- |
+| `RequireTogetherGroups()`              | List all require-together groups      |
+| `AddRequireTogetherGroup(name, group)` | Add require-together group            |
+| `GetRequireTogetherGroup(name)`        | Get require-together group            |
+| `AttachToRequireTogetherGroup`         | Assign flag to require-together group |
 
 ### Dynamic Flags
 

@@ -280,8 +280,8 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 	if !flag.HideRequired && flag.Required {
 		desc += " (Required)"
 	}
-	if flag.Group != nil && !flag.Group.IsHidden() {
-		desc += buildGroupInfo(flag.Group)
+	if flag.MutualGroup != nil && !flag.MutualGroup.IsHidden() {
+		desc += buildGroupInfo(flag.MutualGroup)
 	}
 	return desc
 }
@@ -332,7 +332,7 @@ func (f *FlagSet) calcDynamicUsageColumn(padding int) int {
 }
 
 // buildGroupInfo returns group info suffix if flag belongs to a mutual group.
-func buildGroupInfo(group *core.MutualGroup) string {
+func buildGroupInfo(group *core.MutualExlusiveGroup) string {
 	var b strings.Builder
 	b.WriteString(" (Group: ")
 	if group.TitleText() != "" {

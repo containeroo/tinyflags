@@ -43,14 +43,24 @@ func (b *StaticFlag[T]) Deprecated(reason string) *StaticFlag[T] {
 	return b
 }
 
-// Group assigns this flag to an exclusive group.
-func (b *StaticFlag[T]) Group(name string) *StaticFlag[T] {
+// MutualExlusive assigns this flag to an exclusive group.
+func (b *StaticFlag[T]) MutualExlusive(name string) *StaticFlag[T] {
 	if name == "" {
 		return b
 	}
-	g := b.registry.GetGroup(name)
+	g := b.registry.GetMutualGroup(name)
 	g.Flags = append(g.Flags, b.bf)
-	b.bf.Group = g
+	b.bf.MutualGroup = g
+	return b
+}
+
+// RequireTogether assigns this flag to a require-together group.
+func (b *StaticFlag[T]) RequireTogether(name string) *StaticFlag[T] {
+	if name == "" {
+		return b
+	}
+	g := b.registry.GetRequireTogetherGroup(name)
+	g.Flags = append(g.Flags, b.bf)
 	return b
 }
 

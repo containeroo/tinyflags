@@ -11,34 +11,35 @@ import (
 
 // FlagSet manages the definition, parsing, and usage output of command-line flags.
 type FlagSet struct {
-	name               string                    // Application or command name (used in usage)
-	errorHandling      ErrorHandling             // Behavior when parsing fails
-	staticFlagsMap     map[string]*core.BaseFlag // All registered static flags by name
-	staticFlagsOrder   []*core.BaseFlag          // Static flags in registration order
-	dynamicGroupsMap   map[string]*dynamic.Group // All dynamic groups by name
-	dynamicGroupsOrder []*dynamic.Group          // Dynamic groups in registration order
-	groups             []*core.MutualGroup       // All mutual exclusion groups
-	positional         []string                  // Remaining non-flag arguments
-	requiredPositional int                       // Required positional argument count
-	envPrefix          string                    // Optional ENV prefix (e.g. "APP_")
-	getEnv             func(string) string       // Function used to read ENV vars (default: os.Getenv)
-	ignoreInvalidEnv   bool                      // Whether to ignore unknown ENV overrides
-	defaultDelimiter   string                    // Global slice delimiter (default: ",")
-	title              string                    // Title shown in usage output
-	desc               string                    // Prolog before flags
-	notes              string                    // Epilog after flags
-	versionString      string                    // Version string for --version
-	usagePrintMode     FlagPrintMode             // Usage print mode (short|long|both|flags|none)
-	output             io.Writer                 // Destination for help output
-	enableHelp         bool                      // Whether built-in --help is enabled
-	enableVer          bool                      // Whether built-in --version is enabled
-	showHelp           *bool                     // Parsed value of --help
-	showVersion        *bool                     // Parsed value of --version
-	Usage              func()                    // Custom usage function (optional)
-	sortFlags          bool                      // Enable static flag sorting
-	sortGroups         bool                      // Enable dynamic group sorting
-	authors            string                    // Optional authors block
-	hideEnvs           bool                      // Globally hide environment key hints
+	name               string                      // Application or command name (used in usage)
+	errorHandling      ErrorHandling               // Behavior when parsing fails
+	staticFlagsMap     map[string]*core.BaseFlag   // All registered static flags by name
+	staticFlagsOrder   []*core.BaseFlag            // Static flags in registration order
+	dynamicGroupsMap   map[string]*dynamic.Group   // All dynamic groups by name
+	dynamicGroupsOrder []*dynamic.Group            // Dynamic groups in registration order
+	mutualGroups       []*core.MutualExlusiveGroup // All mutual exclusion groups
+	requiredTogether   []*core.RequiredTogetherGroup
+	positional         []string            // Remaining non-flag arguments
+	requiredPositional int                 // Required positional argument count
+	envPrefix          string              // Optional ENV prefix (e.g. "APP_")
+	getEnv             func(string) string // Function used to read ENV vars (default: os.Getenv)
+	ignoreInvalidEnv   bool                // Whether to ignore unknown ENV overrides
+	defaultDelimiter   string              // Global slice delimiter (default: ",")
+	title              string              // Title shown in usage output
+	desc               string              // Prolog before flags
+	notes              string              // Epilog after flags
+	versionString      string              // Version string for --version
+	usagePrintMode     FlagPrintMode       // Usage print mode (short|long|both|flags|none)
+	output             io.Writer           // Destination for help output
+	enableHelp         bool                // Whether built-in --help is enabled
+	enableVer          bool                // Whether built-in --version is enabled
+	showHelp           *bool               // Parsed value of --help
+	showVersion        *bool               // Parsed value of --version
+	Usage              func()              // Custom usage function (optional)
+	sortFlags          bool                // Enable static flag sorting
+	sortGroups         bool                // Enable dynamic group sorting
+	authors            string              // Optional authors block
+	hideEnvs           bool                // Globally hide environment key hints
 
 	// Indentation and width config for description
 	descIndent int
@@ -217,31 +218,58 @@ func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
 	return groups
 }
 
-// --- Mutual Group Handling ---
+// --- RequireTogether Group Handling ---
 
-func (f *FlagSet) GetGroup(name string) *core.MutualGroup {
-	for _, g := range f.groups {
+func (f *FlagSet) RequireTogetherGroups() []*core.RequiredTogetherGroup { return f.requiredTogether }
+
+func (f *FlagSet) AddRequireTogetherGroup(name string, g *core.RequiredTogetherGroup) {
+	f.requiredTogether = append(f.requiredTogether, g)
+}
+
+// GetRequireTogetherGroup returns a group that requires all flags to be set together.
+// It creates the group if it doesn't exist.
+func (f *FlagSet) GetRequireTogetherGroup(name string) *core.RequiredTogetherGroup {
+	for _, g := range f.requiredTogether {
 		if g.Name == name {
 			return g
 		}
 	}
-	group := &core.MutualGroup{Name: name}
-	f.groups = append(f.groups, group)
+	g := &core.RequiredTogetherGroup{Name: name}
+	f.requiredTogether = append(f.requiredTogether, g)
+	return g
+}
+
+// AttachToRequireTogetherGroup attaches a flag to a require-together group.
+func (f *FlagSet) AttachToRequireTogetherGroup(bf *core.BaseFlag, group string) {
+	g := f.GetRequireTogetherGroup(group)
+	g.Flags = append(g.Flags, bf)
+}
+
+// --- Mutual Group Handling ---
+
+func (f *FlagSet) MutualGroups() []*core.MutualExlusiveGroup {
+	return f.mutualGroups
+}
+
+func (f *FlagSet) AddMutualGroup(name string, g *core.MutualExlusiveGroup) {
+	f.mutualGroups = append(f.mutualGroups, g)
+}
+
+func (f *FlagSet) GetMutualGroup(name string) *core.MutualExlusiveGroup {
+	for _, g := range f.mutualGroups {
+		if g.Name == name {
+			return g
+		}
+	}
+	group := &core.MutualExlusiveGroup{Name: name}
+	f.mutualGroups = append(f.mutualGroups, group)
 	return group
 }
 
-func (f *FlagSet) AddGroup(name string, g *core.MutualGroup) {
-	f.groups = append(f.groups, g)
-}
-
-func (f *FlagSet) Groups() []*core.MutualGroup {
-	return f.groups
-}
-
-func (f *FlagSet) AttachToGroup(bf *core.BaseFlag, group string) {
-	g := f.GetGroup(group)
+func (f *FlagSet) AttachToMutualGroup(bf *core.BaseFlag, group string) {
+	g := f.GetMutualGroup(group)
 	g.Flags = append(g.Flags, bf)
-	bf.Group = g
+	bf.MutualGroup = g
 }
 
 // --- Builtin Flags ---
