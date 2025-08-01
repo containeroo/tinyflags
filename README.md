@@ -74,6 +74,161 @@ func main() {
 }
 ```
 
+## Supported Types
+
+| Type            | Methods                                  |
+| --------------- | ---------------------------------------- |
+| `bool`          | `Bool`, `BoolVar`                        |
+| `int`           | `Int`, `IntVar`                          |
+| `string`        | `String`, `StringVar`                    |
+| `[]string`      | `StringSlice`, `StringSliceVar`          |
+| `counter`       | `Counter`, `CounterVar` (auto-increment) |
+| `time.Duration` | `Duration`, `DurationVar`                |
+| `net.IP`        | `IP`, `IPVar`                            |
+| `[]net.IP`      | `IPSlice`, `IPSliceVar`                  |
+| `*net.TCPAddr`  | `TCPAddr`, `TCPAddrVar`                  |
+| `url.URL`       | `URL`, `URLVar`                          |
+| `*os.File`      | `File`, `FileVar`                        |
+
+> Slice flags accept repeated use or custom-delimited strings.
+
+## FlagSet API
+
+### Common Flag-Builder Methods
+
+| Method                          | Applies to  | Description                                                                             |
+| ------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
+| `Short(s string)`               | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
+| `Required()`                    | all flags   | Mark the flag as required; parser errors if unset.                                      |
+| `Hidden()`                      | all flags   | Omit this flag from generated help output.                                              |
+| `Deprecated(reason string)`     | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
+| `MutualExlusive(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
+| `RequireTogether(group string)` | all flags   | Assign to a named require-together group. All or none in group must be set.             |
+| `Env(key string)`               | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
+| `DisableEnv()`                  | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
+| `Placeholder(text string)`      | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
+| `Allowed(vals ...string)`       | all flags   | Restrict help to show only these allowed values.                                        |
+| `Value() *T`                    | static only | Return the pointer to the parsed value (after `Parse`).                                 |
+
+### Static-Flag Extras
+
+| Method                         | Description                                                                                  | Example                                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Choices(v1, v2, …)`           | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
+| `Validate(fn func(v T) error)` | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
+| `Finalize(fn func(v T) T)`     | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
+| `Delimiter(sep string)`        | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
+
+### Dynamic-Flag Extras
+
+| Method                               | Description                                                                       | Example                                                      |
+| ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `Has(id string) bool`                | Return whether the given instance-ID was provided on the command line or via env. | `if port.Has("a") { fmt.Println("port a is set") }`          |
+| `Get(id string) (value T, ok bool)`  | Retrieve the parsed value for that ID; `ok==false` if unset (returns default).    | `p, ok := port.Get("a"); if ok { fmt.Println("a →", p) }`    |
+| `MustGet(id string) T`               | Like `Get`, but panics if the instance wasn’t provided.                           | `timeout.MustGet("b")`                                       |
+| `Values() map[string]T`              | Get all parsed values keyed by instance ID.                                       | `for id, v := range timeout.Values() { fmt.Println(id, v) }` |
+| `ValuesAny() map[string]interface{}` | Same as `Values()`, but values are `interface{}`.                                 |                                                              |
+
+> All **common** methods (Required, Hidden, etc.) and **static extras** (Choices, Validate, Finalize, Delimiter) also apply to dynamic flags.
+
+### FlagSet Core & Help Configuration
+
+| Method                                                 | Description                                                    |
+| ------------------------------------------------------ | -------------------------------------------------------------- |
+| `NewFlagSet(name string, mode ErrorHandling)`          | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
+| `EnvPrefix(prefix string)`                             | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
+| `Version(version string)`                              | Enable the `--version` flag, printing this string.             |
+| `DisableHelp()` / `DisableVersion()`                   | Remove `--help` or `--version`.                                |
+| `Usage(fn func())`                                     | Install a custom usage function in place of the default.       |
+| `Title(text string)`                                   | Override the “Usage:” title heading.                           |
+| `Authors(names ...string)`                             | Add an “Authors:” section to help.                             |
+| `Description(text string)`                             | Add a free-form description block under the title.             |
+| `Note(text string)`                                    | Add a footer note under the flags listing.                     |
+| `SetOutput(w io.Writer)` / `Output()`                  | Redirect or retrieve where help/version is written.            |
+| **Help Printers:**                                     |                                                                |
+|   `PrintUsage(w, mode)`                                | Print the `Usage:` line.                                       |
+|   `PrintTitle(w)`                                      | Print title and description.                                   |
+|   `PrintAuthors(w)`                                    | Print authors section.                                         |
+|   `PrintDescription(w,indent,width)`                   | Print the description block.                                   |
+|   `PrintNotes(w,indent,width)`                         | Print footer notes.                                            |
+|   `PrintStaticDefaults(w,indent,startCol,width)`       | Print static flags help.                                       |
+|   `PrintDynamicDefaults(w,indent,startCol,width)`      | Print dynamic flags help.                                      |
+| `RequirePositional(n int)`                             | Enforce at least `n` positional arguments.                     |
+| `Args() []string` / `Arg(i int) string`                | Access leftover positional args.                               |
+| `AddMutualGroup(name string, flags []string)`          | Manually define a mutual-exclusion group.                      |
+| `AddRequireTogetherGroup(name string, flags []string)` | Manually define a require-together group.                      |
+
+### How `Validate` and `Finalize` Work
+
+1. **Validate**
+
+   - After parsing a flag’s raw input into `T`, Tinyflags calls your validator:
+
+   ```go
+   fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+
+   count := fs.Int("count", 0, "Number of items").
+       Validate(func(n int) error {
+           if n < 0 {
+               return fmt.Errorf("must be non-negative")
+           }
+           return nil
+       }).
+       Value()
+
+   fs.Parse(os.Args[1:])
+   fmt.Println("Count:", *count)
+   ```
+
+- If the user does `--count=-5`, they see:
+
+  ```
+  invalid value for --count: must be non-negative
+  ```
+
+  - On error, parsing aborts and your message is shown to the user.
+
+2. **Finalize**
+
+   - Only after validation succeeds, Tinyflags passes the parsed value through your finalizer:
+
+   ```go
+   fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+
+   name := fs.String("name", "", "User name").
+     Finalize(func(s string) string {
+             return strings.TrimSpace(strings.ToTitle(s))
+             }).
+     Value()
+
+   url := fs.String("url", "", "URL to use").
+     // Ensure the URL ends with a slash
+     Finalize(func(u *url.URL) *url.URL {
+        // Clone to avoid mutating the original (optional, if needed)
+        u2 := *u
+        if len(u2.Path) > 0 && u2.Path[len(u2.Path)-1] != '/' {
+            u2.Path += "/"
+        }
+        return &u2
+     }).
+     Value()
+
+
+    fs.Parse([]string{"--name=   alice smith  ", "--url", "https://containeroo.ch"})
+    fmt.Println("Hello,", *name)
+    fmt.Println("Visist:", *url)
+    ```
+
+    _Output:_
+
+    ```
+    Hello, Alice Smith
+    Visti: https://containeroo.ch/
+    ```
+
+   - Useful for trimming whitespace, applying normalization, setting derived defaults, etc.
+   ````
+
 ## Environment Variables
 
 ```bash
@@ -209,161 +364,6 @@ Flags:
       --tag TAG...    Optional tags
   -v, --version       Show version
 ```
-
-## Supported Types
-
-| Type            | Methods                                  |
-| --------------- | ---------------------------------------- |
-| `bool`          | `Bool`, `BoolVar`                        |
-| `int`           | `Int`, `IntVar`                          |
-| `string`        | `String`, `StringVar`                    |
-| `[]string`      | `StringSlice`, `StringSliceVar`          |
-| `counter`       | `Counter`, `CounterVar` (auto-increment) |
-| `time.Duration` | `Duration`, `DurationVar`                |
-| `net.IP`        | `IP`, `IPVar`                            |
-| `[]net.IP`      | `IPSlice`, `IPSliceVar`                  |
-| `*net.TCPAddr`  | `TCPAddr`, `TCPAddrVar`                  |
-| `url.URL`       | `URL`, `URLVar`                          |
-| `*os.File`      | `File`, `FileVar`                        |
-
-> Slice flags accept repeated use or custom-delimited strings.
-
-## FlagSet API
-
-### Common Flag-Builder Methods
-
-| Method                          | Applies to  | Description                                                                             |
-| ------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
-| `Short(s string)`               | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
-| `Required()`                    | all flags   | Mark the flag as required; parser errors if unset.                                      |
-| `Hidden()`                      | all flags   | Omit this flag from generated help output.                                              |
-| `Deprecated(reason string)`     | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
-| `MutualExlusive(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
-| `RequireTogether(group string)` | all flags   | Assign to a named require-together group. All or none in group must be set.             |
-| `Env(key string)`               | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
-| `DisableEnv()`                  | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
-| `Placeholder(text string)`      | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
-| `Allowed(vals ...string)`       | all flags   | Restrict help to show only these allowed values.                                        |
-| `Value() *T`                    | static only | Return the pointer to the parsed value (after `Parse`).                                 |
-
-### Static-Flag Extras
-
-| Method                         | Description                                                                                  | Example                                                                                                                           |
-| ------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `Choices(v1, v2, …)`           | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
-| `Validate(fn func(v T) error)` | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
-| `Finalize(fn func(v T) T)`     | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
-| `Delimiter(sep string)`        | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
-
-### Dynamic-Flag Extras
-
-| Method                               | Description                                                                       | Example                                                      |
-| ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `Has(id string) bool`                | Return whether the given instance-ID was provided on the command line or via env. | `if port.Has("a") { fmt.Println("port a is set") }`          |
-| `Get(id string) (value T, ok bool)`  | Retrieve the parsed value for that ID; `ok==false` if unset (returns default).    | `p, ok := port.Get("a"); if ok { fmt.Println("a →", p) }`    |
-| `MustGet(id string) T`               | Like `Get`, but panics if the instance wasn’t provided.                           | `timeout.MustGet("b")`                                       |
-| `Values() map[string]T`              | Get all parsed values keyed by instance ID.                                       | `for id, v := range timeout.Values() { fmt.Println(id, v) }` |
-| `ValuesAny() map[string]interface{}` | Same as `Values()`, but values are `interface{}`.                                 |                                                              |
-
-> All **common** methods (Required, Hidden, etc.) and **static extras** (Choices, Validate, Finalize, Delimiter) also apply to dynamic flags.
-
-### FlagSet Core & Help Configuration
-
-| Method                                                 | Description                                                    |
-| ------------------------------------------------------ | -------------------------------------------------------------- |
-| `NewFlagSet(name string, mode ErrorHandling)`          | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
-| `EnvPrefix(prefix string)`                             | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
-| `Version(version string)`                              | Enable the `--version` flag, printing this string.             |
-| `DisableHelp()` / `DisableVersion()`                   | Remove `--help` or `--version`.                                |
-| `Usage(fn func())`                                     | Install a custom usage function in place of the default.       |
-| `Title(text string)`                                   | Override the “Usage:” title heading.                           |
-| `Authors(names ...string)`                             | Add an “Authors:” section to help.                             |
-| `Description(text string)`                             | Add a free-form description block under the title.             |
-| `Note(text string)`                                    | Add a footer note under the flags listing.                     |
-| `SetOutput(w io.Writer)` / `Output()`                  | Redirect or retrieve where help/version is written.            |
-| **Help Printers:**                                     |                                                                |
-|   `PrintUsage(w, mode)`                                | Print the `Usage:` line.                                       |
-|   `PrintTitle(w)`                                      | Print title and description.                                   |
-|   `PrintAuthors(w)`                                    | Print authors section.                                         |
-|   `PrintDescription(w,indent,width)`                   | Print the description block.                                   |
-|   `PrintNotes(w,indent,width)`                         | Print footer notes.                                            |
-|   `PrintStaticDefaults(w,indent,startCol,width)`       | Print static flags help.                                       |
-|   `PrintDynamicDefaults(w,indent,startCol,width)`      | Print dynamic flags help.                                      |
-| `RequirePositional(n int)`                             | Enforce at least `n` positional arguments.                     |
-| `Args() []string` / `Arg(i int) string`                | Access leftover positional args.                               |
-| `AddMutualGroup(name string, flags []string)`          | Manually define a mutual-exclusion group.                      |
-| `AddRequireTogetherGroup(name string, flags []string)` | Manually define a require-together group.                      |
-
-### How `Validate` and `Finalize` Work
-
-1. **Validate**
-
-   - After parsing a flag’s raw input into `T`, Tinyflags calls your validator:
-
-   ```go
-   fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-
-   count := fs.Int("count", 0, "Number of items").
-       Validate(func(n int) error {
-           if n < 0 {
-               return fmt.Errorf("must be non-negative")
-           }
-           return nil
-       }).
-       Value()
-
-   fs.Parse(os.Args[1:])
-   fmt.Println("Count:", *count)
-   ```
-
-- If the user does `--count=-5`, they see:
-
-  ```
-  invalid value for --count: must be non-negative
-  ```
-
-  - On error, parsing aborts and your message is shown to the user.
-
-2. **Finalize**
-
-   - Only after validation succeeds, Tinyflags passes the parsed value through your finalizer:
-
-   ````go
-   fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-
-   name := fs.String("name", "", "User name").
-     Finalize(func(s string) string {
-             return strings.TrimSpace(strings.ToTitle(s))
-             }).
-     Value()
-
-   url := fs.String("url", "", "URL to use").
-     // Ensure the URL ends with a slash
-     Finalize(func(u *url.URL) *url.URL {
-        // Clone to avoid mutating the original (optional, if needed)
-        u2 := *u
-        if len(u2.Path) > 0 && u2.Path[len(u2.Path)-1] != '/' {
-            u2.Path += "/"
-        }
-        return &u2
-     }).
-     Value()
-
-
-    fs.Parse([]string{"--name=   alice smith  ", "--url", "https://containeroo.ch"})
-    fmt.Println("Hello,", *name)
-    fmt.Println("Visist:", *url)
-    ```
-
-    _Output:_
-
-    ```
-    Hello, Alice Smith
-    Visti: https://containeroo.ch/
-    ```
-
-   - Useful for trimming whitespace, applying normalization, setting derived defaults, etc.
-   ````
 
 ## License
 
