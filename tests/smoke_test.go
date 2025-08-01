@@ -241,9 +241,9 @@ Flags:
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 
-		debug := fs.Bool("debug", true, "Enable debug mode").Group("db").Value()
-		noDebug := fs.Bool("no-debug", false, "Disable debug mode").Group("db").Value()
-		fs.GetGroup("db").Title("Debug Options").Required()
+		debug := fs.Bool("debug", true, "Enable debug mode").MutualExlusive("db").Value()
+		noDebug := fs.Bool("no-debug", false, "Disable debug mode").MutualExlusive("db").Value()
+		fs.GetMutualGroup("db").Title("Debug Options").Required()
 
 		err := fs.Parse([]string{
 			"--debug",

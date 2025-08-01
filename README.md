@@ -47,30 +47,30 @@ go get github.com/containeroo/tinyflags
 package main
 
 import (
-	"fmt"
-	"os"
-	"github.com/containeroo/tinyflags"
+    "fmt"
+    "os"
+    "github.com/containeroo/tinyflags"
 )
 
 func main() {
-	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-	fs.EnvPrefix("MYAPP")
-	fs.Version("v1.2.3")
+    fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+    fs.EnvPrefix("MYAPP")
+    fs.Version("v1.2.3")
 
-	host := fs.String("host", "localhost", "Server hostname").Required().Value()
-	port := fs.Int("port", 8080, "Port to bind").Short("p").Value()
-	debug := fs.Bool("debug", false, "Enable debug logging").Short("d").Value()
-	tags  := fs.StringSlice("tag", nil, "Optional tags").Value()
+    host := fs.String("host", "localhost", "Server hostname").Required().Value()
+    port := fs.Int("port", 8080, "Port to bind").Short("p").Value()
+    debug := fs.Bool("debug", false, "Enable debug logging").Short("d").Value()
+    tags  := fs.StringSlice("tag", nil, "Optional tags").Value()
 
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+    if err := fs.Parse(os.Args[1:]); err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
+    }
 
-	fmt.Println("Host:", *host)
-	fmt.Println("Port:", *port)
-	fmt.Println("Debug:", *debug)
-	fmt.Println("Tags:", *tags)
+    fmt.Println("Host:", *host)
+    fmt.Println("Port:", *port)
+    fmt.Println("Debug:", *debug)
+    fmt.Println("Tags:", *tags)
 }
 ```
 
@@ -92,28 +92,28 @@ fs.Bool("internal", false, "internal use only").DisableEnv()
 package main
 
 import (
-	"fmt"
-	"os"
-	"github.com/containeroo/tinyflags"
+    "fmt"
+    "os"
+    "github.com/containeroo/tinyflags"
 )
 
 func main() {
-	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
-	http := fs.DynamicGroup("http")
+    fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
+    http := fs.DynamicGroup("http")
 
-	port    := http.Int("port", "Backend port")
-	timeout := http.Duration("timeout", "Request timeout")
+    port    := http.Int("port", "Backend port")
+    timeout := http.Duration("timeout", "Request timeout")
 
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+    if err := fs.Parse(os.Args[1:]); err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
+    }
 
-	for _, id := range http.Instances() {
-		p, _ := port.Get(id)
-		t, _ := timeout.Get(id)
-		fmt.Printf("%s: port=%d, timeout=%s\n", id, p, t)
-	}
+    for _, id := range http.Instances() {
+        p, _ := port.Get(id)
+        t, _ := timeout.Get(id)
+        fmt.Printf("%s: port=%d, timeout=%s\n", id, p, t)
+    }
 }
 ```
 
@@ -125,6 +125,76 @@ func main() {
 ```text
 a: port=8080, timeout=30s
 b: port=9090, timeout=1m
+```
+
+## Grouped Flags: Mutual-Exclusion & Require-Together
+
+When certain flags must be used **together**, or must be **exclusive**, tinyflags makes that easy.
+
+### 🔁 Require-Together Group
+
+You can define a group where **either all or none** of the flags must be set:
+
+```go
+email := fs.String("email", "", "User email").
+    RequireTogether("authpair").
+    Value()
+
+password := fs.String("password", "", "User password").
+    RequireTogether("authpair").
+    Value()
+```
+
+### 🔀 Mutual-Exclusion Group
+
+You can define a group where **only one** of the flags (or groups!) may be set:
+
+```go
+bearer := fs.String("bearer-token", "", "Bearer token").
+    MutualExlusive("authmethod").
+    Value()
+
+fs.GetMutualGroup("authmethod").
+    Title("Authentication Method").
+    AddGroup(fs.GetRequireTogetherGroup("authpair")) // <-- email+password
+```
+
+This enforces:
+
+- Either `--email` and `--password` **together**, or
+- `--bearer-token`, but **not both**
+
+### ✅ Valid combinations
+
+```text
+# Valid:
+--email=user --password=secret
+--bearer-token=abc123
+
+# Invalid:
+--email=user                ❌ password missing
+--email=user --bearer-token=abc123 ❌ both auth methods
+```
+
+### Help Output Example
+
+```text
+Usage: app [flags]
+
+Flags:
+  --email EMAIL         User email (Group: Authentication Method) (RequireTogether: authpair)
+  --password PASSWORD   User password (Group: Authentication Method) (RequireTogether: authpair)
+  --bearer-token TOKEN  Bearer token (Group: Authentication Method)
+
+Authentication Method
+(Exactly one required)
+  --bearer-token TOKEN
+  [--email, --password] (Required together)
+
+authpair
+(Required)
+  --email EMAIL
+  --password PASSWORD
 ```
 
 ## Help Output
@@ -224,7 +294,7 @@ Flags:
 | `AddMutualGroup(name string, flags []string)`          | Manually define a mutual-exclusion group.                      |
 | `AddRequireTogetherGroup(name string, flags []string)` | Manually define a require-together group.                      |
 
-## How `Validate` and `Finalize` Work
+### How `Validate` and `Finalize` Work
 
 1. **Validate**
 
@@ -269,14 +339,14 @@ Flags:
 
    url := fs.String("url", "", "URL to use").
      // Ensure the URL ends with a slash
-   	 Finalize(func(u *url.URL) *url.URL {
-   	 	// Clone to avoid mutating the original (optional, if needed)
-   	 	u2 := *u
-   	 	if len(u2.Path) > 0 && u2.Path[len(u2.Path)-1] != '/' {
-   	 		u2.Path += "/"
-   	 	}
-   	 	return &u2
-   	 }).
+     Finalize(func(u *url.URL) *url.URL {
+        // Clone to avoid mutating the original (optional, if needed)
+        u2 := *u
+        if len(u2.Path) > 0 && u2.Path[len(u2.Path)-1] != '/' {
+            u2.Path += "/"
+        }
+        return &u2
+     }).
      Value()
 
 

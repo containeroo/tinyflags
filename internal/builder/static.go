@@ -61,6 +61,7 @@ func (b *StaticFlag[T]) RequireTogether(name string) *StaticFlag[T] {
 	}
 	g := b.registry.GetRequireTogetherGroup(name)
 	g.Flags = append(g.Flags, b.bf)
+	b.bf.RequiredTogether = g
 	return b
 }
 

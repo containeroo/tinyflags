@@ -22,6 +22,9 @@ type Config struct {
 	LogLevel       string
 	Paths          []string
 	URL            *url.URL
+	Email          string
+	Password       string
+	BearerToken    string
 }
 
 func parseArgs(args []string) (*Config, error) {
@@ -47,11 +50,6 @@ func parseArgs(args []string) (*Config, error) {
 
 	port := tf.Int("port", 8080, "port to use").
 		Env("MYAPP_CUSTOM_PORT").
-		Required().
-		Value()
-
-	host := tf.String("host", "localhost", "host to use").
-		Short("h").
 		Required().
 		Value()
 
@@ -113,6 +111,20 @@ func parseArgs(args []string) (*Config, error) {
 		}).
 		Value()
 
+	email := tf.String("email", "", "User email").
+		RequireTogether("authpair").
+		Value()
+	pw := tf.String("password", "", "Password").
+		RequireTogether("authpair").
+		Value()
+	token := tf.String("bearer-token", "", "Bearer token").
+		MutualExlusive("authmethod").
+		Value()
+
+	tf.GetMutualGroup("authmethod").
+		Title("Authentication method").
+		AddGroup(tf.GetRequireTogetherGroup("authpair"))
+
 	if err := tf.Parse(args); err != nil {
 		return nil, err
 	}
@@ -129,7 +141,6 @@ func parseArgs(args []string) (*Config, error) {
 
 	return &Config{
 		Port:           *port,
-		Host:           *host,
 		ListenAddr:     (*listenAddr).String(),
 		SchemaHostPort: *schemaHostPort,
 		HostIP:         *hostip,
@@ -138,13 +149,15 @@ func parseArgs(args []string) (*Config, error) {
 		LogLevel:       *loglevel,
 		Paths:          paths,
 		URL:            *url,
+		Email:          *email,
+		Password:       *pw,
+		BearerToken:    *token,
 	}, nil
 }
 
 func main() {
 	args := []string{
 		"--port=9000",
-		"--host=example.com",
 		"--host-ip=10.0.10.12",
 		"-vv",
 		"--log-level=debug",

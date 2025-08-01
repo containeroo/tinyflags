@@ -52,6 +52,7 @@ func (b *DynamicFlag[T]) RequireTogether(name string) *DynamicFlag[T] {
 	}
 	g := b.registry.GetRequireTogetherGroup(name)
 	g.Flags = append(g.Flags, b.bf)
+	b.bf.RequiredTogether = g
 	return b
 }
 

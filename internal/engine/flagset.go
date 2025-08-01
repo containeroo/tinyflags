@@ -98,6 +98,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		fs.PrintDescription(out, fs.descIndent, fs.descWidth)
 		fs.PrintStaticDefaults(out, fs.usageStaticIndent, fs.usageStaticCol, fs.usageStaticWidth)
 		fs.PrintDynamicDefaults(out, fs.usageDynamicIndent, fs.usageDynamicCol, fs.usageDynamicWidth)
+		fs.PrintGroups(out, fs.usageStaticIndent, fs.usageStaticWidth)
 		fs.PrintNotes(out, fs.noteIndent, fs.noteWidth)
 	}
 

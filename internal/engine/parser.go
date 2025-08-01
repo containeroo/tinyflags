@@ -94,14 +94,42 @@ func (f *FlagSet) parseEnv() error {
 // checkMutualExclusion ensures only one flag per group is set.
 func (f *FlagSet) checkMutualExclusion() error {
 	for _, g := range f.mutualGroups {
-		count := 0
+		var conflicting []string
+
+		// Check individual flags
 		for _, fl := range g.Flags {
 			if fl.Value.Changed() {
-				count++
+				conflicting = append(conflicting, "--"+fl.Name)
 			}
 		}
-		if count > 1 {
-			return fmt.Errorf("mutually exclusive flags used in group %q", g.Name)
+
+		// Check require-together groups
+		for _, grp := range g.RequiredGroups {
+			set := 0
+			for _, fl := range grp.Flags {
+				if fl.Value.Changed() {
+					set++
+				}
+			}
+			if set > 0 && set != len(grp.Flags) {
+				// Skip partially set group (handled by checkRequireTogether)
+				continue
+			}
+			if set == len(grp.Flags) {
+				// Show group as comma-separated flag list
+				var names []string
+				for _, fl := range grp.Flags {
+					names = append(names, "--"+fl.Name)
+				}
+				conflicting = append(conflicting, fmt.Sprintf("[%s]", strings.Join(names, ", ")))
+			}
+		}
+
+		if len(conflicting) > 1 {
+			return fmt.Errorf(
+				"mutually exclusive flags used in group %q: %s",
+				g.Name, strings.Join(conflicting, " vs "),
+			)
 		}
 	}
 	return nil

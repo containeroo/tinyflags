@@ -3,11 +3,12 @@ package core
 // MutualExlusiveGroup enforces exclusivity among a set of flags.
 // Only one flag in the group may be set.
 type MutualExlusiveGroup struct {
-	Name      string      // Identifier for this group.
-	Flags     []*BaseFlag // Member flags.
-	titleText string      // Optional title to display in help.
-	hidden    bool        // Hide this group in help.
-	required  bool        // Require exactly one of the flags.
+	Name           string                   // Identifier for this group.
+	Flags          []*BaseFlag              // Member flags.
+	RequiredGroups []*RequiredTogetherGroup // Optional grouped sets
+	titleText      string                   // Optional title to display in help.
+	hidden         bool                     // Hide this group in help.
+	required       bool                     // Require exactly one of the flags.
 }
 
 // Title sets a custom help heading.
@@ -41,4 +42,15 @@ func (g *MutualExlusiveGroup) Required() *MutualExlusiveGroup {
 // IsRequired reports whether the group is required.
 func (g *MutualExlusiveGroup) IsRequired() bool {
 	return g.required
+}
+
+// AddGroup includes a require-together group as one exclusive member.
+func (g *MutualExlusiveGroup) AddGroup(grp *RequiredTogetherGroup) *MutualExlusiveGroup {
+	if grp != nil {
+		g.RequiredGroups = append(g.RequiredGroups, grp)
+		for _, fl := range grp.Flags {
+			fl.MutualGroup = g // populate the parent mutual group reference
+		}
+	}
+	return g
 }

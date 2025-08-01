@@ -22,14 +22,14 @@ const (
 
 // PrintUsage prints a usage line depending on mode.
 func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
-	fmt.Fprint(w, "Usage: "+f.name)
+	fmt.Fprint(w, "Usage: "+f.name) // nolint:errcheck
 
 	switch mode {
 	case PrintNone:
-		fmt.Fprintln(w)
+		fmt.Fprintln(w) // nolint:errcheck
 		return
 	case PrintFlags:
-		fmt.Fprintln(w, " [flags]")
+		fmt.Fprintln(w, " [flags]") // nolint:errcheck
 		return
 	}
 
@@ -47,20 +47,20 @@ func (f *FlagSet) PrintUsage(w io.Writer, mode FlagPrintMode) {
 	if helpFlag != nil {
 		printUsageToken(w, helpFlag, mode)
 	}
-	fmt.Fprintln(w)
+	fmt.Fprintln(w) // nolint:errcheck
 }
 
 // PrintTitle writes usage title heading.
 func (f *FlagSet) PrintTitle(w io.Writer) {
 	if f.title != "" {
-		fmt.Fprintln(w, f.title)
+		fmt.Fprintln(w, f.title) // nolint:errcheck
 	}
 }
 
 // PrintAuthors writes usage author heading.
 func (f *FlagSet) PrintAuthors(w io.Writer) {
 	if f.authors != "" {
-		fmt.Fprintln(w, "Authors: "+f.authors)
+		fmt.Fprintln(w, "Authors: "+f.authors) // nolint:errcheck
 	}
 }
 
@@ -99,7 +99,7 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 
 		// Title
 		if title := group.TitleText(); title != "" {
-			fmt.Fprintf(w, "\n%s\n", title)
+			fmt.Fprintf(w, "\n%s\n", title) // nolint:errcheck
 		}
 		// Description
 		if desc := group.DescriptionText(); desc != "" {
@@ -115,15 +115,15 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 			flagLine := formatDynamicFlagLine(name, idPlaceholder, fl)
 			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
 			if len(flagLine)+len(desc) <= maxWidth-startCol {
-				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc)
+				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc) // nolint:errcheck
 				continue
 			}
 
 			wrapped := wrapText(desc, maxWidth-indent-startCol-1)
 			lines := strings.Split(wrapped, "\n")
-			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0])
+			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0]) // nolint:errcheck
 			for _, l := range lines[1:] {
-				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l)
+				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l) // nolint:errcheck
 			}
 		}
 
@@ -134,6 +134,78 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 
 	if f.DynamicUsageNote() != "" {
 		fmt.Println(f.DynamicUsageNote())
+	}
+}
+
+// PrintGroups renders usage help for mutual and require-together groups.
+func (f *FlagSet) PrintGroups(w io.Writer, indent, maxWidth int) {
+	// Required-together groups
+	for _, g := range f.requiredTogether {
+		if g.IsHidden() {
+			continue
+		}
+		if g.TitleText() != "" {
+			fmt.Fprintf(w, "\n%s\n", g.TitleText()) // nolint:errcheck
+		}
+		if g.IsRequired() {
+			fmt.Fprintf(w, "%s(Required)\n", strings.Repeat(" ", indent)) // nolint:errcheck
+		}
+		if len(g.Flags) > 0 {
+			for _, fl := range g.Flags {
+				desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
+				printGroupFlagUsage(w, indent, fl, desc, maxWidth)
+			}
+		}
+	}
+
+	// Mutual exclusive groups
+	for _, g := range f.mutualGroups {
+		if g.IsHidden() {
+			continue
+		}
+		if g.TitleText() != "" {
+			fmt.Fprintf(w, "\n%s\n", g.TitleText()) // nolint:errcheck
+		} else {
+			fmt.Fprintf(w, "\nMutually Exclusive Group: %s\n", g.Name) // nolint:errcheck
+		}
+		if g.IsRequired() {
+			fmt.Fprintf(w, "%s(Exactly one required)\n", strings.Repeat(" ", indent)) // nolint:errcheck
+		}
+		for _, fl := range g.Flags {
+			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
+			printGroupFlagUsage(w, indent, fl, desc, maxWidth)
+		}
+		for _, grp := range g.RequiredGroups {
+			names := make([]string, 0, len(grp.Flags))
+			for _, fl := range grp.Flags {
+				names = append(names, "--"+fl.Name)
+			}
+			groupLabel := "[" + strings.Join(names, ", ") + "]"
+			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), 20, groupLabel, "(Required together)") // nolint:errcheck
+		}
+	}
+}
+
+// printGroupFlagUsage prints one flag in a group with indent and wrapping.
+func printGroupFlagUsage(w io.Writer, indent int, flag *core.BaseFlag, desc string, maxWidth int) {
+	var b strings.Builder
+	formatStaticFlagNames(&b, flag)
+	flagLine := b.String()
+
+	if meta := getPlaceholder(flag); meta != "" {
+		flagLine += " " + meta
+	}
+
+	if len(flagLine)+len(desc) <= maxWidth-indent {
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), 20, flagLine, desc) // nolint:errcheck
+		return
+	}
+
+	wrapped := wrapText(desc, maxWidth-indent-21)
+	lines := strings.Split(wrapped, "\n")
+	fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), 20, flagLine, lines[0]) // nolint:errcheck
+	for _, l := range lines[1:] {
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), 20, "", l) // nolint:errcheck
 	}
 }
 
@@ -181,15 +253,15 @@ func printFlagUsage(w io.Writer, indent, startCol, maxWidth int, globalHideEnvs 
 	desc := buildFlagDescription(flag, globalHideEnvs, prefix)
 
 	if len(flagLine)+len(desc) <= maxWidth-startCol {
-		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc)
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc) // nolint:errcheck
 		return
 	}
 
 	wrapped := wrapText(desc, maxWidth-indent-startCol-1)
 	lines := strings.Split(wrapped, "\n")
-	fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0])
+	fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0]) // nolint:errcheck
 	for _, l := range lines[1:] {
-		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l)
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l) // nolint:errcheck
 	}
 }
 
@@ -283,6 +355,9 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 	if flag.MutualGroup != nil && !flag.MutualGroup.IsHidden() {
 		desc += buildGroupInfo(flag.MutualGroup)
 	}
+	if flag.RequiredTogether != nil && !flag.RequiredTogether.IsHidden() {
+		desc += buildRequireGroupInfo(flag.RequiredTogether)
+	}
 	return desc
 }
 
@@ -347,30 +422,46 @@ func buildGroupInfo(group *core.MutualExlusiveGroup) string {
 	return b.String()
 }
 
+// buildRequireGroupInfo returns group info suffix if flag belongs to a require-together group.
+func buildRequireGroupInfo(group *core.RequiredTogetherGroup) string {
+	var b strings.Builder
+	b.WriteString(" (Require Together: ")
+	if group.TitleText() != "" {
+		b.WriteString(group.TitleText())
+	} else {
+		b.WriteString(group.Name)
+	}
+	if group.IsRequired() {
+		b.WriteString(", required")
+	}
+	b.WriteString(")")
+	return b.String()
+}
+
 // printUsageToken prints short, long, or combined flag usage.
 func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 	meta := getPlaceholder(fl)
 	switch mode {
 	case PrintShort:
 		if fl.Short != "" {
-			fmt.Fprintf(w, " -%s", fl.Short)
+			fmt.Fprintf(w, " -%s", fl.Short) // nolint:errcheck
 			if meta != "" {
-				fmt.Fprintf(w, " %s", meta)
+				fmt.Fprintf(w, " %s", meta) // nolint:errcheck
 			}
 		}
 	case PrintLong:
-		fmt.Fprintf(w, " --%s", fl.Name)
+		fmt.Fprintf(w, " --%s", fl.Name) // nolint:errcheck
 		if meta != "" {
-			fmt.Fprintf(w, " %s", meta)
+			fmt.Fprintf(w, " %s", meta) // nolint:errcheck
 		}
 	case PrintBoth:
 		if fl.Short != "" {
-			fmt.Fprintf(w, " -%s|--%s", fl.Short, fl.Name)
+			fmt.Fprintf(w, " -%s|--%s", fl.Short, fl.Name) // nolint:errcheck
 		} else {
-			fmt.Fprintf(w, " --%s", fl.Name)
+			fmt.Fprintf(w, " --%s", fl.Name) // nolint:errcheck
 		}
 		if meta != "" {
-			fmt.Fprintf(w, " %s", meta)
+			fmt.Fprintf(w, " %s", meta) // nolint:errcheck
 		}
 	}
 }
@@ -380,6 +471,6 @@ func writeIndented(w io.Writer, text string, indent int) {
 	lines := strings.Split(text, "\n")
 	prefix := strings.Repeat(" ", indent)
 	for _, line := range lines {
-		fmt.Fprintf(w, "%s%s\n", prefix, line)
+		fmt.Fprintf(w, "%s%s\n", prefix, line) // nolint:errcheck
 	}
 }
