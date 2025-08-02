@@ -26,61 +26,61 @@ func (b *StaticFlag[T]) Short(s string) *StaticFlag[T] {
 }
 
 // Required marks the flag as mandatory.
-func (b *StaticFlag[T]) Required() *StaticFlag[T] {
-	b.bf.Required = true
-	return b
+func (s *StaticFlag[T]) Required() *StaticFlag[T] {
+	s.bf.Required = true
+	return s
 }
 
 // Hidden omits the flag from help output.
-func (b *StaticFlag[T]) Hidden() *StaticFlag[T] {
-	b.bf.Hidden = true
-	return b
+func (s *StaticFlag[T]) Hidden() *StaticFlag[T] {
+	s.bf.Hidden = true
+	return s
 }
 
 // Deprecated adds a deprecation notice.
-func (b *StaticFlag[T]) Deprecated(reason string) *StaticFlag[T] {
-	b.bf.Deprecated = reason
-	return b
+func (s *StaticFlag[T]) Deprecated(reason string) *StaticFlag[T] {
+	s.bf.Deprecated = reason
+	return s
 }
 
 // MutualExlusive assigns this flag to an exclusive group.
-func (b *StaticFlag[T]) MutualExlusive(name string) *StaticFlag[T] {
+func (s *StaticFlag[T]) MutualExlusive(name string) *StaticFlag[T] {
 	if name == "" {
-		return b
+		return s
 	}
-	g := b.registry.GetMutualGroup(name)
-	g.Flags = append(g.Flags, b.bf)
-	b.bf.MutualGroup = g
-	return b
+	g := s.registry.GetMutualGroup(name)
+	g.Flags = append(g.Flags, s.bf)
+	s.bf.MutualGroup = g
+	return s
 }
 
 // RequireTogether assigns this flag to a require-together group.
-func (b *StaticFlag[T]) RequireTogether(name string) *StaticFlag[T] {
+func (s *StaticFlag[T]) RequireTogether(name string) *StaticFlag[T] {
 	if name == "" {
-		return b
+		return s
 	}
-	g := b.registry.GetRequireTogetherGroup(name)
-	g.Flags = append(g.Flags, b.bf)
-	b.bf.RequiredTogether = g
-	return b
+	g := s.registry.GetRequireTogetherGroup(name)
+	g.Flags = append(g.Flags, s.bf)
+	s.bf.RequiredTogether = g
+	return s
 }
 
 // Env sets a custom environment‐variable key.
-func (b *StaticFlag[T]) Env(key string) *StaticFlag[T] {
-	if b.bf.DisableEnv {
+func (s *StaticFlag[T]) Env(key string) *StaticFlag[T] {
+	if s.bf.DisableEnv {
 		panic("cannot call Env after DisableEnv")
 	}
-	b.bf.EnvKey = key
-	return b
+	s.bf.EnvKey = key
+	return s
 }
 
 // DisableEnv turns off environment‐variable lookup.
-func (b *StaticFlag[T]) DisableEnv() *StaticFlag[T] {
-	if b.bf.EnvKey != "" {
+func (s *StaticFlag[T]) DisableEnv() *StaticFlag[T] {
+	if s.bf.EnvKey != "" {
 		panic("cannot call DisableEnv after Env")
 	}
-	b.bf.DisableEnv = true
-	return b
+	s.bf.DisableEnv = true
+	return s
 }
 
 // Placeholder customizes the value placeholder in usage.
@@ -90,13 +90,13 @@ func (b *StaticFlag[T]) Placeholder(s string) *StaticFlag[T] {
 }
 
 // Value exposes the underlying pointer for reading.
-func (b *StaticFlag[T]) Value() *T {
-	return b.ptr
+func (s *StaticFlag[T]) Value() *T {
+	return s.ptr
 }
 
 // Allowed restricts help to show only these formatted values.
-func (b *StaticFlag[T]) Allowed(vals ...string) *StaticFlag[T] {
+func (s *StaticFlag[T]) Allowed(vals ...string) *StaticFlag[T] {
 	// copy to prevent external mutation
-	b.bf.Allowed = append([]string(nil), vals...)
-	return b
+	s.bf.Allowed = append([]string(nil), vals...)
+	return s
 }

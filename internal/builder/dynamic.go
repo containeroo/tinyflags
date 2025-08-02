@@ -17,72 +17,72 @@ func NewDynamicFlag[T any](
 }
 
 // Required marks the flag as mandatory.
-func (b *DynamicFlag[T]) Required() *DynamicFlag[T] {
-	b.bf.Required = true
-	return b
+func (d *DynamicFlag[T]) Required() *DynamicFlag[T] {
+	d.bf.Required = true
+	return d
 }
 
 // Hidden omits the flag from help output.
-func (b *DynamicFlag[T]) Hidden() *DynamicFlag[T] {
-	b.bf.Hidden = true
-	return b
+func (d *DynamicFlag[T]) Hidden() *DynamicFlag[T] {
+	d.bf.Hidden = true
+	return d
 }
 
 // Deprecated adds a deprecation notice.
-func (b *DynamicFlag[T]) Deprecated(reason string) *DynamicFlag[T] {
-	b.bf.Deprecated = reason
-	return b
+func (d *DynamicFlag[T]) Deprecated(reason string) *DynamicFlag[T] {
+	d.bf.Deprecated = reason
+	return d
 }
 
 // MutualExlusive assigns this flag to an exclusive group.
-func (b *DynamicFlag[T]) MutualExlusive(name string) *DynamicFlag[T] {
+func (d *DynamicFlag[T]) MutualExlusive(name string) *DynamicFlag[T] {
 	if name == "" {
-		return b
+		return d
 	}
-	g := b.registry.GetMutualGroup(name)
-	g.Flags = append(g.Flags, b.bf)
-	b.bf.MutualGroup = g
-	return b
+	g := d.registry.GetMutualGroup(name)
+	g.Flags = append(g.Flags, d.bf)
+	d.bf.MutualGroup = g
+	return d
 }
 
 // RequireTogether assigns this flag to a require-together group.
-func (b *DynamicFlag[T]) RequireTogether(name string) *DynamicFlag[T] {
+func (d *DynamicFlag[T]) RequireTogether(name string) *DynamicFlag[T] {
 	if name == "" {
-		return b
+		return d
 	}
-	g := b.registry.GetRequireTogetherGroup(name)
-	g.Flags = append(g.Flags, b.bf)
-	b.bf.RequiredTogether = g
-	return b
+	g := d.registry.GetRequireTogetherGroup(name)
+	g.Flags = append(g.Flags, d.bf)
+	d.bf.RequiredTogether = g
+	return d
 }
 
 // Env sets a custom environment‐variable key.
-func (b *DynamicFlag[T]) Env(key string) *DynamicFlag[T] {
-	if b.bf.DisableEnv {
+func (d *DynamicFlag[T]) Env(key string) *DynamicFlag[T] {
+	if d.bf.DisableEnv {
 		panic("cannot call Env after DisableEnv")
 	}
-	b.bf.EnvKey = key
-	return b
+	d.bf.EnvKey = key
+	return d
 }
 
 // DisableEnv turns off environment‐variable lookup.
-func (b *DynamicFlag[T]) DisableEnv() *DynamicFlag[T] {
-	if b.bf.EnvKey != "" {
+func (d *DynamicFlag[T]) DisableEnv() *DynamicFlag[T] {
+	if d.bf.EnvKey != "" {
 		panic("cannot call DisableEnv after Env")
 	}
-	b.bf.DisableEnv = true
-	return b
+	d.bf.DisableEnv = true
+	return d
 }
 
 // Placeholder customizes the value placeholder in usage.
-func (b *DynamicFlag[T]) Placeholder(s string) *DynamicFlag[T] {
-	b.bf.Placeholder = s
-	return b
+func (d *DynamicFlag[T]) Placeholder(s string) *DynamicFlag[T] {
+	d.bf.Placeholder = s
+	return d
 }
 
 // Allowed restricts help to show only these formatted values.
-func (b *DynamicFlag[T]) Allowed(vals ...string) *DynamicFlag[T] {
+func (d *DynamicFlag[T]) Allowed(vals ...string) *DynamicFlag[T] {
 	// copy to prevent external mutation
-	b.bf.Allowed = append([]string(nil), vals...)
-	return b
+	d.bf.Allowed = append([]string(nil), vals...)
+	return d
 }

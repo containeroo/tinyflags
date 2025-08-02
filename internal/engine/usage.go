@@ -138,7 +138,7 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 }
 
 // PrintGroups renders usage help for mutual and require-together groups.
-func (f *FlagSet) PrintGroups(w io.Writer, indent, maxWidth int) {
+func (f *FlagSet) PrintGroups(w io.Writer, indent, startCol, maxWidth int) {
 	// Required-together groups
 	for _, g := range f.requiredTogether {
 		if g.IsHidden() {
@@ -153,7 +153,7 @@ func (f *FlagSet) PrintGroups(w io.Writer, indent, maxWidth int) {
 		if len(g.Flags) > 0 {
 			for _, fl := range g.Flags {
 				desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-				printGroupFlagUsage(w, indent, fl, desc, maxWidth)
+				printGroupFlagUsage(w, indent, startCol, fl, desc, maxWidth)
 			}
 		}
 	}
@@ -173,7 +173,7 @@ func (f *FlagSet) PrintGroups(w io.Writer, indent, maxWidth int) {
 		}
 		for _, fl := range g.Flags {
 			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-			printGroupFlagUsage(w, indent, fl, desc, maxWidth)
+			printGroupFlagUsage(w, indent, startCol, fl, desc, maxWidth)
 		}
 		for _, grp := range g.RequiredGroups {
 			names := make([]string, 0, len(grp.Flags))
@@ -181,13 +181,13 @@ func (f *FlagSet) PrintGroups(w io.Writer, indent, maxWidth int) {
 				names = append(names, "--"+fl.Name)
 			}
 			groupLabel := "[" + strings.Join(names, ", ") + "]"
-			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), 20, groupLabel, "(Required together)") // nolint:errcheck
+			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, groupLabel, "(Required together)") // nolint:errcheck
 		}
 	}
 }
 
 // printGroupFlagUsage prints one flag in a group with indent and wrapping.
-func printGroupFlagUsage(w io.Writer, indent int, flag *core.BaseFlag, desc string, maxWidth int) {
+func printGroupFlagUsage(w io.Writer, indent, startCol int, flag *core.BaseFlag, desc string, maxWidth int) {
 	var b strings.Builder
 	formatStaticFlagNames(&b, flag)
 	flagLine := b.String()
@@ -197,7 +197,7 @@ func printGroupFlagUsage(w io.Writer, indent int, flag *core.BaseFlag, desc stri
 	}
 
 	if len(flagLine)+len(desc) <= maxWidth-indent {
-		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), 20, flagLine, desc) // nolint:errcheck
+		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc) // nolint:errcheck
 		return
 	}
 
