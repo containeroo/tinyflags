@@ -180,13 +180,13 @@ func main() {
    fmt.Println("Count:", *count)
    ```
 
-- If the user does `--count=-5`, they see:
+   - If the user does `--count=-5`, they see:
 
-  ```
-  invalid value for --count: must be non-negative
-  ```
+     ```text
+     invalid value for --count: must be non-negative
+     ```
 
-  - On error, parsing aborts and your message is shown to the user.
+   - On error, parsing aborts and your message is shown to the user.
 
 2. **Finalize**
 
@@ -217,17 +217,16 @@ func main() {
     fs.Parse([]string{"--name=   alice smith  ", "--url", "https://containeroo.ch"})
     fmt.Println("Hello,", *name)
     fmt.Println("Visist:", *url)
-    ```
+   ```
 
-    _Output:_
+   _Output:_
 
-    ```
-    Hello, Alice Smith
-    Visti: https://containeroo.ch/
-    ```
+   ```text
+   Hello, Alice Smith
+   Visti: https://containeroo.ch/
+   ```
 
    - Useful for trimming whitespace, applying normalization, setting derived defaults, etc.
-   ````
 
 ## Environment Variables
 
