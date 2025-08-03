@@ -280,11 +280,11 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 	if !flag.HideRequired && flag.Required {
 		desc += " (Required)"
 	}
-	if flag.MutualGroup != nil && !flag.MutualGroup.IsHidden() {
-		desc += buildGroupInfo(flag.MutualGroup)
+	if flag.OneOfGroup != nil && !flag.OneOfGroup.IsHidden() {
+		desc += buildGroupInfo(flag.OneOfGroup)
 	}
-	if flag.RequiredTogether != nil && !flag.RequiredTogether.IsHidden() {
-		desc += buildRequireGroupInfo(flag.RequiredTogether)
+	if flag.AllOrNone != nil && !flag.AllOrNone.IsHidden() {
+		desc += buildRequireGroupInfo(flag.AllOrNone)
 	}
 	return desc
 }
@@ -334,10 +334,10 @@ func (f *FlagSet) calcDynamicUsageColumn(padding int) int {
 	return maxLen + padding
 }
 
-// buildGroupInfo returns group info suffix if flag belongs to a mutual group.
-func buildGroupInfo(group *core.MutualExlusiveGroup) string {
+// buildGroupInfo returns group info suffix if flag belongs to a one of group.
+func buildGroupInfo(group *core.OneOfGroupGroup) string {
 	var b strings.Builder
-	b.WriteString(" (Group: ")
+	b.WriteString(" (One Of Group: ")
 	if group.TitleText() != "" {
 		b.WriteString(group.TitleText())
 	} else {
@@ -351,9 +351,9 @@ func buildGroupInfo(group *core.MutualExlusiveGroup) string {
 }
 
 // buildRequireGroupInfo returns group info suffix if flag belongs to a require-together group.
-func buildRequireGroupInfo(group *core.RequiredTogetherGroup) string {
+func buildRequireGroupInfo(group *core.AllOrNoneGroup) string {
 	var b strings.Builder
-	b.WriteString(" (Require Together: ")
+	b.WriteString(" (All Or None Group: ")
 	if group.TitleText() != "" {
 		b.WriteString(group.TitleText())
 	} else {

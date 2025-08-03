@@ -39,7 +39,7 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkMutualExclusion(); err != nil {
 		return f.handleError(err)
 	}
-	if err := f.checkRequireTogether(); err != nil {
+	if err := f.checkAllOrNone(); err != nil {
 		return f.handleError(err)
 	}
 
@@ -93,7 +93,7 @@ func (f *FlagSet) parseEnv() error {
 
 // checkMutualExclusion ensures only one flag per group is set.
 func (f *FlagSet) checkMutualExclusion() error {
-	for _, g := range f.mutualGroups {
+	for _, g := range f.oneOfGroup {
 		var conflicting []string
 
 		// Check individual flags
@@ -112,7 +112,7 @@ func (f *FlagSet) checkMutualExclusion() error {
 				}
 			}
 			if set > 0 && set != len(grp.Flags) {
-				// Skip partially set group (handled by checkRequireTogether)
+				// Skip partially set group (handled by checkAllOrNone)
 				continue
 			}
 			if set == len(grp.Flags) {
@@ -135,9 +135,9 @@ func (f *FlagSet) checkMutualExclusion() error {
 	return nil
 }
 
-// checkRequireTogether ensures all required flags were set.
-func (f *FlagSet) checkRequireTogether() error {
-	for _, g := range f.requiredTogether {
+// checkAllOrNone ensures all required flags were set.
+func (f *FlagSet) checkAllOrNone() error {
+	for _, g := range f.allOrNoneGroup {
 		set := 0
 		for _, fl := range g.Flags {
 			if fl.Value.Changed() {

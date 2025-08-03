@@ -3,10 +3,10 @@ package core
 // Registry manages static flags, dynamic groups, and defaults.
 type Registry interface {
 	RegisterFlag(name string, bf *BaseFlag)
-	GetMutualGroup(name string) *MutualExlusiveGroup
-	MutualGroups() []*MutualExlusiveGroup
+	GetOneOfGroup(name string) *OneOfGroupGroup
+	OneOfGroups() []*OneOfGroupGroup
 	DefaultDelimiter() string
-	GetRequireTogetherGroup(name string) *RequiredTogetherGroup
+	GetAllOrNoneGroup(name string) *AllOrNoneGroup
 }
 
 // Value parses and holds a single CLI value.

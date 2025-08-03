@@ -131,42 +131,42 @@ func (f *FlagSet) Args() []string { return f.impl.Args() }
 // Arg returns the i-th positional argument and whether it exists.
 func (f *FlagSet) Arg(i int) (string, bool) { return f.impl.Arg(i) }
 
-// MutualGroups returns all registered mutual exclusion groups.
-func (f *FlagSet) MutualGroups() []*core.MutualExlusiveGroup { return f.impl.MutualGroups() }
+// OneOfGroups returns all registered OneOfGroups groups.
+func (f *FlagSet) OneOfGroups() []*core.OneOfGroupGroup { return f.impl.OneOfGroups() }
 
-// AddMutualGroup adds a mutual exclusion group.
-func (f *FlagSet) AddMutualGroup(name string, g *core.MutualExlusiveGroup) {
-	f.impl.AddMutualGroup(name, g)
+// AddOneOfGroup adds a AddOneOfGroup group.
+func (f *FlagSet) AddOneOfGroup(name string, g *core.OneOfGroupGroup) {
+	f.impl.AddOneOfGroup(name, g)
 }
 
-// GetMutualGroup retrieves or creates a named mutual exclusion group.
-func (f *FlagSet) GetMutualGroup(name string) *core.MutualExlusiveGroup {
-	return f.impl.GetMutualGroup(name)
+// GetOneOfGroup retrieves or creates a named OneOfGroup group.
+func (f *FlagSet) GetOneOfGroup(name string) *core.OneOfGroupGroup {
+	return f.impl.GetOneOfGroup(name)
 }
 
-// AttachToMutualGroup attaches a static flag to a mutual exclusion group.
-func (f *FlagSet) AttachToMutualGroup(flag *core.BaseFlag, group string) {
-	f.impl.AttachToMutualGroup(flag, group)
+// AttachToOneOfGroup attaches a static flag to a OneOfGroup group.
+func (f *FlagSet) AttachToOneOfGroup(flag *core.BaseFlag, group string) {
+	f.impl.AttachToOneOfGroup(flag, group)
 }
 
-// RequireTogetherGroups returns all registered require-together groups.
-func (f *FlagSet) RequireTogetherGroups() []*core.RequiredTogetherGroup {
-	return f.impl.RequireTogetherGroups()
+// AllOrNoneGroup returns all registered AllOrNoneGroup group.
+func (f *FlagSet) AllOrNoneGroup() []*core.AllOrNoneGroup {
+	return f.impl.AllOrNoneGroups()
 }
 
-// AddRequireTogetherGroup adds a require-together group.
-func (f *FlagSet) AddRequireTogetherGroup(name string, g *core.RequiredTogetherGroup) {
-	f.impl.AddRequireTogetherGroup(name, g)
+// AddAllOrNoneGroup adds a AllOrNoneGroup group.
+func (f *FlagSet) AddAllOrNoneGroup(name string, g *core.AllOrNoneGroup) {
+	f.impl.AddAllOrNoneGroup(name, g)
 }
 
-// GetRequireTogetherGroup retrieves or creates a named require-together group.
-func (f *FlagSet) GetRequireTogetherGroup(name string) *core.RequiredTogetherGroup {
-	return f.impl.GetRequireTogetherGroup(name)
+// GetAllOrNoneGroup retrieves or creates a named AllOrNoneGroup group.
+func (f *FlagSet) GetAllOrNoneGroup(name string) *core.AllOrNoneGroup {
+	return f.impl.GetAllOrNoneGroup(name)
 }
 
-// AttachToRequireTogetherGroup attaches a flag to a require-together group.
-func (f *FlagSet) AttachToRequireTogetherGroup(flag *core.BaseFlag, group string) {
-	f.impl.AttachToRequireTogetherGroup(flag, group)
+// AttachToAllOrNoneGroup attaches a flag to a AllOrNoneGroup group.
+func (f *FlagSet) AttachToAllOrNoneGroup(flag *core.BaseFlag, group string) {
+	f.impl.AttachToAllOrNoneGroup(flag, group)
 }
 
 // LookupFlag retrieves a static flag by name.

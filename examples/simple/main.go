@@ -36,9 +36,9 @@ func main() {
 		Short("d").
 		Value()
 
-	log := tf.Bool("log", false, "enable logging").MutualExlusive("logging").Short("l").Value()
-	noLog := tf.Bool("no-log", false, "disable logging").MutualExlusive("logging").Short("L").Value()
-	tf.GetMutualGroup("logging").Hidden()
+	log := tf.Bool("log", false, "enable logging").OneOfGroup("logging").Short("l").Value()
+	noLog := tf.Bool("no-log", false, "disable logging").OneOfGroup("logging").Short("L").Value()
+	tf.GetOneOfGroup("logging").Hidden()
 
 	tags := tf.StringSlice("tag", []string{}, "list of tags").
 		Value()
@@ -47,8 +47,8 @@ func main() {
 		Choices("debug", "info", "warn", "error").
 		Value()
 
-	user := tf.String("user", "admin", "user to use").RequireTogether("credentials").Value()
-	pw := tf.String("password", "", "password to use").RequireTogether("credentials").Value()
+	user := tf.String("user", "admin", "user to use").AllOrNone("credentials").Value()
+	pw := tf.String("password", "", "password to use").AllOrNone("credentials").Value()
 
 	if err := tf.Parse(args); err != nil {
 		if tinyflags.IsHelpRequested(err) || tinyflags.IsVersionRequested(err) {

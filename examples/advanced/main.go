@@ -112,18 +112,18 @@ func parseArgs(args []string) (*Config, error) {
 		Value()
 
 	email := tf.String("email", "", "User email").
-		RequireTogether("authpair").
+		AllOrNone("authpair").
 		Value()
 	pw := tf.String("password", "", "Password").
-		RequireTogether("authpair").
+		AllOrNone("authpair").
 		Value()
 	token := tf.String("bearer-token", "", "Bearer token").
-		MutualExlusive("authmethod").
+		OneOfGroup("authmethod").
 		Value()
 
-	tf.GetMutualGroup("authmethod").
+	tf.GetOneOfGroup("authmethod").
 		Title("Authentication method").
-		AddGroup(tf.GetRequireTogetherGroup("authpair"))
+		AddGroup(tf.GetAllOrNoneGroup("authpair"))
 
 	if err := tf.Parse(args); err != nil {
 		return nil, err

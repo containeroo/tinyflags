@@ -11,35 +11,35 @@ import (
 
 // FlagSet manages the definition, parsing, and usage output of command-line flags.
 type FlagSet struct {
-	name               string                      // Application or command name (used in usage)
-	errorHandling      ErrorHandling               // Behavior when parsing fails
-	staticFlagsMap     map[string]*core.BaseFlag   // All registered static flags by name
-	staticFlagsOrder   []*core.BaseFlag            // Static flags in registration order
-	dynamicGroupsMap   map[string]*dynamic.Group   // All dynamic groups by name
-	dynamicGroupsOrder []*dynamic.Group            // Dynamic groups in registration order
-	mutualGroups       []*core.MutualExlusiveGroup // All mutual exclusion groups
-	requiredTogether   []*core.RequiredTogetherGroup
-	positional         []string            // Remaining non-flag arguments
-	requiredPositional int                 // Required positional argument count
-	envPrefix          string              // Optional ENV prefix (e.g. "APP_")
-	getEnv             func(string) string // Function used to read ENV vars (default: os.Getenv)
-	ignoreInvalidEnv   bool                // Whether to ignore unknown ENV overrides
-	defaultDelimiter   string              // Global slice delimiter (default: ",")
-	title              string              // Title shown in usage output
-	desc               string              // Prolog before flags
-	notes              string              // Epilog after flags
-	versionString      string              // Version string for --version
-	usagePrintMode     FlagPrintMode       // Usage print mode (short|long|both|flags|none)
-	output             io.Writer           // Destination for help output
-	enableHelp         bool                // Whether built-in --help is enabled
-	enableVer          bool                // Whether built-in --version is enabled
-	showHelp           *bool               // Parsed value of --help
-	showVersion        *bool               // Parsed value of --version
-	Usage              func()              // Custom usage function (optional)
-	sortFlags          bool                // Enable static flag sorting
-	sortGroups         bool                // Enable dynamic group sorting
-	authors            string              // Optional authors block
-	hideEnvs           bool                // Globally hide environment key hints
+	name               string                    // Application or command name (used in usage)
+	errorHandling      ErrorHandling             // Behavior when parsing fails
+	staticFlagsMap     map[string]*core.BaseFlag // All registered static flags by name
+	staticFlagsOrder   []*core.BaseFlag          // Static flags in registration order
+	dynamicGroupsMap   map[string]*dynamic.Group // All dynamic groups by name
+	dynamicGroupsOrder []*dynamic.Group          // Dynamic groups in registration order
+	oneOfGroup         []*core.OneOfGroupGroup   // All oneOfGroup groups
+	allOrNoneGroup     []*core.AllOrNoneGroup    // All AllOrNoneGroup groups
+	positional         []string                  // Remaining non-flag arguments
+	requiredPositional int                       // Required positional argument count
+	envPrefix          string                    // Optional ENV prefix (e.g. "APP_")
+	getEnv             func(string) string       // Function used to read ENV vars (default: os.Getenv)
+	ignoreInvalidEnv   bool                      // Whether to ignore unknown ENV overrides
+	defaultDelimiter   string                    // Global slice delimiter (default: ",")
+	title              string                    // Title shown in usage output
+	desc               string                    // Prolog before flags
+	notes              string                    // Epilog after flags
+	versionString      string                    // Version string for --version
+	usagePrintMode     FlagPrintMode             // Usage print mode (short|long|both|flags|none)
+	output             io.Writer                 // Destination for help output
+	enableHelp         bool                      // Whether built-in --help is enabled
+	enableVer          bool                      // Whether built-in --version is enabled
+	showHelp           *bool                     // Parsed value of --help
+	showVersion        *bool                     // Parsed value of --version
+	Usage              func()                    // Custom usage function (optional)
+	sortFlags          bool                      // Enable static flag sorting
+	sortGroups         bool                      // Enable dynamic group sorting
+	authors            string                    // Optional authors block
+	hideEnvs           bool                      // Globally hide environment key hints
 
 	// Indentation and width config for description
 	descIndent int
@@ -143,29 +143,25 @@ func (f *FlagSet) DescIndent() int      { return f.descIndent }
 func (f *FlagSet) SetDescWidth(max int) { f.descWidth = max }
 func (f *FlagSet) DescWidth() int       { return f.descWidth }
 
-func (f *FlagSet) SetStaticUsageIndent(n int)   { f.usageStaticIndent = n }
-func (f *FlagSet) StaticUsageIndent() int       { return f.usageStaticIndent }
-func (f *FlagSet) SetStaticUsageColumn(col int) { f.usageStaticCol = col }
-func (f *FlagSet) StaticUsageColumn() int       { return f.usageStaticCol }
-func (f *FlagSet) SetStaticUsageWidth(max int)  { f.usageStaticWidth = max }
-func (f *FlagSet) StaticUsageWidth() int        { return f.usageStaticWidth }
-func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
-	return f.calcStaticUsageColumn(padding)
-}
-func (f *FlagSet) SetStaticUsageNote(s string) { f.usageStaticNote = s }
-func (f *FlagSet) StaticUsageNote() string     { return f.usageStaticNote }
+func (f *FlagSet) SetStaticUsageIndent(n int)            { f.usageStaticIndent = n }
+func (f *FlagSet) StaticUsageIndent() int                { return f.usageStaticIndent }
+func (f *FlagSet) SetStaticUsageColumn(col int)          { f.usageStaticCol = col }
+func (f *FlagSet) StaticUsageColumn() int                { return f.usageStaticCol }
+func (f *FlagSet) SetStaticUsageWidth(max int)           { f.usageStaticWidth = max }
+func (f *FlagSet) StaticUsageWidth() int                 { return f.usageStaticWidth }
+func (f *FlagSet) StaticAutoUsageColumn(padding int) int { return f.calcStaticUsageColumn(padding) }
+func (f *FlagSet) SetStaticUsageNote(s string)           { f.usageStaticNote = s }
+func (f *FlagSet) StaticUsageNote() string               { return f.usageStaticNote }
 
-func (f *FlagSet) SetDynamicUsageIndent(n int)   { f.usageDynamicIndent = n }
-func (f *FlagSet) DynamicUsageIndent() int       { return f.usageDynamicIndent }
-func (f *FlagSet) SetDynamicUsageColumn(col int) { f.usageDynamicCol = col }
-func (f *FlagSet) DynamicUsageColumn() int       { return f.usageDynamicCol }
-func (f *FlagSet) SetDynamicUsageWidth(max int)  { f.usageDynamicWidth = max }
-func (f *FlagSet) DynamicUsageWidth() int        { return f.usageDynamicWidth }
-func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
-	return f.calcDynamicUsageColumn(padding)
-}
-func (f *FlagSet) SetDynamicUsageNote(s string) { f.usageDynamicNote = s }
-func (f *FlagSet) DynamicUsageNote() string     { return f.usageDynamicNote }
+func (f *FlagSet) SetDynamicUsageIndent(n int)            { f.usageDynamicIndent = n }
+func (f *FlagSet) DynamicUsageIndent() int                { return f.usageDynamicIndent }
+func (f *FlagSet) SetDynamicUsageColumn(col int)          { f.usageDynamicCol = col }
+func (f *FlagSet) DynamicUsageColumn() int                { return f.usageDynamicCol }
+func (f *FlagSet) SetDynamicUsageWidth(max int)           { f.usageDynamicWidth = max }
+func (f *FlagSet) DynamicUsageWidth() int                 { return f.usageDynamicWidth }
+func (f *FlagSet) DynamicAutoUsageColumn(padding int) int { return f.calcDynamicUsageColumn(padding) }
+func (f *FlagSet) SetDynamicUsageNote(s string)           { f.usageDynamicNote = s }
+func (f *FlagSet) DynamicUsageNote() string               { return f.usageDynamicNote }
 
 func (f *FlagSet) SetNoteIndent(n int)  { f.noteIndent = n }
 func (f *FlagSet) NoteIndent() int      { return f.noteIndent }
@@ -218,58 +214,58 @@ func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
 	return groups
 }
 
-// --- RequireTogether Group Handling ---
+// --- AllOrNone Group Handling ---
 
-func (f *FlagSet) RequireTogetherGroups() []*core.RequiredTogetherGroup { return f.requiredTogether }
+func (f *FlagSet) AllOrNoneGroups() []*core.AllOrNoneGroup { return f.allOrNoneGroup }
 
-func (f *FlagSet) AddRequireTogetherGroup(name string, g *core.RequiredTogetherGroup) {
-	f.requiredTogether = append(f.requiredTogether, g)
+func (f *FlagSet) AddAllOrNoneGroup(name string, g *core.AllOrNoneGroup) {
+	f.allOrNoneGroup = append(f.allOrNoneGroup, g)
 }
 
-// GetRequireTogetherGroup returns a group that requires all flags to be set together.
+// GetAllOrNoneGroup returns a group that requires all flags to be set together.
 // It creates the group if it doesn't exist.
-func (f *FlagSet) GetRequireTogetherGroup(name string) *core.RequiredTogetherGroup {
-	for _, g := range f.requiredTogether {
+func (f *FlagSet) GetAllOrNoneGroup(name string) *core.AllOrNoneGroup {
+	for _, g := range f.allOrNoneGroup {
 		if g.Name == name {
 			return g
 		}
 	}
-	g := &core.RequiredTogetherGroup{Name: name}
-	f.requiredTogether = append(f.requiredTogether, g)
+	g := &core.AllOrNoneGroup{Name: name}
+	f.allOrNoneGroup = append(f.allOrNoneGroup, g)
 	return g
 }
 
-// AttachToRequireTogetherGroup attaches a flag to a require-together group.
-func (f *FlagSet) AttachToRequireTogetherGroup(bf *core.BaseFlag, group string) {
-	g := f.GetRequireTogetherGroup(group)
+// AttachToAllOrNoneGroup attaches a flag to a require-together group.
+func (f *FlagSet) AttachToAllOrNoneGroup(bf *core.BaseFlag, group string) {
+	g := f.GetAllOrNoneGroup(group)
 	g.Flags = append(g.Flags, bf)
 }
 
 // --- Mutual Group Handling ---
 
-func (f *FlagSet) MutualGroups() []*core.MutualExlusiveGroup {
-	return f.mutualGroups
+func (f *FlagSet) OneOfGroups() []*core.OneOfGroupGroup {
+	return f.oneOfGroup
 }
 
-func (f *FlagSet) AddMutualGroup(name string, g *core.MutualExlusiveGroup) {
-	f.mutualGroups = append(f.mutualGroups, g)
+func (f *FlagSet) AddOneOfGroup(name string, g *core.OneOfGroupGroup) {
+	f.oneOfGroup = append(f.oneOfGroup, g)
 }
 
-func (f *FlagSet) GetMutualGroup(name string) *core.MutualExlusiveGroup {
-	for _, g := range f.mutualGroups {
+func (f *FlagSet) GetOneOfGroup(name string) *core.OneOfGroupGroup {
+	for _, g := range f.oneOfGroup {
 		if g.Name == name {
 			return g
 		}
 	}
-	group := &core.MutualExlusiveGroup{Name: name}
-	f.mutualGroups = append(f.mutualGroups, group)
+	group := &core.OneOfGroupGroup{Name: name}
+	f.oneOfGroup = append(f.oneOfGroup, group)
 	return group
 }
 
-func (f *FlagSet) AttachToMutualGroup(bf *core.BaseFlag, group string) {
-	g := f.GetMutualGroup(group)
+func (f *FlagSet) AttachToOneOfGroup(bf *core.BaseFlag, group string) {
+	g := f.GetOneOfGroup(group)
 	g.Flags = append(g.Flags, bf)
-	bf.MutualGroup = g
+	bf.OneOfGroup = g
 }
 
 // --- Builtin Flags ---

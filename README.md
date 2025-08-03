@@ -13,8 +13,8 @@ Zero dependencies. Full generics support. Rich usage output.
 - **Required, deprecated, and grouped flags**
 - **Slice flags** (`[]T`) with custom delimiters
 - **Allowed choices, validation and finalizers**
-- **Mutual-exclusion groups**
-- **Require-together groups**
+- **One Of groups**
+- **All or None groups**
 - **Custom placeholders & help sections**
 - **Dynamic flags** (`--group.id.field=value`)
 - **Typed values** (`*os.File`, `*net.TCPAddr`, `url.URL`, `time.Duration`, etc.)
@@ -22,18 +22,18 @@ Zero dependencies. Full generics support. Rich usage output.
 **Why yet another flag library?**
 
 - **Validate & Finalize on the fly**
-  I got tired of the two-step tango—parse first, then wade through a swamp of `if`-statements just to check and tweak values. Tinyflags lets you **validate** and **finalize** your flags as they’re parsed, so you can slap on your business logic (and data massaging) in one go.
+  I got tired of the two-step tango--parse first, then wade through a swamp of `if`-statements just to check and tweak values. Tinyflags lets you **validate** and **finalize** your flags as they're parsed, so you can slap on your business logic (and data massaging) in one go.
 
 - **Group therapy for flags**
-  Ever tried juggling “mutually exclusive” or “all-or-nothing” flags with plain `flag`? It’s like herding cats. Tinyflags brings built-in **mutual-exclusion** and **require-together** groups so your flags behave like well-trained puppies.
+  Ever tried juggling "onf of" or "all-or-nothing" flags with plain `flag`? It's like herding cats. Tinyflags brings built-in **onf-of** and **all-or-none** groups so your flags behave like well-trained puppies.
 
 - **Self-service help & version**
   Want to bail out with `--help` or `--version` at just the right moment, without writing extra `if`-blocks? Tinyflags handles the exit routine for you, so you can spend less time plumbing and more time coding.
 
-- **Dynamic flags—finally!**
-  I looked high and low for a Go library that lets you declare `--group.id.field=value` flags, where `id` is dynamic. No luck. So I built one, folded it into tinyflags, and voila: one library to rule both “regular” **and** “shape-shifting” dynamic flags.
+- **Dynamic flags--finally!**
+  I looked high and low for a Go library that lets you declare `--group.id.field=value` flags, where `id` is dynamic. No luck. So I built one, folded it into tinyflags, and voila: one library to rule both "regular" **and** "shape-shifting" dynamic flags.
 
-In short, tinyflags slices away boilerplate, stitches in the goodies I actually needed, and keeps my codebase lean—no extra flag-parsing baggage required. 🚀
+In short, tinyflags slices away boilerplate, stitches in the goodies I actually needed, and keeps my codebase lean--no extra flag-parsing baggage required. 🚀
 
 ## Install
 
@@ -96,25 +96,25 @@ func main() {
 
 ### Common Flag-Builder Methods
 
-| Method                          | Applies to  | Description                                                                             |
-| ------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
-| `Short(s string)`               | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
-| `Required()`                    | all flags   | Mark the flag as required; parser errors if unset.                                      |
-| `Hidden()`                      | all flags   | Omit this flag from generated help output.                                              |
-| `Deprecated(reason string)`     | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
-| `MutualExlusive(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
-| `RequireTogether(group string)` | all flags   | Assign to a named require-together group. All or none in group must be set.             |
-| `Env(key string)`               | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
-| `DisableEnv()`                  | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
-| `Placeholder(text string)`      | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
-| `Allowed(vals ...string)`       | all flags   | Restrict help to show only these allowed values.                                        |
-| `Value() *T`                    | static only | Return the pointer to the parsed value (after `Parse`).                                 |
+| Method                      | Applies to  | Description                                                                             |
+| --------------------------- | ----------- | --------------------------------------------------------------------------------------- |
+| `Short(s string)`           | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
+| `Required()`                | all flags   | Mark the flag as required; parser errors if unset.                                      |
+| `Hidden()`                  | all flags   | Omit this flag from generated help output.                                              |
+| `Deprecated(reason string)` | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
+| `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
+| `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.             |
+| `Env(key string)`           | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
+| `DisableEnv()`              | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
+| `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
+| `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                        |
+| `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                 |
 
 ### Static-Flag Extras
 
 | Method                         | Description                                                                                  | Example                                                                                                                           |
 | ------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `Choices(v1, v2, …)`           | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
+| `Choices(v1, v2, ...)`         | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
 | `Validate(fn func(v T) error)` | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
 | `Finalize(fn func(v T) T)`     | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
 | `Delimiter(sep string)`        | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
@@ -125,7 +125,7 @@ func main() {
 | ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `Has(id string) bool`                | Return whether the given instance-ID was provided on the command line or via env. | `if port.Has("a") { fmt.Println("port a is set") }`          |
 | `Get(id string) (value T, ok bool)`  | Retrieve the parsed value for that ID; `ok==false` if unset (returns default).    | `p, ok := port.Get("a"); if ok { fmt.Println("a →", p) }`    |
-| `MustGet(id string) T`               | Like `Get`, but panics if the instance wasn’t provided.                           | `timeout.MustGet("b")`                                       |
+| `MustGet(id string) T`               | Like `Get`, but panics if the instance wasn't provided.                           | `timeout.MustGet("b")`                                       |
 | `Values() map[string]T`              | Get all parsed values keyed by instance ID.                                       | `for id, v := range timeout.Values() { fmt.Println(id, v) }` |
 | `ValuesAny() map[string]interface{}` | Same as `Values()`, but values are `interface{}`.                                 |                                                              |
 
@@ -133,36 +133,36 @@ func main() {
 
 ### FlagSet Core & Help Configuration
 
-| Method                                                 | Description                                                    |
-| ------------------------------------------------------ | -------------------------------------------------------------- |
-| `NewFlagSet(name string, mode ErrorHandling)`          | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
-| `EnvPrefix(prefix string)`                             | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
-| `Version(version string)`                              | Enable the `--version` flag, printing this string.             |
-| `DisableHelp()` / `DisableVersion()`                   | Remove `--help` or `--version`.                                |
-| `Usage(fn func())`                                     | Install a custom usage function in place of the default.       |
-| `Title(text string)`                                   | Override the “Usage:” title heading.                           |
-| `Authors(names ...string)`                             | Add an “Authors:” section to help.                             |
-| `Description(text string)`                             | Add a free-form description block under the title.             |
-| `Note(text string)`                                    | Add a footer note under the flags listing.                     |
-| `SetOutput(w io.Writer)` / `Output()`                  | Redirect or retrieve where help/version is written.            |
-| **Help Printers:**                                     |                                                                |
-|   `PrintUsage(w, mode)`                                | Print the `Usage:` line.                                       |
-|   `PrintTitle(w)`                                      | Print title and description.                                   |
-|   `PrintAuthors(w)`                                    | Print authors section.                                         |
-|   `PrintDescription(w,indent,width)`                   | Print the description block.                                   |
-|   `PrintNotes(w,indent,width)`                         | Print footer notes.                                            |
-|   `PrintStaticDefaults(w,indent,startCol,width)`       | Print static flags help.                                       |
-|   `PrintDynamicDefaults(w,indent,startCol,width)`      | Print dynamic flags help.                                      |
-| `RequirePositional(n int)`                             | Enforce at least `n` positional arguments.                     |
-| `Args() []string` / `Arg(i int) string`                | Access leftover positional args.                               |
-| `AddMutualGroup(name string, flags []string)`          | Manually define a mutual-exclusion group.                      |
-| `AddRequireTogetherGroup(name string, flags []string)` | Manually define a require-together group.                      |
+| Method                                            | Description                                                    |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| `NewFlagSet(name string, mode ErrorHandling)`     | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
+| `EnvPrefix(prefix string)`                        | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
+| `Version(version string)`                         | Enable the `--version` flag, printing this string.             |
+| `DisableHelp()` / `DisableVersion()`              | Remove `--help` or `--version`.                                |
+| `Usage(fn func())`                                | Install a custom usage function in place of the default.       |
+| `Title(text string)`                              | Override the "Usage:" title heading.                           |
+| `Authors(names ...string)`                        | Add an "Authors:" section to help.                             |
+| `Description(text string)`                        | Add a free-form description block under the title.             |
+| `Note(text string)`                               | Add a footer note under the flags listing.                     |
+| `SetOutput(w io.Writer)` / `Output()`             | Redirect or retrieve where help/version is written.            |
+| **Help Printers:**                                |                                                                |
+|   `PrintUsage(w, mode)`                           | Print the `Usage:` line.                                       |
+|   `PrintTitle(w)`                                 | Print title and description.                                   |
+|   `PrintAuthors(w)`                               | Print authors section.                                         |
+|   `PrintDescription(w,indent,width)`              | Print the description block.                                   |
+|   `PrintNotes(w,indent,width)`                    | Print footer notes.                                            |
+|   `PrintStaticDefaults(w,indent,startCol,width)`  | Print static flags help.                                       |
+|   `PrintDynamicDefaults(w,indent,startCol,width)` | Print dynamic flags help.                                      |
+| `RequirePositional(n int)`                        | Enforce at least `n` positional arguments.                     |
+| `Args() []string` / `Arg(i int) string`           | Access leftover positional args.                               |
+| `AddOneOfGroup(name string, flags []string)`      | Manually define a mutual-exclusion group.                      |
+| `AddAllOrNoneGroup(name string, flags []string)`  | Manually define a require-together group.                      |
 
 ### How `Validate` and `Finalize` Work
 
 1. **Validate**
 
-   - After parsing a flag’s raw input into `T`, Tinyflags calls your validator:
+   - After parsing a flag's raw input into `T`, Tinyflags calls your validator:
 
    ```go
    fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
@@ -291,11 +291,11 @@ You can define a group where **either all or none** of the flags must be set:
 
 ```go
 email := fs.String("email", "", "User email").
-    RequireTogether("authpair").
+    AllOrNone("authpair").
     Value()
 
 password := fs.String("password", "", "User password").
-    RequireTogether("authpair").
+    AllOrNone("authpair").
     Value()
 ```
 
@@ -305,12 +305,12 @@ You can define a group where **only one** of the flags (or groups!) may be set:
 
 ```go
 bearer := fs.String("bearer-token", "", "Bearer token").
-    MutualExlusive("authmethod").
+    OneOfGroup("authmethod").
     Value()
 
-fs.GetMutualGroup("authmethod").
+fs.GetOneOfGroup("authmethod").
     Title("Authentication Method").
-    AddGroup(fs.GetRequireTogetherGroup("authpair")) // <-- email+password
+    AddGroup(fs.GetAllOrNoneGroup("authpair")) // <-- email+password
 ```
 
 This enforces:
@@ -336,8 +336,8 @@ This enforces:
 Usage: app [flags]
 
 Flags:
-  --email EMAIL         User email (Group: Authentication Method) (RequireTogether: authpair)
-  --password PASSWORD   User password (Group: Authentication Method) (RequireTogether: authpair)
+  --email EMAIL         User email (Group: Authentication Method) (AllOrNone: authpair)
+  --password PASSWORD   User password (Group: Authentication Method) (AllOrNone: authpair)
   --bearer-token TOKEN  Bearer token (Group: Authentication Method)
 
 Authentication Method
@@ -366,4 +366,4 @@ Flags:
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE)
+Apache 2.0 -- see [LICENSE](LICENSE)

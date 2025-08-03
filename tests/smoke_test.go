@@ -236,14 +236,14 @@ Flags:
 		}
 	})
 
-	t.Run("smoke mutual group", func(t *testing.T) {
+	t.Run("smoke one of group", func(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 
-		debug := fs.Bool("debug", true, "Enable debug mode").MutualExlusive("db").Value()
-		noDebug := fs.Bool("no-debug", false, "Disable debug mode").MutualExlusive("db").Value()
-		fs.GetMutualGroup("db").Title("Debug Options").Required()
+		debug := fs.Bool("debug", true, "Enable debug mode").OneOfGroup("db").Value()
+		noDebug := fs.Bool("no-debug", false, "Disable debug mode").OneOfGroup("db").Value()
+		fs.GetOneOfGroup("db").Title("Debug Options").Required()
 
 		err := fs.Parse([]string{
 			"--debug",

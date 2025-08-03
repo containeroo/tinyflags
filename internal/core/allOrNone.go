@@ -1,7 +1,7 @@
 package core
 
-// RequiredTogetherGroup enforces that all member flags must be set if any is set.
-type RequiredTogetherGroup struct {
+// AllOrNoneGroup enforces that all member flags must be set if any is set.
+type AllOrNoneGroup struct {
 	Name      string      // Identifier for this group.
 	Flags     []*BaseFlag // Member flags.
 	titleText string      // Optional title to display in help.
@@ -10,34 +10,34 @@ type RequiredTogetherGroup struct {
 }
 
 // Title sets a custom help heading.
-func (g *RequiredTogetherGroup) Title(t string) *RequiredTogetherGroup {
+func (g *AllOrNoneGroup) Title(t string) *AllOrNoneGroup {
 	g.titleText = t
 	return g
 }
 
 // TitleText returns the custom heading, if any.
-func (g *RequiredTogetherGroup) TitleText() string {
+func (g *AllOrNoneGroup) TitleText() string {
 	return g.titleText
 }
 
 // Hidden marks the group as omitted from help.
-func (g *RequiredTogetherGroup) Hidden() *RequiredTogetherGroup {
+func (g *AllOrNoneGroup) Hidden() *AllOrNoneGroup {
 	g.hidden = true
 	return g
 }
 
 // IsHidden reports whether the group is hidden.
-func (g *RequiredTogetherGroup) IsHidden() bool {
+func (g *AllOrNoneGroup) IsHidden() bool {
 	return g.hidden
 }
 
 // Required enforces that at least one of the group flags must be set.
-func (g *RequiredTogetherGroup) Required() *RequiredTogetherGroup {
+func (g *AllOrNoneGroup) Required() *AllOrNoneGroup {
 	g.required = true
 	return g
 }
 
 // IsRequired reports whether the group is required.
-func (g *RequiredTogetherGroup) IsRequired() bool {
+func (g *AllOrNoneGroup) IsRequired() bool {
 	return g.required
 }
