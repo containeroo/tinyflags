@@ -31,6 +31,18 @@ func (s *StaticFlag[T]) Required() *StaticFlag[T] {
 	return s
 }
 
+// HideRequired hides the “(Required)” suffix from help.
+func (s *StaticFlag[T]) HideRequired() *StaticFlag[T] {
+	s.bf.HideRequired = true
+	return s
+}
+
+// HideAllowed hides the allowed values from help.
+func (s *StaticFlag[T]) HideAllowed() *StaticFlag[T] {
+	s.bf.HideAllowed = true
+	return s
+}
+
 // Hidden omits the flag from help output.
 func (s *StaticFlag[T]) Hidden() *StaticFlag[T] {
 	s.bf.Hidden = true

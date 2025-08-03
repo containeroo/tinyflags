@@ -22,6 +22,18 @@ func (d *DynamicFlag[T]) Required() *DynamicFlag[T] {
 	return d
 }
 
+// HideRequired hides the “(Required)” suffix from help.
+func (d *DynamicFlag[T]) HideRequired() *DynamicFlag[T] {
+	d.bf.HideRequired = true
+	return d
+}
+
+// HideAllowed hides the allowed values from help.
+func (d *DynamicFlag[T]) HideAllowed() *DynamicFlag[T] {
+	d.bf.HideAllowed = true
+	return d
+}
+
 // Hidden omits the flag from help output.
 func (d *DynamicFlag[T]) Hidden() *DynamicFlag[T] {
 	d.bf.Hidden = true

@@ -77,7 +77,7 @@ func main() {
 ## Supported Types
 
 | Type            | Methods                                  |
-| --------------- | ---------------------------------------- |
+| :-------------- | :--------------------------------------- |
 | `bool`          | `Bool`, `BoolVar`                        |
 | `int`           | `Int`, `IntVar`                          |
 | `string`        | `String`, `StringVar`                    |
@@ -97,23 +97,26 @@ func main() {
 ### Common Flag-Builder Methods
 
 | Method                      | Applies to  | Description                                                                             |
-| --------------------------- | ----------- | --------------------------------------------------------------------------------------- |
+| :-------------------------- | :---------- | :-------------------------------------------------------------------------------------- |
 | `Short(s string)`           | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
 | `Required()`                | all flags   | Mark the flag as required; parser errors if unset.                                      |
+| `HideRequired()`            | all flags   | Hide the “(Required)” suffix from help.                                                 |
 | `Hidden()`                  | all flags   | Omit this flag from generated help output.                                              |
 | `Deprecated(reason string)` | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
 | `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
 | `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.             |
 | `Env(key string)`           | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
+| `HideEnv()`                 | all flags   | Hide the environment-variable name from help.                                           |
 | `DisableEnv()`              | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
 | `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
 | `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                        |
+| `HideAllowed()`             | all flags   | Hide the allowed values from help.                                                      |
 | `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                 |
 
 ### Static-Flag Extras
 
 | Method                         | Description                                                                                  | Example                                                                                                                           |
-| ------------------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| :----------------------------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
 | `Choices(v1, v2, ...)`         | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
 | `Validate(fn func(v T) error)` | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
 | `Finalize(fn func(v T) T)`     | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
@@ -122,7 +125,7 @@ func main() {
 ### Dynamic-Flag Extras
 
 | Method                               | Description                                                                       | Example                                                      |
-| ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| :----------------------------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------- |
 | `Has(id string) bool`                | Return whether the given instance-ID was provided on the command line or via env. | `if port.Has("a") { fmt.Println("port a is set") }`          |
 | `Get(id string) (value T, ok bool)`  | Retrieve the parsed value for that ID; `ok==false` if unset (returns default).    | `p, ok := port.Get("a"); if ok { fmt.Println("a →", p) }`    |
 | `MustGet(id string) T`               | Like `Get`, but panics if the instance wasn't provided.                           | `timeout.MustGet("b")`                                       |
@@ -134,7 +137,7 @@ func main() {
 ### FlagSet Core & Help Configuration
 
 | Method                                            | Description                                                    |
-| ------------------------------------------------- | -------------------------------------------------------------- |
+| :------------------------------------------------ | :------------------------------------------------------------- |
 | `NewFlagSet(name string, mode ErrorHandling)`     | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
 | `EnvPrefix(prefix string)`                        | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
 | `Version(version string)`                         | Enable the `--version` flag, printing this string.             |

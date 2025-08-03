@@ -254,7 +254,6 @@ func getPlaceholder(flag *core.BaseFlag) string {
 	return placeholder
 }
 
-// buildFlagDescription creates the descriptive string for a flag.
 // buildFlagDescription creates the full help text for a flag, including metadata
 // such as allowed values, default, environment variable, deprecation, and group info.
 func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string) string {
@@ -269,7 +268,7 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 	} else if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
 		allowed = append(allowed, "true", "false")
 	}
-	if len(allowed) > 0 {
+	if !flag.HideAllowed && len(allowed) > 0 {
 		desc += " (Allowed: " + strings.Join(allowed, ", ") + ")"
 	}
 
