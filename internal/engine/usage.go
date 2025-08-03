@@ -255,37 +255,68 @@ func getPlaceholder(flag *core.BaseFlag) string {
 }
 
 // buildFlagDescription creates the descriptive string for a flag.
+// buildFlagDescription creates the full help text for a flag, including metadata
+// such as allowed values, default, environment variable, deprecation, and group info.
 func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string) string {
 	desc := flag.Usage
+
+	// Determine allowed values:
+	// If explicitly set via flag.Allowed, use those.
+	// Otherwise, if it's a strict bool, default to "true,false".
+	var allowed []string
 	if len(flag.Allowed) > 0 {
-		desc += " (Allowed: " + strings.Join(flag.Allowed, ", ") + ")"
+		allowed = append(allowed, flag.Allowed...)
+	} else if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
+		allowed = append(allowed, "true", "false")
 	}
-	if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
-		desc += " (Allowed: true, false)"
+	if len(allowed) > 0 {
+		desc += " (Allowed: " + strings.Join(allowed, ", ") + ")"
 	}
+
+	// Determine whether to print the default value:
+	// For non-strict bools, suppress the default entirely.
+	showDefault := true
+	if bv, ok := flag.Value.(core.StrictBool); ok && !bv.IsStrictBool() {
+		showDefault = false
+	}
+
+	// Append deprecation notice, if applicable.
 	if flag.Deprecated != "" {
 		desc += " [DEPRECATED: " + flag.Deprecated + "]"
 	}
-	if flag.Value != nil {
+
+	// Append default value, if available and allowed.
+	if flag.Value != nil && showDefault {
 		if def := flag.Value.Default(); def != "" {
 			desc += " (Default: " + def + ")"
 		}
 	}
+
+	// If no EnvKey is explicitly set and it's allowed, generate one from prefix and flag name.
 	if shouldInjectEnvKey(flag, globalHideEnvs, name) {
 		flag.EnvKey = strings.ToUpper(name + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
 	}
+
+	// Append environment variable name, if applicable.
 	if shouldShowEnv(flag, globalHideEnvs) {
 		desc += " (Env: " + flag.EnvKey + ")"
 	}
+
+	// Append required marker, if not hidden.
 	if !flag.HideRequired && flag.Required {
 		desc += " (Required)"
 	}
+
+	// Append group info if part of a One Of group.
 	if flag.OneOfGroup != nil && !flag.OneOfGroup.IsHidden() {
 		desc += buildGroupInfo(flag.OneOfGroup)
 	}
+
+	// Append group info if part of a Require Together group.
 	if flag.AllOrNone != nil && !flag.AllOrNone.IsHidden() {
 		desc += buildRequireGroupInfo(flag.AllOrNone)
 	}
+
 	return desc
 }
 
