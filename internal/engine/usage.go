@@ -337,32 +337,34 @@ func (f *FlagSet) calcDynamicUsageColumn(padding int) int {
 // buildGroupInfo returns group info suffix if flag belongs to a one of group.
 func buildGroupInfo(group *core.OneOfGroupGroup) string {
 	var b strings.Builder
-	b.WriteString(" (One Of Group: ")
+	b.WriteString(" [Group: ")
 	if group.TitleText() != "" {
 		b.WriteString(group.TitleText())
 	} else {
 		b.WriteString(group.Name)
 	}
+	b.WriteString(" (One Of)")
 	if group.IsRequired() {
-		b.WriteString(", required")
+		b.WriteString(" - required")
 	}
-	b.WriteString(")")
+	b.WriteString("]")
 	return b.String()
 }
 
 // buildRequireGroupInfo returns group info suffix if flag belongs to a require-together group.
 func buildRequireGroupInfo(group *core.AllOrNoneGroup) string {
 	var b strings.Builder
-	b.WriteString(" (All Or None Group: ")
+	b.WriteString(" [Group: ")
 	if group.TitleText() != "" {
 		b.WriteString(group.TitleText())
 	} else {
 		b.WriteString(group.Name)
 	}
+	b.WriteString(" (All Or None)")
 	if group.IsRequired() {
-		b.WriteString(", required")
+		b.WriteString(" - required")
 	}
-	b.WriteString(")")
+	b.WriteString("]")
 	return b.String()
 }
 
