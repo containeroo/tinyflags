@@ -240,7 +240,7 @@ func (f *FlagSet) SetStaticUsageColumn(col int) { f.impl.SetStaticUsageColumn(co
 func (f *FlagSet) StaticUsageColumn() int { return f.impl.StaticUsageColumn() }
 
 // SetStaticUsageWidth sets the max wrapping width for static flag descriptions.
-func (f *FlagSet) SetStaticUsageWidth(max int) { f.impl.SetStaticUsageWidth(max) }
+func (f *FlagSet) SetStaticUsageWidth(maxWidth int) { f.impl.SetStaticUsageWidth(maxWidth) }
 
 // StaticUsageWidth returns the wrapping width for static flag descriptions.
 func (f *FlagSet) StaticUsageWidth() int { return f.impl.StaticUsageWidth() }

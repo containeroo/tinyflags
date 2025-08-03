@@ -65,30 +65,32 @@ type FlagSet struct {
 // NewFlagSet creates a new FlagSet with the given name and error handling policy.
 func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 	fs := &FlagSet{
-		name:               name,
-		errorHandling:      errorHandling,
-		staticFlagsMap:     make(map[string]*core.BaseFlag),
-		getEnv:             os.Getenv,
-		enableHelp:         true,
-		enableVer:          true,
-		defaultDelimiter:   ",",
-		output:             os.Stdout,
-		usagePrintMode:     PrintFlags,
-		descIndent:         0,
-		descWidth:          400,
-		usageStaticIndent:  4,
-		usageStaticWidth:   200,
+		name:              name,
+		errorHandling:     errorHandling,
+		staticFlagsMap:    make(map[string]*core.BaseFlag),
+		getEnv:            os.Getenv,
+		enableHelp:        true,
+		enableVer:         true,
+		defaultDelimiter:  ",",
+		output:            os.Stdout,
+		usagePrintMode:    PrintFlags,
+		descIndent:        0,
+		descWidth:         400,
+		usageStaticIndent: 4,
+		//	usageStaticWidth:   150,
 		usageDynamicIndent: 4,
-		usageDynamicWidth:  200,
-		noteIndent:         0,
-		noteWidth:          400,
-		title:              "Flags:",
+		//		usageDynamicWidth:  150,
+		noteIndent: 0,
+		noteWidth:  400,
+		title:      "Flags:",
 	}
 
 	fs.Usage = func() {
 		out := fs.Output()
 		if fs.usageStaticCol == 0 {
 			fs.usageStaticCol = fs.StaticAutoUsageColumn(1)
+		}
+		if fs.usageDynamicCol == 0 {
 			fs.usageDynamicCol = fs.DynamicAutoUsageColumn(1)
 		}
 
@@ -147,7 +149,7 @@ func (f *FlagSet) SetStaticUsageIndent(n int)            { f.usageStaticIndent =
 func (f *FlagSet) StaticUsageIndent() int                { return f.usageStaticIndent }
 func (f *FlagSet) SetStaticUsageColumn(col int)          { f.usageStaticCol = col }
 func (f *FlagSet) StaticUsageColumn() int                { return f.usageStaticCol }
-func (f *FlagSet) SetStaticUsageWidth(max int)           { f.usageStaticWidth = max }
+func (f *FlagSet) SetStaticUsageWidth(maxWidth int)      { f.usageStaticWidth = maxWidth }
 func (f *FlagSet) StaticUsageWidth() int                 { return f.usageStaticWidth }
 func (f *FlagSet) StaticAutoUsageColumn(padding int) int { return f.calcStaticUsageColumn(padding) }
 func (f *FlagSet) SetStaticUsageNote(s string)           { f.usageStaticNote = s }

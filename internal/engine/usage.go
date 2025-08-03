@@ -180,16 +180,20 @@ func printFlagUsage(w io.Writer, indent, startCol, maxWidth int, globalHideEnvs 
 	flagLine := b.String()
 	desc := buildFlagDescription(flag, globalHideEnvs, prefix)
 
-	if len(flagLine)+len(desc) <= maxWidth-startCol {
-		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc) // nolint:errcheck
-		return
-	}
+	// Width for description (after flag column)
+	descWidth := max(maxWidth-indent-startCol-1, 100)
 
-	wrapped := wrapText(desc, maxWidth-indent-startCol-1)
+	// Wrap only the description
+	wrapped := wrapText(desc, descWidth)
 	lines := strings.Split(wrapped, "\n")
+
+	// First line: print flag line and first part of desc
 	fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0]) // nolint:errcheck
-	for _, l := range lines[1:] {
-		fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l) // nolint:errcheck
+
+	// Remaining lines: align under desc column
+	padding := strings.Repeat(" ", indent+startCol+1)
+	for _, line := range lines[1:] {
+		fmt.Fprintf(w, "%s%s\n", padding, line) // nolint:errcheck
 	}
 }
 
@@ -333,15 +337,15 @@ func shouldShowEnv(flag *core.BaseFlag, globalHideEnvs bool) bool {
 func (f *FlagSet) calcStaticUsageColumn(padding int) int {
 	maxFlagLen := 0
 	for _, fl := range f.staticFlags() {
-		b := new(strings.Builder)
-		formatStaticFlagNames(b, fl)
+		var b strings.Builder
+		formatStaticFlagNames(&b, fl)
 		if meta := getPlaceholder(fl); meta != "" {
 			b.WriteString(" ")
 			b.WriteString(meta)
 		}
 		line := b.String()
-		if len(line) > maxFlagLen {
-			maxFlagLen = len(line)
+		if l := len(line); l > maxFlagLen {
+			maxFlagLen = l
 		}
 	}
 	return maxFlagLen + padding
