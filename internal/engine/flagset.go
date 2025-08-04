@@ -273,12 +273,12 @@ func (f *FlagSet) AttachToOneOfGroup(bf *core.BaseFlag, group string) {
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.staticFlagsMap["help"]; !exists {
-			f.showHelp = f.Bool("help", false, "show help").Short("h").DisableEnv().Value()
+			f.showHelp = f.Bool("help", false, "Show help").Short("h").DisableEnv().Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
 		if _, exists := f.staticFlagsMap["version"]; !exists {
-			f.showVersion = f.Bool("version", false, "show version").DisableEnv().Value()
+			f.showVersion = f.Bool("version", false, "Show version").DisableEnv().Value()
 		}
 	}
 }
