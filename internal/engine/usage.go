@@ -67,14 +67,14 @@ func (f *FlagSet) PrintAuthors(w io.Writer) {
 // PrintDescription renders description block above flags.
 func (f *FlagSet) PrintDescription(w io.Writer, indent, maxWidth int) {
 	if f.desc != "" {
-		writeIndented(w, wrapText(f.desc, maxWidth-indent), indent)
+		writeIndented(w, f.desc, indent, maxWidth)
 	}
 }
 
 // PrintNotes renders notes block below flags.
 func (f *FlagSet) PrintNotes(w io.Writer, indent, maxWidth int) {
 	if f.notes != "" {
-		writeIndented(w, wrapText(f.notes, maxWidth-indent), indent)
+		writeIndented(w, f.notes, indent, maxWidth)
 	}
 }
 
@@ -103,7 +103,7 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 		}
 		// Description
 		if desc := group.DescriptionText(); desc != "" {
-			writeIndented(w, wrapText(desc, maxWidth-indent), 0)
+			writeIndented(w, wrapText(desc, maxWidth-indent), 0, maxWidth)
 		}
 
 		idPlaceholder := group.GetPlaceholder()
@@ -128,7 +128,7 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 		}
 
 		if note := group.NoteText(); note != "" {
-			writeIndented(w, wrapText(note, maxWidth-indent), 0)
+			writeIndented(w, wrapText(note, maxWidth-indent), 0, maxWidth)
 		}
 	}
 
@@ -430,11 +430,46 @@ func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 	}
 }
 
-// writeIndented prints each line with the given indentation.
-func writeIndented(w io.Writer, text string, indent int) {
-	lines := strings.Split(text, "\n")
+func writeIndented(w io.Writer, text string, indent, maxWidth int) {
 	prefix := strings.Repeat(" ", indent)
-	for _, line := range lines {
-		fmt.Fprintf(w, "%s%s\n", prefix, line) // nolint:errcheck
+	paragraphs := splitParagraphs(text)
+
+	for i, p := range paragraphs {
+		if strings.TrimSpace(p) == "" {
+			// blank line between paragraphs
+			fmt.Fprintln(w) // nolint:errcheck
+			continue
+		}
+		wrapped := wrapText(strings.TrimSpace(p), maxWidth-indent)
+		for _, line := range strings.Split(wrapped, "\n") {
+			fmt.Fprintf(w, "%s%s\n", prefix, line) // nolint:errcheck
+		}
+		// Add blank line after each paragraph, unless it's the last
+		if i < len(paragraphs)-1 {
+			fmt.Fprintln(w)
+		}
 	}
+}
+
+// splitParagraphs splits text by double newlines and preserves spacing.
+func splitParagraphs(s string) []string {
+	lines := strings.Split(s, "\n")
+	var result []string
+	var paragraph []string
+
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			if len(paragraph) > 0 {
+				result = append(result, strings.Join(paragraph, " "))
+				paragraph = nil
+			}
+			result = append(result, "") // preserve blank
+			continue
+		}
+		paragraph = append(paragraph, strings.TrimSpace(line))
+	}
+	if len(paragraph) > 0 {
+		result = append(result, strings.Join(paragraph, " "))
+	}
+	return result
 }
