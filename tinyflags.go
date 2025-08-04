@@ -77,6 +77,9 @@ func (f *FlagSet) Version(s string) { f.impl.Version(s) }
 // EnvPrefix sets a prefix for all environment variables.
 func (f *FlagSet) EnvPrefix(s string) { f.impl.EnvPrefix(s) }
 
+// HideEnvs disables all env-var annotations in help output.
+func (f *FlagSet) HideEnvs() { f.impl.HideEnvs() }
+
 // Title sets the main title shown in usage output.
 func (f *FlagSet) Title(s string) { f.impl.Title(s) }
 
@@ -94,9 +97,6 @@ func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
 
 // DisableVersion disables the automatic --version flag.
 func (f *FlagSet) DisableVersion() { f.impl.DisableVersion() }
-
-// HideEnvs disables all env-var annotations in help output.
-func (f *FlagSet) HideEnvs() { f.impl.HideEnvs() }
 
 // SortedFlags enables sorted help output for static flags.
 func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
