@@ -4,6 +4,7 @@ package dynamic
 type DynamicScalarValue[T any] struct {
 	field    string                  // Flag field name
 	def      T                       // Default value
+	changed  bool                    // Whether the value was changed
 	parse    func(string) (T, error) // Parser from raw input
 	format   func(T) string          // Formatter to string
 	validate func(T) error           // Optional validation function
@@ -37,6 +38,7 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 		val = d.finalize(val)
 	}
 	d.values[id] = val
+	d.changed = true
 	return nil
 }
 

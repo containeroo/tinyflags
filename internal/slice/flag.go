@@ -30,3 +30,13 @@ func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
 	f.val.setValidate(fn)
 	return f
 }
+
+// Default returns the default value.
+func (f *SliceFlag[T]) Default() []T {
+	return f.val.def
+}
+
+// Changed returns true if the value was changed.
+func (f *SliceFlag[T]) Changed() bool {
+	return f.val.changed
+}

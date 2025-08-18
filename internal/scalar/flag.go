@@ -29,3 +29,13 @@ func (f *ScalarFlag[T]) Finalize(fn func(T) T) *ScalarFlag[T] {
 	f.val.setFinalize(fn)
 	return f
 }
+
+// Default returns the default value.
+func (f *ScalarFlag[T]) Default() T {
+	return f.val.def
+}
+
+// Changed returns true if the value was changed.
+func (f *ScalarFlag[T]) Changed() bool {
+	return f.val.changed
+}

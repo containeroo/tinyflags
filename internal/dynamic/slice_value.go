@@ -9,6 +9,7 @@ import (
 type DynamicSliceValue[T any] struct {
 	field     string                  // Flag field name
 	def       []T                     // Default slice value
+	changed   bool                    // Whether the value was changed
 	parse     func(string) (T, error) // Function to parse a single element
 	format    func(T) string          // Function to format a single element
 	delimiter string                  // Separator used to split input
@@ -52,6 +53,7 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 		}
 		d.values[id] = append(d.values[id], val)
 	}
+	d.changed = true
 	return nil
 }
 

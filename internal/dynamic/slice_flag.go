@@ -38,6 +38,16 @@ func (f *SliceFlag[T]) Finalize(fn func(T) T) *SliceFlag[T] {
 	return f
 }
 
+// Default returns the default value.
+func (f *SliceFlag[T]) Default() []T {
+	return f.item.def
+}
+
+// Changed returns true if the value was changed.
+func (f *SliceFlag[T]) Changed() bool {
+	return f.item.changed
+}
+
 // Has reports whether a value is set for the given ID.
 func (f *SliceFlag[T]) Has(id string) bool {
 	_, ok := f.item.values[id]

@@ -32,6 +32,16 @@ func (f *ScalarFlag[T]) Finalize(fn func(T) T) *ScalarFlag[T] {
 	return f
 }
 
+// Default returns the default value.
+func (f *ScalarFlag[T]) Default() T {
+	return f.item.def
+}
+
+// Changed returns true if the value was changed.
+func (f *ScalarFlag[T]) Changed() bool {
+	return f.item.changed
+}
+
 // Has reports whether a value was set for the given ID.
 func (f *ScalarFlag[T]) Has(id string) bool {
 	_, ok := f.item.values[id]
