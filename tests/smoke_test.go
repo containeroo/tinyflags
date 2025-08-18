@@ -150,8 +150,8 @@ func TestSmoke_ParseArgs(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, `Usage: app [flags]
 Flags:
-    -h, --help     show help (Default: false)
-        --version  show version (Default: false)
+    -h, --help     Show help
+        --version  Show version
 `)
 	})
 
@@ -391,7 +391,8 @@ Flags:
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-		fs.SetDynamicUsageIndent(8)
+		fs.SetDynamicUsageIndent(8) // ensure 8-space indent for dynamic flags
+
 		http := fs.DynamicGroup("http")
 		http.String("address", "", "API address").
 			Validate(func(s string) error {
@@ -401,7 +402,9 @@ Flags:
 				return nil
 			})
 		http.Int("port", 0, "API port")
-		http.Bool("enabled", true, "Enable service").Strict()
+		http.Bool("enabled", true, "Enable service").
+			Strict().
+			HideAllowed()
 		http.Bool("verbose", true, "Enable verbose mode")
 
 		err := fs.Parse([]string{
@@ -416,11 +419,11 @@ Flags:
 		require.Error(t, err)
 		assert.EqualError(t, err, `Usage: app [flags]
 Flags:
-    -h, --help  show help (Default: false)
+    -h, --help  Show help
         --http.<ID>.address ADDRESS       API address
         --http.<ID>.port PORT             API port (Default: 0)
-        --http.<ID>.enabled <true|false>  Enable service (Allowed: true, false) (Default: true)
-        --http.<ID>.verbose               Enable verbose mode (Default: true)
+        --http.<ID>.enabled <true|false>  Enable service (Default: true)
+        --http.<ID>.verbose               Enable verbose mode
 `)
 	})
 }

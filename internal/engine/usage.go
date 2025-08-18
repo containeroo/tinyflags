@@ -111,19 +111,44 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 			idPlaceholder = "<ID>"
 		}
 
+		// Match static behavior: give the description column a generous minimum
+		descWidth := max(maxWidth-indent-startCol-1, 100)
+
 		for _, fl := range group.DynamicFlags() {
 			flagLine := formatDynamicFlagLine(name, idPlaceholder, fl)
 			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-			if len(flagLine)+len(desc) <= maxWidth-startCol {
-				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc) // nolint:errcheck
+
+			// One-liner if it fits
+			if len(desc) <= descWidth {
+				fmt.Fprintf(
+					w,
+					"%s%-*s %s\n",
+					strings.Repeat(" ", indent),
+					startCol,
+					flagLine,
+					desc,
+				) // nolint:errcheck
 				continue
 			}
 
-			wrapped := wrapText(desc, maxWidth-indent-startCol-1)
+			// Otherwise wrap only the description and align under the desc column
+			wrapped := wrapText(desc, descWidth)
 			lines := strings.Split(wrapped, "\n")
-			fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0]) // nolint:errcheck
+
+			// First line with flag label + first chunk of desc
+			fmt.Fprintf(
+				w,
+				"%s%-*s %s\n",
+				strings.Repeat(" ", indent),
+				startCol,
+				flagLine,
+				lines[0],
+			) // nolint:errcheck
+
+			// Continuation lines under the description column
+			padding := strings.Repeat(" ", indent+startCol+1)
 			for _, l := range lines[1:] {
-				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, "", l) // nolint:errcheck
+				fmt.Fprintf(w, "%s%s\n", padding, l) // nolint:errcheck
 			}
 		}
 
@@ -430,6 +455,7 @@ func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 	}
 }
 
+// writeIndented writes text to w, indenting each line by indent spaces.
 func writeIndented(w io.Writer, text string, indent, maxWidth int) {
 	prefix := strings.Repeat(" ", indent)
 	paragraphs := splitParagraphs(text)

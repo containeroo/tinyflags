@@ -36,7 +36,7 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkRequired(); err != nil {
 		return f.handleError(err)
 	}
-	if err := f.checkMutualExclusion(); err != nil {
+	if err := f.checkOneOfGroups(); err != nil {
 		return f.handleError(err)
 	}
 	if err := f.checkAllOrNone(); err != nil {
@@ -91,8 +91,8 @@ func (f *FlagSet) parseEnv() error {
 	return nil
 }
 
-// checkMutualExclusion ensures only one flag per group is set.
-func (f *FlagSet) checkMutualExclusion() error {
+// checkOneOfGroups ensures only one flag per group is set.
+func (f *FlagSet) checkOneOfGroups() error {
 	for _, g := range f.oneOfGroup {
 		var conflicting []string
 
@@ -127,7 +127,7 @@ func (f *FlagSet) checkMutualExclusion() error {
 
 		if len(conflicting) > 1 {
 			return fmt.Errorf(
-				"mutually exclusive flags used in group %q: %s",
+				"only one of the flags in group %q may be used: %s",
 				g.Name, strings.Join(conflicting, " vs "),
 			)
 		}
