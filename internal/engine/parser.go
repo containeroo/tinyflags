@@ -74,8 +74,8 @@ func (f *FlagSet) parseEnv() error {
 			continue
 		}
 		envKey := fl.EnvKey
-		if envKey == "" && f.envPrefix != "" {
-			envKey = strings.ToUpper(f.envPrefix + "_" + strings.ReplaceAll(fl.Name, "-", "_"))
+		if envKey == "" {
+			envKey = f.envKeyFunc(f.envPrefix, fl.Name)
 		}
 		val := f.getEnv(envKey)
 		if val == "" {

@@ -100,7 +100,7 @@ func main() {
 | :-------------------------- | :---------- | :-------------------------------------------------------------------------------------- |
 | `Short(s string)`           | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
 | `Required()`                | all flags   | Mark the flag as required; parser errors if unset.                                      |
-| `HideRequired()`            | all flags   | Hide the “(Required)” suffix from help.                                                 |
+| `HideRequired()`            | all flags   | Hide the "(Required)" suffix from help.                                                 |
 | `Hidden()`                  | all flags   | Omit this flag from generated help output.                                              |
 | `Deprecated(reason string)` | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
 | `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
@@ -136,30 +136,32 @@ func main() {
 
 ### FlagSet Core & Help Configuration
 
-| Method                                            | Description                                                    |
-| :------------------------------------------------ | :------------------------------------------------------------- |
-| `NewFlagSet(name string, mode ErrorHandling)`     | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
-| `EnvPrefix(prefix string)`                        | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
-| `Version(version string)`                         | Enable the `--version` flag, printing this string.             |
-| `DisableHelp()` / `DisableVersion()`              | Remove `--help` or `--version`.                                |
-| `Usage(fn func())`                                | Install a custom usage function in place of the default.       |
-| `Title(text string)`                              | Override the "Usage:" title heading.                           |
-| `Authors(names ...string)`                        | Add an "Authors:" section to help.                             |
-| `Description(text string)`                        | Add a free-form description block under the title.             |
-| `Note(text string)`                               | Add a footer note under the flags listing.                     |
-| `SetOutput(w io.Writer)` / `Output()`             | Redirect or retrieve where help/version is written.            |
-| **Help Printers:**                                |                                                                |
-|   `PrintUsage(w, mode)`                           | Print the `Usage:` line.                                       |
-|   `PrintTitle(w)`                                 | Print title and description.                                   |
-|   `PrintAuthors(w)`                               | Print authors section.                                         |
-|   `PrintDescription(w,indent,width)`              | Print the description block.                                   |
-|   `PrintNotes(w,indent,width)`                    | Print footer notes.                                            |
-|   `PrintStaticDefaults(w,indent,startCol,width)`  | Print static flags help.                                       |
-|   `PrintDynamicDefaults(w,indent,startCol,width)` | Print dynamic flags help.                                      |
-| `RequirePositional(n int)`                        | Enforce at least `n` positional arguments.                     |
-| `Args() []string` / `Arg(i int) string`           | Access leftover positional args.                               |
-| `AddOneOfGroup(name string, flags []string)`      | Manually define a mutual-exclusion group.                      |
-| `AddAllOrNoneGroup(name string, flags []string)`  | Manually define a require-together group.                      |
+| Method                                           | Description                                                    |
+| :----------------------------------------------- | :------------------------------------------------------------- |
+| `NewFlagSet(name string, mode ErrorHandling)`    | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
+| `EnvPrefix(prefix string)`                       | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
+| `SetEnvKeyFunc`                                  | Set a function to derive env keys from prefix+flag name.       |
+| `EnvKeyForFlag`                                  | Derive the env key for a flag.                                 |
+| `NewReplacerEnvKeyFunc`                          | Build an `EnvKeyFunc` that applies the given replacer.         |
+| `Version(version string)`                        | Enable the `--version` flag, printing this string.             |
+| `DisableHelp()` / `DisableVersion()`             | Remove `--help` or `--version`.                                |
+| `Usage(fn func())`                               | Install a custom usage function in place of the default.       |
+| `Title(text string)`                             | Override the "Usage:" title heading.                           |
+| `Authors(names ...string)`                       | Add an "Authors:" section to help.                             |
+| `Description(text string)`                       | Add a free-form description block under the title.             |
+| `Note(text string)`                              | Add a footer note under the flags listing.                     |
+| `SetOutput(w io.Writer)` / `Output()`            | Redirect or retrieve where help/version is written.            |
+| `PrintUsage(w, mode)`                            | Print the `Usage:` line.                                       |
+| `PrintTitle(w)`                                  | Print title and description.                                   |
+| `PrintAuthors(w)`                                | Print authors section.                                         |
+| `PrintDescription(w,indent,width)`               | Print the description block.                                   |
+| `PrintNotes(w,indent,width)`                     | Print footer notes.                                            |
+| `PrintStaticDefaults(w,indent,startCol,width)`   | Print static flags help.                                       |
+| `PrintDynamicDefaults(w,indent,startCol,width)`  | Print dynamic flags help.                                      |
+| `RequirePositional(n int)`                       | Enforce at least `n` positional arguments.                     |
+| `Args() []string` / `Arg(i int) string`          | Access leftover positional args.                               |
+| `AddOneOfGroup(name string, flags []string)`     | Manually define a mutual-exclusion group.                      |
+| `AddAllOrNoneGroup(name string, flags []string)` | Manually define a require-together group.                      |
 
 ### How `Validate` and `Finalize` Work
 
@@ -233,15 +235,44 @@ func main() {
 
 ## Environment Variables
 
+Flags can be set from environment variables in addition to CLI arguments.
+By default, environment keys are derived from:
+
+- the global prefix set via `fs.EnvPrefix("MYAPP")`
+- `-`, `_`, `.`, `_`, `/` are replaced with `_` in the flag name
+- the whole key upper-cased
+
+For example:
+
 ```bash
 MYAPP_HOST=example.com MYAPP_PORT=9090 ./app --debug
 ```
+
+A flag `--db.user` will look up `MYAPP_DB_USER`.
 
 You can disable env binding per-flag:
 
 ```go
 fs.Bool("internal", false, "internal use only").DisableEnv()
 ```
+
+### Custom key mapping
+
+You can override how keys are derived with `SetEnvKeyFunc`:
+
+```go
+fs.EnvPrefix("MYAPP")
+fs.SetEnvKeyFunc(engine.NewReplacerEnvKeyFunc(
+    strings.NewReplacer("-", "_", ".", "_", "/", "_"),
+    true, // upper-case
+))
+```
+
+This would map:
+
+- `--log.level` → `MYAPP_LOG_LEVEL`
+- `--db-user` → `MYAPP_DB_USER`
+- `--api/v1` → `MYAPP_API_V1`
 
 ## Dynamic Flags
 

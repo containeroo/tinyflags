@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/dynamic"
@@ -22,7 +23,9 @@ type FlagSet struct {
 	positional         []string                  // Remaining non-flag arguments
 	requiredPositional int                       // Required positional argument count
 	envPrefix          string                    // Optional ENV prefix (e.g. "APP_")
+	envKeyFunc         EnvKeyFunc                // Function to derive env keys from prefix+flag name  <-- NEW
 	getEnv             func(string) string       // Function used to read ENV vars (default: os.Getenv)
+	hideEnvs           bool                      // Globally hide environment key hints
 	ignoreInvalidEnv   bool                      // Whether to ignore unknown ENV overrides
 	defaultDelimiter   string                    // Global slice delimiter (default: ",")
 	title              string                    // Title shown in usage output
@@ -39,7 +42,6 @@ type FlagSet struct {
 	sortFlags          bool                      // Enable static flag sorting
 	sortGroups         bool                      // Enable dynamic group sorting
 	authors            string                    // Optional authors block
-	hideEnvs           bool                      // Globally hide environment key hints
 
 	// Indentation and width config for description
 	descIndent int
@@ -69,6 +71,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		errorHandling:      errorHandling,
 		staticFlagsMap:     make(map[string]*core.BaseFlag),
 		getEnv:             os.Getenv,
+		envKeyFunc:         NewReplacerEnvKeyFunc(strings.NewReplacer("-", "_", ".", "_", "/", "_"), true),
 		enableHelp:         true,
 		enableVer:          true,
 		defaultDelimiter:   ",",
@@ -108,6 +111,8 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 
 func (f *FlagSet) Name() string                       { return f.name }
 func (f *FlagSet) EnvPrefix(prefix string)            { f.envPrefix = prefix }
+func (f *FlagSet) SetEnvKeyFunc(fn EnvKeyFunc)        { f.envKeyFunc = fn }
+func (f *FlagSet) EnvKeyForFlag(name string) string   { return f.envKeyFunc(f.envPrefix, name) }
 func (f *FlagSet) DefaultDelimiter() string           { return f.defaultDelimiter }
 func (f *FlagSet) Globaldelimiter(s string)           { f.defaultDelimiter = s }
 func (f *FlagSet) Version(s string)                   { f.versionString = s; f.enableVer = true }

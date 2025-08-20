@@ -4,6 +4,7 @@ package tinyflags
 
 import (
 	"io"
+	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/dynamic"
@@ -76,6 +77,21 @@ func (f *FlagSet) Version(s string) { f.impl.Version(s) }
 
 // EnvPrefix sets a prefix for all environment variables.
 func (f *FlagSet) EnvPrefix(s string) { f.impl.EnvPrefix(s) }
+
+// SetEnvKeyFunc sets a function to derive env keys from prefix+flag name.
+func (f *FlagSet) SetEnvKeyFunc(fn engine.EnvKeyFunc) { f.impl.SetEnvKeyFunc(fn) }
+
+// EnvKeyForFlag derives the env key for a flag.
+func (f *FlagSet) EnvKeyForFlag(name string) string { return f.impl.EnvKeyForFlag(name) }
+
+// NewReplacerEnvKeyFunc builds an EnvKeyFunc that:
+// - returns "" when prefix is empty
+// - applies the given replacer to the flag name
+// - joins prefix + "_" + transformed name
+// - upper-cases the result (if upper is true)
+func (f *FlagSet) NewReplacerEnvKeyFunc(replacer *strings.Replacer, upper bool) engine.EnvKeyFunc {
+	return engine.NewReplacerEnvKeyFunc(replacer, upper)
+}
 
 // HideEnvs disables all env-var annotations in help output.
 func (f *FlagSet) HideEnvs() { f.impl.HideEnvs() }
