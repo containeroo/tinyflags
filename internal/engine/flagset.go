@@ -288,7 +288,7 @@ func (f *FlagSet) maybeAddBuiltinFlags() {
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
 		if _, exists := f.staticFlagsMap["version"]; !exists {
-			f.showVersion = f.Bool("version", false, cmp.Or(f.helpText, "Show version")).DisableEnv().Value()
+			f.showVersion = f.Bool("version", false, cmp.Or(f.versionText, "Show version")).DisableEnv().Value()
 		}
 	}
 }
