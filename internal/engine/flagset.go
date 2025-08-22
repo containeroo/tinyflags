@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"cmp"
 	"io"
 	"os"
 	"sort"
@@ -37,7 +38,9 @@ type FlagSet struct {
 	enableHelp         bool                      // Whether built-in --help is enabled
 	enableVer          bool                      // Whether built-in --version is enabled
 	showHelp           *bool                     // Parsed value of --help
+	helpText           string                    // Custom help text
 	showVersion        *bool                     // Parsed value of --version
+	versionText        string                    // Custom version text
 	Usage              func()                    // Custom usage function (optional)
 	sortFlags          bool                      // Enable static flag sorting
 	sortGroups         bool                      // Enable dynamic group sorting
@@ -116,6 +119,8 @@ func (f *FlagSet) EnvKeyForFlag(name string) string   { return f.envKeyFunc(f.en
 func (f *FlagSet) DefaultDelimiter() string           { return f.defaultDelimiter }
 func (f *FlagSet) Globaldelimiter(s string)           { f.defaultDelimiter = s }
 func (f *FlagSet) Version(s string)                   { f.versionString = s; f.enableVer = true }
+func (f *FlagSet) VersionText(s string)               { f.versionText = s }
+func (f *FlagSet) HelpText(s string)                  { f.helpText = s }
 func (f *FlagSet) Title(s string)                     { f.title = s }
 func (f *FlagSet) Authors(s string)                   { f.authors = s }
 func (f *FlagSet) Description(s string)               { f.desc = s }
@@ -278,12 +283,12 @@ func (f *FlagSet) AttachToOneOfGroup(bf *core.BaseFlag, group string) {
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.staticFlagsMap["help"]; !exists {
-			f.showHelp = f.Bool("help", false, "Show help").Short("h").DisableEnv().Value()
+			f.showHelp = f.Bool("help", false, cmp.Or(f.helpText, "Show help")).Short("h").DisableEnv().Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
 		if _, exists := f.staticFlagsMap["version"]; !exists {
-			f.showVersion = f.Bool("version", false, "Show version").DisableEnv().Value()
+			f.showVersion = f.Bool("version", false, cmp.Or(f.helpText, "Show version")).DisableEnv().Value()
 		}
 	}
 }

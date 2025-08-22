@@ -144,6 +144,8 @@ func main() {
 | `EnvKeyForFlag`                                  | Derive the env key for a flag.                                 |
 | `NewReplacerEnvKeyFunc`                          | Build an `EnvKeyFunc` that applies the given replacer.         |
 | `Version(version string)`                        | Enable the `--version` flag, printing this string.             |
+| `VersionText(text string)`                       | Override the `--version` text. Default: `"Show version"`.      |
+| `HelpText(text string)`                          | Override the `--help` text. Default: `"Show help"`.            |
 | `DisableHelp()` / `DisableVersion()`             | Remove `--help` or `--version`.                                |
 | `Usage(fn func())`                               | Install a custom usage function in place of the default.       |
 | `Title(text string)`                             | Override the "Usage:" title heading.                           |

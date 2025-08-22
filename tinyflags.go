@@ -75,6 +75,9 @@ func (f *FlagSet) Name() string { return f.impl.Name() }
 // Version sets the --version string.
 func (f *FlagSet) Version(s string) { f.impl.Version(s) }
 
+// VersionText sets the --version text.
+func (f *FlagSet) VersionText(s string) { f.impl.VersionText(s) }
+
 // EnvPrefix sets a prefix for all environment variables.
 func (f *FlagSet) EnvPrefix(s string) { f.impl.EnvPrefix(s) }
 
@@ -107,6 +110,9 @@ func (f *FlagSet) Description(s string) { f.impl.Description(s) }
 
 // Note sets the bottom note section of the help output.
 func (f *FlagSet) Note(s string) { f.impl.Note(s) }
+
+// HelpText sets the --help text.
+func (f *FlagSet) HelpText(s string) { f.impl.HelpText(s) }
 
 // DisableHelp disables the automatic --help flag.
 func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
