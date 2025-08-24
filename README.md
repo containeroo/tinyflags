@@ -111,6 +111,8 @@ func main() {
 | `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
 | `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                        |
 | `HideAllowed()`             | all flags   | Hide the allowed values from help.                                                      |
+| `Requires(names ...string)` | all flags   | Mark flag as required by the given flag.                                                |
+| `HideRequires()`            | all flags   | Hide the “(Requires)” suffix from help.                                                 |
 | `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                 |
 
 ### Static-Flag Extras

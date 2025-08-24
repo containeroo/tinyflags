@@ -42,6 +42,9 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkAllOrNone(); err != nil {
 		return f.handleError(err)
 	}
+	if err := f.checkRequirements(); err != nil {
+		return f.handleError(err)
+	}
 
 	return nil
 }
@@ -86,6 +89,23 @@ func (f *FlagSet) parseEnv() error {
 				continue
 			}
 			return fmt.Errorf("invalid environment value for %s: %w", fl.Name, err)
+		}
+	}
+	return nil
+}
+
+// checkRequirements ensures all flags which requrie others are set.
+func (f *FlagSet) checkRequirements() error {
+	for _, fl := range f.staticFlagsMap {
+		// only enforce for flags that are actually set/changed
+		if fl.Value == nil || !fl.Value.Changed() {
+			continue
+		}
+		for _, req := range fl.Requires {
+			rfl, ok := f.staticFlagsMap[req]
+			if !ok || rfl.Value == nil || !rfl.Value.Changed() {
+				return fmt.Errorf("--%s requires --%s", fl.Name, req)
+			}
 		}
 	}
 	return nil

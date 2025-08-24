@@ -28,12 +28,6 @@ func (d *DynamicFlag[T]) HideRequired() *DynamicFlag[T] {
 	return d
 }
 
-// HideAllowed hides the allowed values from help.
-func (d *DynamicFlag[T]) HideAllowed() *DynamicFlag[T] {
-	d.bf.HideAllowed = true
-	return d
-}
-
 // Hidden omits the flag from help output.
 func (d *DynamicFlag[T]) Hidden() *DynamicFlag[T] {
 	d.bf.Hidden = true
@@ -96,5 +90,24 @@ func (d *DynamicFlag[T]) Placeholder(s string) *DynamicFlag[T] {
 func (d *DynamicFlag[T]) Allowed(vals ...string) *DynamicFlag[T] {
 	// copy to prevent external mutation
 	d.bf.Allowed = append([]string(nil), vals...)
+	return d
+}
+
+// HideAllowed hides the allowed values from help.
+func (d *DynamicFlag[T]) HideAllowed() *DynamicFlag[T] {
+	d.bf.HideAllowed = true
+	return d
+}
+
+// Requires marks this flag as required by the given flag.
+func (d *DynamicFlag[T]) Requires(names ...string) *DynamicFlag[T] {
+	// copy to prevent external mutation
+	d.bf.Requires = append([]string(nil), names...)
+	return d
+}
+
+// HideRequires hides the “(Requires)” suffix from help.
+func (d *DynamicFlag[T]) HideRequires() *DynamicFlag[T] {
+	d.bf.HideRequires = true
 	return d
 }

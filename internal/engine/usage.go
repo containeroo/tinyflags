@@ -120,14 +120,13 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 
 			// One-liner if it fits
 			if len(desc) <= descWidth {
-				fmt.Fprintf(
-					w,
+				_, _ = fmt.Fprintf(w,
 					"%s%-*s %s\n",
 					strings.Repeat(" ", indent),
 					startCol,
 					flagLine,
 					desc,
-				) // nolint:errcheck
+				)
 				continue
 			}
 
@@ -136,14 +135,13 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 			lines := strings.Split(wrapped, "\n")
 
 			// First line with flag label + first chunk of desc
-			fmt.Fprintf(
-				w,
+			_, _ = fmt.Fprintf(w,
 				"%s%-*s %s\n",
 				strings.Repeat(" ", indent),
 				startCol,
 				flagLine,
 				lines[0],
-			) // nolint:errcheck
+			)
 
 			// Continuation lines under the description column
 			padding := strings.Repeat(" ", indent+startCol+1)
@@ -318,6 +316,11 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 		if def := flag.Value.Default(); def != "" {
 			desc += " (Default: " + def + ")"
 		}
+	}
+
+	// Append required marker, if not hidden.
+	if !flag.HideRequires && len(flag.Requires) > 0 {
+		desc += " (Requires: " + strings.Join(flag.Requires, ", ") + ")"
 	}
 
 	// If no EnvKey is explicitly set and it's allowed, generate one from prefix and flag name.

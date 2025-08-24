@@ -37,12 +37,6 @@ func (s *StaticFlag[T]) HideRequired() *StaticFlag[T] {
 	return s
 }
 
-// HideAllowed hides the allowed values from help.
-func (s *StaticFlag[T]) HideAllowed() *StaticFlag[T] {
-	s.bf.HideAllowed = true
-	return s
-}
-
 // Hidden omits the flag from help output.
 func (s *StaticFlag[T]) Hidden() *StaticFlag[T] {
 	s.bf.Hidden = true
@@ -110,5 +104,24 @@ func (s *StaticFlag[T]) Value() *T {
 func (s *StaticFlag[T]) Allowed(vals ...string) *StaticFlag[T] {
 	// copy to prevent external mutation
 	s.bf.Allowed = append([]string(nil), vals...)
+	return s
+}
+
+// HideAllowed hides the allowed values from help.
+func (s *StaticFlag[T]) HideAllowed() *StaticFlag[T] {
+	s.bf.HideAllowed = true
+	return s
+}
+
+// Requires marks this flag as required by the given flag.
+func (s *StaticFlag[T]) Requires(names ...string) *StaticFlag[T] {
+	// copy to prevent external mutation
+	s.bf.Requires = append([]string(nil), names...)
+	return s
+}
+
+// HideRequires hides the “(Requires)” suffix from help.
+func (s *StaticFlag[T]) HideRequires() *StaticFlag[T] {
+	s.bf.HideAllowed = true
 	return s
 }

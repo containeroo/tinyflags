@@ -18,4 +18,6 @@ type BaseFlag struct {
 	HideAllowed  bool             // Hide allowed values from help.
 	OneOfGroup   *OneOfGroupGroup // OneOfGroup group membership.
 	AllOrNone    *AllOrNoneGroup  // AllOrNone group membership.
+	Requires     []string         // Names of flags this flag requires
+	HideRequires bool             // Hide “(Requires)” in help.
 }
