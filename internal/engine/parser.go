@@ -33,7 +33,10 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.parseEnv(); err != nil {
 		return f.handleError(err)
 	}
-	if err := f.checkRequired(); err != nil {
+	if err := f.checkRequired(); err != nil { // static
+		return f.handleError(err)
+	}
+	if err := f.checkRequiredDynamic(); err != nil { // NEW
 		return f.handleError(err)
 	}
 	if err := f.checkOneOfGroups(); err != nil {
@@ -45,7 +48,6 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkRequirements(); err != nil {
 		return f.handleError(err)
 	}
-
 	return nil
 }
 
@@ -180,6 +182,41 @@ func (f *FlagSet) checkRequired() error {
 	for _, fl := range f.staticFlagsMap {
 		if fl.Required && !fl.Value.Changed() {
 			return fmt.Errorf("flag --%s is required", fl.Name)
+		}
+	}
+	return nil
+}
+
+// checkRequiredDynamic ensures all required dynamic flags are set for each
+// existing instance of every dynamic group. Errors use --group.id.flag format.
+func (f *FlagSet) checkRequiredDynamic() error {
+	if len(f.dynamicGroups()) == 0 {
+		return nil
+	}
+
+	for _, g := range f.dynamicGroups() {
+		ids := g.Instances() // []string of all IDs seen (from parsed values)
+		if len(ids) == 0 {
+			// No instances present → nothing to enforce for this group.
+			continue
+		}
+
+		items := g.Items() // map[field]core.GroupItem
+		if len(items) == 0 {
+			continue
+		}
+
+		for _, id := range ids {
+			for field, item := range items {
+				bf := item.Flag
+				if bf == nil || !bf.Required {
+					continue
+				}
+				// Was a value set for this id?
+				if _, ok := item.Value.GetAny(id); !ok {
+					return fmt.Errorf("flag --%s.%s.%s is required", g.Name(), id, field)
+				}
+			}
 		}
 	}
 	return nil
