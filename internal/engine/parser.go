@@ -48,6 +48,9 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkRequirements(); err != nil {
 		return f.handleError(err)
 	}
+	if err := f.checkPositionals(); err != nil {
+		return f.handleError(err)
+	}
 	return nil
 }
 
@@ -113,6 +116,17 @@ func (f *FlagSet) checkRequirements() error {
 	return nil
 }
 
+// checkPositionals ensures all positional arguments are valid.
+func (f *FlagSet) checkPositionals() error {
+	if err := f.validatePositionals(); err != nil {
+		return f.handleError(err)
+	}
+	if err := f.finalizePositionals(); err != nil {
+		return f.handleError(err)
+	}
+	return nil
+}
+
 // checkOneOfGroups ensures only one flag per group is set.
 func (f *FlagSet) checkOneOfGroups() error {
 	for _, g := range f.oneOfGroup {
@@ -173,6 +187,36 @@ func (f *FlagSet) checkAllOrNone() error {
 			}
 			return fmt.Errorf("flags %s must be set together", strings.Join(names, ", "))
 		}
+	}
+	return nil
+}
+
+// validatePositionals ensures all positional arguments are valid.
+func (f *FlagSet) validatePositionals() error {
+	if len(f.positional) == 0 {
+		return nil
+	}
+	if f.validatePositional == nil {
+		return nil
+	}
+	for _, arg := range f.positional {
+		if err := f.validatePositional(arg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// finalizePositionals mutates positional arguments.
+func (f *FlagSet) finalizePositionals() error {
+	if len(f.positional) == 0 {
+		return nil
+	}
+	if f.finalizePositional == nil {
+		return nil
+	}
+	for i, arg := range f.positional {
+		f.positional[i] = f.finalizePositional(arg)
 	}
 	return nil
 }

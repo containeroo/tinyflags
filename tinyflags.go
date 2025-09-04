@@ -153,6 +153,12 @@ func (f *FlagSet) Args() []string { return f.impl.Args() }
 // Arg returns the i-th positional argument and whether it exists.
 func (f *FlagSet) Arg(i int) (string, bool) { return f.impl.Arg(i) }
 
+// SetPositionalValidate sets a function to validate positional arguments.
+func (f *FlagSet) SetPositionalValidate(fn func(string) error) { f.impl.SetPositionalValidate(fn) }
+
+// SetPositionalFinalize sets a function to finalize positional arguments.
+func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.impl.SetPositionalFinalize(fn) }
+
 // OneOfGroups returns all registered OneOfGroups groups.
 func (f *FlagSet) OneOfGroups() []*core.OneOfGroupGroup { return f.impl.OneOfGroups() }
 

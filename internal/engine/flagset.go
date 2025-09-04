@@ -23,6 +23,8 @@ type FlagSet struct {
 	allOrNoneGroup     []*core.AllOrNoneGroup    // All AllOrNoneGroup groups
 	positional         []string                  // Remaining non-flag arguments
 	requiredPositional int                       // Required positional argument count
+	validatePositional func(string) error        // Function to validate positional arguments
+	finalizePositional func(string) string       // Function to finalize positional arguments
 	envPrefix          string                    // Optional ENV prefix (e.g. "APP_")
 	envKeyFunc         EnvKeyFunc                // Function to derive env keys from prefix+flag name  <-- NEW
 	getEnv             func(string) string       // Function used to read ENV vars (default: os.Getenv)
@@ -145,6 +147,8 @@ func (f *FlagSet) Arg(i int) (string, bool) {
 	}
 	return "", false
 }
+func (f *FlagSet) SetPositionalValidate(fn func(string) error)  { f.validatePositional = fn }
+func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.finalizePositional = fn }
 
 // --- Usage Formatting Configuration ---
 
