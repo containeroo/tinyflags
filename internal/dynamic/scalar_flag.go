@@ -20,6 +20,12 @@ func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
 	return f
 }
 
+// AllowOverride enforces per-id single assignment.
+func (f *ScalarFlag[T]) AllowOverride() *ScalarFlag[T] {
+	f.item.allowOverride = true
+	return f
+}
+
 // Validate adds a custom validation function for values.
 func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
 	f.item.setValidate(fn)

@@ -133,6 +133,7 @@ func main() {
 | `MustGet(id string) T`               | Like `Get`, but panics if the instance wasn't provided.                           | `timeout.MustGet("b")`                                       |
 | `Values() map[string]T`              | Get all parsed values keyed by instance ID.                                       | `for id, v := range timeout.Values() { fmt.Println(id, v) }` |
 | `ValuesAny() map[string]interface{}` | Same as `Values()`, but values are `interface{}`.                                 |                                                              |
+| `AllowOverride()`                    | Allow re-assignment of a dynamic flag per-ID. Only for Scalar flags.              |                                                              |
 
 > All **common** methods (Required, Hidden, etc.) and **static extras** (Choices, Validate, Finalize, Delimiter) also apply to dynamic flags.
 

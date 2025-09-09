@@ -127,6 +127,8 @@ func handleDynamic(name, val string, hasVal bool) stateFn {
 			return stateStart
 		}
 
+		item.GetAny(name)
+
 		// Handle --group.id.flag=value
 		if hasVal {
 			p.err = trySetDynamic(item, id, val, name)

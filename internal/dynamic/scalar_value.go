@@ -1,15 +1,20 @@
 package dynamic
 
+import (
+	"github.com/containeroo/tinyflags/internal/core"
+)
+
 // DynamicScalarValue holds parsed scalar values per ID with parsing, formatting, and validation.
 type DynamicScalarValue[T any] struct {
-	field    string                  // Flag field name
-	def      T                       // Default value
-	changed  bool                    // Whether the value was changed
-	parse    func(string) (T, error) // Parser from raw input
-	format   func(T) string          // Formatter to string
-	validate func(T) error           // Optional validation function
-	finalize (func(T) T)             // Optional finalizer function
-	values   map[string]T            // Parsed values per ID
+	field         string                  // Flag field name
+	def           T                       // Default value
+	changed       bool                    // Whether the value was changed
+	parse         func(string) (T, error) // Parser from raw input
+	format        func(T) string          // Formatter to string
+	validate      func(T) error           // Optional validation function
+	finalize      (func(T) T)             // Optional finalizer function
+	values        map[string]T            // Parsed values per ID
+	allowOverride bool                    // NEW: enforce per-id single assignment when true
 }
 
 // NewDynamicScalarValue creates a new dynamic scalar value.
@@ -25,6 +30,12 @@ func NewDynamicScalarValue[T any](field string, def T, parse func(string) (T, er
 
 // Set parses and stores a value for a specific ID.
 func (d *DynamicScalarValue[T]) Set(id, raw string) error {
+	// Enforce before any parsing/validation to catch duplicates early.
+	if !d.allowOverride {
+		if _, exists := d.values[id]; exists {
+			return &core.DuplicatePerIDError{Field: d.field, ID: id}
+		}
+	}
 	val, err := d.parse(raw)
 	if err != nil {
 		return err
