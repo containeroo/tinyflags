@@ -28,7 +28,7 @@ func (p *parser) next() (arg string, ok bool) {
 		p.index++
 		ok = true
 	}
-	return
+	return arg, ok
 }
 
 // peek returns the next argument without advancing the index.
@@ -37,7 +37,7 @@ func (p *parser) peek() (arg string, ok bool) {
 		arg = p.args[p.index]
 		ok = true
 	}
-	return
+	return arg, ok
 }
 
 // run executes the parser state machine starting from stateStart.
