@@ -29,6 +29,31 @@ func (g *Group) Int(field string, def int, usage string) *ScalarFlag[int] {
 	return registerDynamicScalar(g, field, def, usage, strconv.Atoi, strconv.Itoa)
 }
 
+// Int32
+func (g *Group) Int32(field string, def int32, usage string) *ScalarFlag[int32] {
+	return registerDynamicScalar(g, field, def, usage,
+		func(s string) (int32, error) {
+			v, err := strconv.ParseInt(s, 10, 32)
+			return int32(v), err
+		},
+		func(v int32) string {
+			return strconv.FormatInt(int64(v), 10)
+		},
+	)
+}
+
+// Int64
+func (g *Group) Int64(field string, def int64, usage string) *ScalarFlag[int64] {
+	return registerDynamicScalar(g, field, def, usage,
+		func(s string) (int64, error) {
+			return strconv.ParseInt(s, 10, 64)
+		},
+		func(v int64) string {
+			return strconv.FormatInt(v, 10)
+		},
+	)
+}
+
 // Duration
 func (g *Group) Duration(field string, def time.Duration, usage string) *ScalarFlag[time.Duration] {
 	return registerDynamicScalar(g, field, def, usage, time.ParseDuration, time.Duration.String)

@@ -24,9 +24,29 @@ func (f *FlagSet) IntSliceVar(ptr *[]int, name string, def []int, usage string) 
 	return f.impl.IntSliceVar(ptr, name, def, usage)
 }
 
+// Int32SliceVar defines a []int32 flag and binds it to the given pointer.
+func (f *FlagSet) Int32SliceVar(ptr *[]int32, name string, def []int32, usage string) *slice.SliceFlag[int32] {
+	return f.impl.Int32SliceVar(ptr, name, def, usage)
+}
+
+// Int64SliceVar defines a []int64 flag and binds it to the given pointer.
+func (f *FlagSet) Int64SliceVar(ptr *[]int64, name string, def []int64, usage string) *slice.SliceFlag[int64] {
+	return f.impl.Int64SliceVar(ptr, name, def, usage)
+}
+
 // IntSlice defines a []int flag and returns its handle.
 func (f *FlagSet) IntSlice(name string, def []int, usage string) *slice.SliceFlag[int] {
 	return f.IntSliceVar(new([]int), name, def, usage)
+}
+
+// Int32Slice defines a []int32 flag and returns its handle.
+func (f *FlagSet) Int32Slice(name string, def []int32, usage string) *slice.SliceFlag[int32] {
+	return f.Int32SliceVar(new([]int32), name, def, usage)
+}
+
+// Int64Slice defines a []int64 flag and returns its handle.
+func (f *FlagSet) Int64Slice(name string, def []int64, usage string) *slice.SliceFlag[int64] {
+	return f.Int64SliceVar(new([]int64), name, def, usage)
 }
 
 // DurationSliceVar defines a []time.Duration flag and binds it to the given pointer.

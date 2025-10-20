@@ -25,6 +25,31 @@ func (f *FlagSet) IntSliceVar(ptr *[]int, name string, def []int, usage string) 
 	)
 }
 
+// Int32Var defines an int32 flag.
+func (f *FlagSet) Int32SliceVar(ptr *[]int32, name string, def []int32, usage string) *slice.SliceFlag[int32] {
+	return registerSlice(f, ptr, name, usage, def,
+		func(s string) (int32, error) {
+			v, err := strconv.ParseInt(s, 10, 32)
+			return int32(v), err
+		},
+		func(v int32) string {
+			return strconv.FormatInt(int64(v), 10)
+		},
+	)
+}
+
+// Int64Var defines an int64 flag.
+func (f *FlagSet) Int64SliceVar(ptr *[]int64, name string, def []int64, usage string) *slice.SliceFlag[int64] {
+	return registerSlice(f, ptr, name, usage, def,
+		func(s string) (int64, error) {
+			return strconv.ParseInt(s, 10, 64)
+		},
+		func(v int64) string {
+			return strconv.FormatInt(v, 10)
+		},
+	)
+}
+
 // DurationVar defines a time.Duration flag.
 func (f *FlagSet) DurationSliceVar(ptr *[]time.Duration, name string, def []time.Duration, usage string) *slice.SliceFlag[time.Duration] {
 	return registerSlice(f, ptr, name, usage, def,

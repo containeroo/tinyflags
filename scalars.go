@@ -24,9 +24,29 @@ func (f *FlagSet) IntVar(ptr *int, name string, def int, usage string) *scalar.S
 	return f.impl.IntVar(ptr, name, def, usage)
 }
 
+// Int32Var defines an int flag and binds it to the given pointer.
+func (f *FlagSet) Int32Var(ptr *int32, name string, def int32, usage string) *scalar.ScalarFlag[int32] {
+	return f.impl.Int32Var(ptr, name, def, usage)
+}
+
+// Int64Var defines an int flag and binds it to the given pointer.
+func (f *FlagSet) Int64Var(ptr *int64, name string, def int64, usage string) *scalar.ScalarFlag[int64] {
+	return f.impl.Int64Var(ptr, name, def, usage)
+}
+
 // Int defines an int flag and returns its handle.
 func (f *FlagSet) Int(name string, def int, usage string) *scalar.ScalarFlag[int] {
 	return f.IntVar(new(int), name, def, usage)
+}
+
+// Int32 defines an int flag and returns its handle.
+func (f *FlagSet) Int32(name string, def int32, usage string) *scalar.ScalarFlag[int32] {
+	return f.Int32Var(new(int32), name, def, usage)
+}
+
+// Int64 defines an int flag and returns its handle.
+func (f *FlagSet) Int64(name string, def int64, usage string) *scalar.ScalarFlag[int64] {
+	return f.Int64Var(new(int64), name, def, usage)
 }
 
 // Bool defines a bool flag.

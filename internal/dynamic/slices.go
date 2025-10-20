@@ -20,6 +20,31 @@ func (g *Group) IntSlice(field string, def []int, usage string) *SliceFlag[int] 
 	return registerDynamicSlice(g, field, def, usage, strconv.Atoi, strconv.Itoa)
 }
 
+// Int32Slice
+func (g *Group) Int32Slice(field string, def []int32, usage string) *SliceFlag[int32] {
+	return registerDynamicSlice(g, field, def, usage,
+		func(s string) (int32, error) {
+			v, err := strconv.ParseInt(s, 10, 32)
+			return int32(v), err
+		},
+		func(v int32) string {
+			return strconv.FormatInt(int64(v), 10)
+		},
+	)
+}
+
+// Int64Slice
+func (g *Group) Int64Slice(field string, def []int64, usage string) *SliceFlag[int64] {
+	return registerDynamicSlice(g, field, def, usage,
+		func(s string) (int64, error) {
+			return strconv.ParseInt(s, 10, 64)
+		},
+		func(v int64) string {
+			return strconv.FormatInt(v, 10)
+		},
+	)
+}
+
 // DurationSlice
 func (g *Group) DurationSlice(field string, def []time.Duration, usage string) *SliceFlag[time.Duration] {
 	return registerDynamicSlice(g, field, def, usage, time.ParseDuration, time.Duration.String)
