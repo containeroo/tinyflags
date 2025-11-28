@@ -122,6 +122,6 @@ func (s *StaticFlag[T]) Requires(names ...string) *StaticFlag[T] {
 
 // HideRequires hides the “(Requires)” suffix from help.
 func (s *StaticFlag[T]) HideRequires() *StaticFlag[T] {
-	s.bf.HideAllowed = true
+	s.bf.HideRequires = true
 	return s
 }

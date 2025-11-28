@@ -33,6 +33,7 @@ func main() {
 	// parse two dynamic flags
 	args := []string{
 		"--http.alpha.address=127.0.0.1",
+		"--http.alpha.address=127.0.0.2",
 		"--http.alpha.port=8080",
 		"--http.beta.address=10.0.0.1",
 		"--tcp.beta.addresses=10.0.0.1",

@@ -3,6 +3,8 @@ package dynamic
 import (
 	"fmt"
 	"strings"
+
+	"github.com/containeroo/tinyflags/internal/utils"
 )
 
 // DynamicSliceValue holds parsed slice values per ID with parsing, formatting, and validation.
@@ -43,13 +45,9 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 		if err != nil {
 			return fmt.Errorf("invalid %q: %w", chunk, err)
 		}
-		if d.validate != nil {
-			if err := d.validate(val); err != nil {
-				return fmt.Errorf("invalid value %q: %w", chunk, err)
-			}
-		}
-		if d.finalize != nil {
-			val = d.finalize(val)
+		val, err = utils.ApplyValueHooks(val, d.validate, d.finalize)
+		if err != nil {
+			return fmt.Errorf("invalid value %q: %w", chunk, err)
 		}
 		d.values[id] = append(d.values[id], val)
 	}

@@ -16,7 +16,6 @@ func (c *CounterValue) Increment() error {
 		}
 	}
 	*c.ptr = next
-	c.value = next
 	c.changed = true
 	return nil
 }
@@ -52,7 +51,6 @@ func NewCounterValue(ptr *int, def int) *CounterValue {
 func (c *CounterValue) Set(s string) error {
 	if s == "" {
 		*c.ptr++
-		c.value = *c.ptr
 		c.changed = true
 		return nil
 	}

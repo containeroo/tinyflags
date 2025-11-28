@@ -2,6 +2,7 @@ package dynamic
 
 import (
 	"github.com/containeroo/tinyflags/internal/core"
+	"github.com/containeroo/tinyflags/internal/utils"
 )
 
 // DynamicScalarValue holds parsed scalar values per ID with parsing, formatting, and validation.
@@ -40,13 +41,9 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	if err != nil {
 		return err
 	}
-	if d.validate != nil {
-		if err := d.validate(val); err != nil {
-			return err
-		}
-	}
-	if d.finalize != nil {
-		val = d.finalize(val)
+	val, err = utils.ApplyValueHooks(val, d.validate, d.finalize)
+	if err != nil {
+		return err
 	}
 	d.values[id] = val
 	d.changed = true

@@ -1,10 +1,11 @@
 package scalar
 
+import "github.com/containeroo/tinyflags/internal/utils"
+
 // ScalarValue implements scalar flag parsing, formatting, and validation.
 type ScalarValue[T any] struct {
 	ptr      *T
 	def      T
-	value    T
 	changed  bool
 	parse    func(string) (T, error)
 	format   func(T) string
@@ -29,16 +30,11 @@ func (f *ScalarValue[T]) Set(s string) error {
 	if err != nil {
 		return err
 	}
-	if f.validate != nil {
-		if err := f.validate(val); err != nil {
-			return err
-		}
-	}
-	if f.finalize != nil {
-		val = f.finalize(val)
+	val, err = utils.ApplyValueHooks(val, f.validate, f.finalize)
+	if err != nil {
+		return err
 	}
 	*f.ptr = val
-	f.value = val
 	f.changed = true
 	return nil
 }

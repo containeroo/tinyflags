@@ -14,8 +14,10 @@ func TestSlice_Finalize(t *testing.T) {
 
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 
+	calls := 0
 	names := fs.StringSlice("name", nil, "User names").
 		Finalize(func(s string) string {
+			calls++
 			return strings.ToUpper(strings.TrimSpace(s))
 		}).
 		Value()
@@ -27,6 +29,7 @@ func TestSlice_Finalize(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, []string{"ALICE", "BOB", "CAROL"}, *names)
+	assert.Equal(t, 3, calls)
 }
 
 func TestDynamicSlice_Finalize(t *testing.T) {

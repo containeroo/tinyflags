@@ -3,13 +3,14 @@ package slice
 import (
 	"fmt"
 	"strings"
+
+	"github.com/containeroo/tinyflags/internal/utils"
 )
 
 // SliceValue implements slice flag parsing and validation.
 type SliceValue[T any] struct {
 	ptr       *[]T
 	def       []T
-	value     []T
 	changed   bool
 	delimiter string
 	parse     func(string) (T, error)
@@ -47,17 +48,12 @@ func (v *SliceValue[T]) Set(s string) error {
 		if err != nil {
 			return fmt.Errorf("invalid slice item %q: %w", raw, err)
 		}
-		if v.validate != nil {
-			if err := v.validate(val); err != nil {
-				return fmt.Errorf("invalid value %q: %w", raw, err)
-			}
-		}
-		if v.finalize != nil {
-			val = v.finalize(val)
+		val, err = utils.ApplyValueHooks(val, v.validate, v.finalize)
+		if err != nil {
+			return fmt.Errorf("invalid value %q: %w", raw, err)
 		}
 		*v.ptr = append(*v.ptr, val)
 	}
-	v.value = *v.ptr
 	v.changed = true
 	return nil
 }
