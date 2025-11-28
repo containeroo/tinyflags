@@ -12,6 +12,14 @@ import (
 func (f *FlagSet) Parse(args []string) error {
 	f.maybeAddBuiltinFlags()
 
+	if f.beforeParse != nil {
+		var err error
+		args, err = f.beforeParse(args)
+		if err != nil {
+			return f.handleError(err)
+		}
+	}
+
 	if err := f.parseArgs(args); err != nil {
 		return f.handleError(err)
 	}
@@ -63,6 +71,13 @@ func (f *FlagSet) parseArgs(args []string) error {
 	f.positional = append(f.positional, positional...)
 
 	if f.requiredPositional > 0 && len(f.positional) < f.requiredPositional {
+		if f.showHelp != nil && *f.showHelp {
+			return nil
+		}
+		if f.showVersion != nil && *f.showVersion {
+			return nil
+		}
+
 		return fmt.Errorf("expected at least %d positional argument%s, got %d",
 			f.requiredPositional,
 			utils.PluralSuffix(f.requiredPositional),
@@ -130,42 +145,29 @@ func (f *FlagSet) checkPositionals() error {
 // checkOneOfGroups ensures only one flag per group is set.
 func (f *FlagSet) checkOneOfGroups() error {
 	for _, g := range f.oneOfGroup {
-		var conflicting []string
-
-		// Check individual flags
+		selections := 0
 		for _, fl := range g.Flags {
 			if fl.Value.Changed() {
-				conflicting = append(conflicting, "--"+fl.Name)
+				selections++
 			}
 		}
-
-		// Check require-together groups
 		for _, grp := range g.RequiredGroups {
-			set := 0
+			changed := 0
 			for _, fl := range grp.Flags {
 				if fl.Value.Changed() {
-					set++
+					changed++
 				}
 			}
-			if set > 0 && set != len(grp.Flags) {
-				// Skip partially set group (handled by checkAllOrNone)
-				continue
-			}
-			if set == len(grp.Flags) {
-				// Show group as comma-separated flag list
-				var names []string
-				for _, fl := range grp.Flags {
-					names = append(names, "--"+fl.Name)
-				}
-				conflicting = append(conflicting, fmt.Sprintf("[%s]", strings.Join(names, ", ")))
+			if changed == len(grp.Flags) && len(grp.Flags) > 0 {
+				selections++
 			}
 		}
 
-		if len(conflicting) > 1 {
-			return fmt.Errorf(
-				"only one of the flags in group %q may be used: %s",
-				g.Name, strings.Join(conflicting, " vs "),
-			)
+		if selections > 1 {
+			return fmt.Errorf("only one of the flags in group %q may be used", g.Name)
+		}
+		if g.IsRequired() && selections == 0 {
+			return fmt.Errorf("one of the flags in group %q must be set", g.Name)
 		}
 	}
 	return nil
@@ -174,13 +176,20 @@ func (f *FlagSet) checkOneOfGroups() error {
 // checkAllOrNone ensures all required flags were set.
 func (f *FlagSet) checkAllOrNone() error {
 	for _, g := range f.allOrNoneGroup {
-		set := 0
+		changed := 0
 		for _, fl := range g.Flags {
 			if fl.Value.Changed() {
-				set++
+				changed++
 			}
 		}
-		if set > 0 && set != len(g.Flags) {
+		if changed > 0 && changed != len(g.Flags) {
+			names := make([]string, 0, len(g.Flags))
+			for _, fl := range g.Flags {
+				names = append(names, "--"+fl.Name)
+			}
+			return fmt.Errorf("flags %s must be set together", strings.Join(names, ", "))
+		}
+		if g.IsRequired() && changed == 0 {
 			names := make([]string, 0, len(g.Flags))
 			for _, fl := range g.Flags {
 				names = append(names, "--"+fl.Name)

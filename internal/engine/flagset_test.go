@@ -134,6 +134,27 @@ func TestNewFlagSet(t *testing.T) {
 		assert.False(t, ok)
 	})
 
+	t.Run("helpWithPositionalRequirement", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("pos", tinyflags.ContinueOnError)
+		fs.RequirePositional(1)
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.True(t, tinyflags.IsHelpRequested(err))
+	})
+
+	t.Run("versionWithPositionalRequirement", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("pos", tinyflags.ContinueOnError)
+		fs.RequirePositional(1)
+		fs.Version("1.0.0")
+		err := fs.Parse([]string{"--version"})
+		require.Error(t, err)
+		assert.True(t, tinyflags.IsVersionRequested(err))
+	})
+
 	t.Run("PrintDefaults and Usage", func(t *testing.T) {
 		var buf bytes.Buffer
 		t.Parallel()

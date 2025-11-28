@@ -122,7 +122,12 @@ func main() {
 | `Choices(v1, v2, ...)`         | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
 | `Validate(fn func(v T) error)` | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
 | `Finalize(fn func(v T) T)`     | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
+| `FinalizeWithID(fn func(id string, v T) T)` | _(dynamic only)_ Finalize with access to the instance ID.                                | `http.String("addr","","").FinalizeWithID(func(id, v string) string { return id+":"+v })`                                         |
 | `Delimiter(sep string)`        | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
+| `StrictDelimiter()`            | _(slice flags only)_ Reject mixed separators in one flag occurrence.                         |                                                                                                                                  |
+| `AllowEmpty()`                 | _(slice flags only)_ Allow empty items (e.g. `"a,,b"`).                                      |                                                                                                                                  |
+| `HideDefault()`                | Hide the default value from help output.                                                     |                                                                                                                                  |
+| `Section(name string)`         | Group flags under a section header in help output.                                           |                                                                                                                                  |
 
 ### Dynamic-Flag Extras
 
@@ -147,6 +152,10 @@ func main() {
 | `EnvKeyForFlag`                                  | Derive the env key for a flag.                                 |
 | `NewReplacerEnvKeyFunc`                          | Build an `EnvKeyFunc` that applies the given replacer.         |
 | `Version(version string)`                        | Enable the `--version` flag, printing this string.             |
+| `Help()`                                         | Access grouped helpers for title/authors/description/note/help text. |
+| `Layout()`                                       | Access grouped helpers for usage/indent/width/note layout.     |
+| `BeforeParse(fn func([]string) ([]string, error))` | Mutate arguments before parsing (e.g., expand @files).         |
+| `OnUnknownFlag(fn func(name string) error)`      | Handle or ignore unknown flags instead of failing.             |
 | `VersionText(text string)`                       | Override the `--version` text. Default: `"Show version"`.      |
 | `HelpText(text string)`                          | Override the `--help` text. Default: `"Show help"`.            |
 | `DisableHelp()` / `DisableVersion()`             | Remove `--help` or `--version`.                                |

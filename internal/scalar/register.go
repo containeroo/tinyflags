@@ -5,8 +5,8 @@ import (
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
-// scalarValueProvider is the interface for scalar flags.
-type scalarValueProvider[T any] interface {
+// ValueProvider is the interface for scalar flag values.
+type ValueProvider[T any] interface {
 	core.Value
 	Base() *ScalarValue[T]
 }
@@ -15,7 +15,7 @@ type scalarValueProvider[T any] interface {
 func RegisterScalar[T any](
 	reg core.Registry,
 	name, usage string,
-	val scalarValueProvider[T],
+	val ValueProvider[T],
 	ptr *T,
 ) *ScalarFlag[T] {
 	bf := &core.BaseFlag{

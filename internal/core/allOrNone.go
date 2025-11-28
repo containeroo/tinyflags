@@ -4,9 +4,10 @@ package core
 type AllOrNoneGroup struct {
 	Name      string      // Identifier for this group.
 	Flags     []*BaseFlag // Member flags.
-	titleText string      // Optional title to display in help.
-	hidden    bool        // Hide this group in help.
-	required  bool        // If true, at least one must be set.
+	Groups    []*AllOrNoneGroup
+	titleText string // Optional title to display in help.
+	hidden    bool   // Hide this group in help.
+	required  bool   // If true, at least one must be set.
 }
 
 // Title sets a custom help heading.
@@ -40,4 +41,16 @@ func (g *AllOrNoneGroup) Required() *AllOrNoneGroup {
 // IsRequired reports whether the group is required.
 func (g *AllOrNoneGroup) IsRequired() bool {
 	return g.required
+}
+
+// AddGroup nests another AllOrNoneGroup into this one for compound rules.
+func (g *AllOrNoneGroup) AddGroup(groups ...*AllOrNoneGroup) *AllOrNoneGroup {
+	for _, sub := range groups {
+		if sub == nil {
+			continue
+		}
+		g.Groups = append(g.Groups, sub)
+		g.Flags = append(g.Flags, sub.Flags...)
+	}
+	return g
 }

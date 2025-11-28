@@ -5,8 +5,8 @@ import (
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
-// sliceValueProvider is the interface for slice flags.
-type sliceValueProvider[T any] interface {
+// ValueProvider is the interface for slice flags.
+type ValueProvider[T any] interface {
 	core.Value
 	Base() *SliceValue[T]
 }
@@ -15,7 +15,7 @@ type sliceValueProvider[T any] interface {
 func RegisterSlice[T any](
 	reg core.Registry,
 	name, usage string,
-	val sliceValueProvider[T],
+	val ValueProvider[T],
 	ptr *[]T,
 ) *SliceFlag[T] {
 	bf := &core.BaseFlag{

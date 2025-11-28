@@ -9,14 +9,16 @@ import (
 
 // SliceValue implements slice flag parsing and validation.
 type SliceValue[T any] struct {
-	ptr       *[]T
-	def       []T
-	changed   bool
-	delimiter string
-	parse     func(string) (T, error)
-	format    func(T) string
-	validate  func(T) error
-	finalize  (func(T) T)
+	ptr        *[]T
+	def        []T
+	changed    bool
+	delimiter  string
+	strictDel  bool
+	allowEmpty bool
+	parse      func(string) (T, error)
+	format     func(T) string
+	validate   func(T) error
+	finalize   (func(T) T)
 }
 
 // NewSliceValue creates a new slice value.
@@ -43,8 +45,22 @@ func (v *SliceValue[T]) Set(s string) error {
 		*v.ptr = nil
 	}
 	parts := strings.Split(s, v.delimiter)
+	if v.strictDel {
+		for _, alt := range []string{",", ";", "|"} {
+			if alt == v.delimiter {
+				continue
+			}
+			if strings.Contains(s, alt) {
+				return fmt.Errorf("mixed delimiters: found %q while using %q", alt, v.delimiter)
+			}
+		}
+	}
 	for _, raw := range parts {
-		val, err := v.parse(strings.TrimSpace(raw))
+		raw = strings.TrimSpace(raw)
+		if raw == "" && !v.allowEmpty {
+			return fmt.Errorf("invalid slice item %q: empty values are not allowed", raw)
+		}
+		val, err := v.parse(raw)
 		if err != nil {
 			return fmt.Errorf("invalid slice item %q: %w", raw, err)
 		}
@@ -82,6 +98,12 @@ func (v *SliceValue[T]) setValidate(fn func(T) error) { v.validate = fn }
 
 // setFinalize sets a per-item finalizer function.
 func (v *SliceValue[T]) setFinalize(fn func(T) T) { v.finalize = fn }
+
+// setStrictDelimiter toggles mixed-delimiter rejection.
+func (v *SliceValue[T]) setStrictDelimiter(strict bool) { v.strictDel = strict }
+
+// setAllowEmpty toggles acceptance of empty items.
+func (v *SliceValue[T]) setAllowEmpty(allow bool) { v.allowEmpty = allow }
 
 // Base returns the underlying value.
 func (v *SliceValue[T]) Base() *SliceValue[T] { return v }

@@ -80,7 +80,15 @@ func (f *FlagSet) PrintNotes(w io.Writer, indent, maxWidth int) {
 
 // PrintStaticDefaults renders all statically registered flags.
 func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth int) {
+	var lastSection string
 	for _, fl := range f.staticFlags() {
+		if fl.Hidden {
+			continue
+		}
+		if fl.Section != "" && fl.Section != lastSection {
+			fmt.Fprintf(w, "\n%s:\n", fl.Section) // nolint:errcheck
+			lastSection = fl.Section
+		}
 		printFlagUsage(w, indent, startCol, maxWidth, f.hideEnvs, fl, f.envPrefix)
 	}
 
@@ -105,7 +113,6 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 		if desc := group.DescriptionText(); desc != "" {
 			writeIndented(w, wrapText(desc, maxWidth-indent), 0, maxWidth)
 		}
-
 		idPlaceholder := group.GetPlaceholder()
 		if idPlaceholder == "" {
 			idPlaceholder = "<ID>"
@@ -151,7 +158,7 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 		}
 
 		if note := group.NoteText(); note != "" {
-			writeIndented(w, wrapText(note, maxWidth-indent), 0, maxWidth)
+			writeIndented(w, wrapText(note, maxWidth-indent), indent, maxWidth)
 		}
 	}
 
@@ -312,7 +319,7 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 	}
 
 	// Append default value, if available and allowed.
-	if flag.Value != nil && showDefault {
+	if flag.Value != nil && showDefault && !flag.HideDefault {
 		if def := flag.Value.Default(); def != "" {
 			desc += " (Default: " + def + ")"
 		}

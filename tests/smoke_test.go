@@ -2,6 +2,7 @@ package tinyflags_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/containeroo/tinyflags"
@@ -253,6 +254,25 @@ Flags:
 		assert.Equal(t, false, *noDebug)
 	})
 
+	t.Run("smoke one of with nested group", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		cacheFlag := fs.Bool("cache", false, "Enable cache").AllOrNone("cache").Value()
+		dbFlag := fs.Bool("db", false, "Enable db").AllOrNone("db").Value()
+
+		one := fs.GetOneOfGroup("backend").
+			AddGroup(fs.GetAllOrNoneGroup("cache")).
+			AddGroup(fs.GetAllOrNoneGroup("db")).
+			Required()
+
+		err := fs.Parse([]string{"--cache"})
+		require.NoError(t, err)
+		_ = one
+		assert.True(t, *cacheFlag)
+		assert.False(t, *dbFlag)
+	})
+
 	t.Run("smoke choice error", func(t *testing.T) {
 		t.Parallel()
 
@@ -425,5 +445,45 @@ Flags:
         --http.<ID>.enabled <true|false>  Enable service (Default: true)
         --http.<ID>.verbose               Enable verbose mode
 `)
+	})
+
+	t.Run("smoke global delimiter", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Globaldelimiter("|")
+
+		names := fs.StringSlice("name", nil, "names").Value()
+
+		err := fs.Parse([]string{
+			"--name=alice|bob|carol",
+		})
+		require.NoError(t, err)
+
+		assert.Equal(t, []string{"alice", "bob", "carol"}, *names)
+	})
+
+	t.Run("smoke positional validate and finalize", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+
+		fs.SetPositionalValidate(func(s string) error {
+			if len(s) < 3 {
+				return fmt.Errorf("too short")
+			}
+			return nil
+		})
+		fs.SetPositionalFinalize(func(s string) string {
+			return strings.ToUpper(s)
+		})
+
+		err := fs.Parse([]string{
+			"foo",
+			"bar",
+		})
+		require.NoError(t, err)
+
+		assert.Equal(t, []string{"FOO", "BAR"}, fs.Args())
 	})
 }

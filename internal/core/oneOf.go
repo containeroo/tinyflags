@@ -48,9 +48,6 @@ func (g *OneOfGroupGroup) IsRequired() bool {
 func (g *OneOfGroupGroup) AddGroup(grp *AllOrNoneGroup) *OneOfGroupGroup {
 	if grp != nil {
 		g.RequiredGroups = append(g.RequiredGroups, grp)
-		for _, fl := range grp.Flags {
-			fl.OneOfGroup = g // populate the parent one of group reference
-		}
 	}
 	return g
 }

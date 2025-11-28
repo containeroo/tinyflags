@@ -38,6 +38,12 @@ func (f *SliceFlag[T]) Finalize(fn func(T) T) *SliceFlag[T] {
 	return f
 }
 
+// FinalizeWithID sets a finalizer that receives the instance ID.
+func (f *SliceFlag[T]) FinalizeWithID(fn func(string, T) T) *SliceFlag[T] {
+	f.item.setFinalizeWithID(fn)
+	return f
+}
+
 // Default returns the default value.
 func (f *SliceFlag[T]) Default() []T {
 	return f.item.def
@@ -84,4 +90,16 @@ func (f *SliceFlag[T]) ValuesAny() map[string]any {
 		out[k] = v
 	}
 	return out
+}
+
+// StrictDelimiter rejects inputs that mix different separators.
+func (f *SliceFlag[T]) StrictDelimiter() *SliceFlag[T] {
+	f.item.setStrictDelimiter(true)
+	return f
+}
+
+// AllowEmpty permits empty items in the slice (e.g., "a,,b").
+func (f *SliceFlag[T]) AllowEmpty() *SliceFlag[T] {
+	f.item.setAllowEmpty(true)
+	return f
 }

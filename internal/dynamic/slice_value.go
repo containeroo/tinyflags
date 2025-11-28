@@ -9,15 +9,18 @@ import (
 
 // DynamicSliceValue holds parsed slice values per ID with parsing, formatting, and validation.
 type DynamicSliceValue[T any] struct {
-	field     string                  // Flag field name
-	def       []T                     // Default slice value
-	changed   bool                    // Whether the value was changed
-	parse     func(string) (T, error) // Function to parse a single element
-	format    func(T) string          // Function to format a single element
-	delimiter string                  // Separator used to split input
-	validate  func(T) error           // Optional validation function
-	finalize  (func(T) T)             // Optional finalizer function
-	values    map[string][]T          // Parsed values per ID
+	field      string                  // Flag field name
+	def        []T                     // Default slice value
+	changed    bool                    // Whether the value was changed
+	parse      func(string) (T, error) // Function to parse a single element
+	format     func(T) string          // Function to format a single element
+	delimiter  string                  // Separator used to split input
+	validate   func(T) error           // Optional validation function
+	finalize   (func(T) T)             // Optional finalizer function
+	finalizeID func(string, T) T       // Optional finalizer function with ID
+	strictDel  bool                    // Reject mixed delimiters when true
+	allowEmpty bool                    // Allow empty items when true
+	values     map[string][]T          // Parsed values per ID
 }
 
 // NewDynamicSliceValue creates a new dynamic slice value.
@@ -40,14 +43,33 @@ func NewDynamicSliceValue[T any](
 
 // Set parses and stores one or more values for a given ID.
 func (d *DynamicSliceValue[T]) Set(id, raw string) error {
+	if d.strictDel {
+		for _, alt := range []string{",", ";", "|"} {
+			if alt == d.delimiter {
+				continue
+			}
+			if strings.Contains(raw, alt) {
+				return fmt.Errorf("mixed delimiters: found %q while using %q", alt, d.delimiter)
+			}
+		}
+	}
+
 	for _, chunk := range strings.Split(raw, d.delimiter) {
-		val, err := d.parse(strings.TrimSpace(chunk))
+		chunk = strings.TrimSpace(chunk)
+		if chunk == "" && !d.allowEmpty {
+			return fmt.Errorf("invalid value %q: empty values are not allowed", chunk)
+		}
+
+		val, err := d.parse(chunk)
 		if err != nil {
 			return fmt.Errorf("invalid %q: %w", chunk, err)
 		}
 		val, err = utils.ApplyValueHooks(val, d.validate, d.finalize)
 		if err != nil {
 			return fmt.Errorf("invalid value %q: %w", chunk, err)
+		}
+		if d.finalizeID != nil {
+			val = d.finalizeID(id, val)
 		}
 		d.values[id] = append(d.values[id], val)
 	}
@@ -65,9 +87,24 @@ func (d *DynamicSliceValue[T]) setFinalize(fn func(T) T) {
 	d.finalize = fn
 }
 
+// setFinalizeWithID sets a per-item finalizer with access to the ID.
+func (d *DynamicSliceValue[T]) setFinalizeWithID(fn func(string, T) T) {
+	d.finalizeID = fn
+}
+
 // setDelimiter sets the delimiter used to split input values.
 func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
 	d.delimiter = sep
+}
+
+// setStrictDelimiter toggles mixed-delimiter rejection.
+func (d *DynamicSliceValue[T]) setStrictDelimiter(strict bool) {
+	d.strictDel = strict
+}
+
+// setAllowEmpty toggles acceptance of empty items.
+func (d *DynamicSliceValue[T]) setAllowEmpty(allow bool) {
+	d.allowEmpty = allow
 }
 
 // FieldName returns the field name of the flag.

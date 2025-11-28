@@ -20,4 +20,6 @@ type BaseFlag struct {
 	AllOrNone    *AllOrNoneGroup  // AllOrNone group membership.
 	Requires     []string         // Names of flags this flag requires
 	HideRequires bool             // Hide “(Requires)” in help.
+	HideDefault  bool             // Hide default value in help.
+	Section      string           // Optional section name for grouping in help.
 }

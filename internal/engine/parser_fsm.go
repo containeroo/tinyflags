@@ -94,6 +94,18 @@ func stateStart(p *parser) stateFn {
 	}
 }
 
+func handleUnknown(p *parser, name string) stateFn {
+	if p.fs.unknownFlag == nil {
+		p.err = fmt.Errorf("unknown flag: %s", name)
+		return nil
+	}
+	if err := p.fs.unknownFlag(name); err != nil {
+		p.err = err
+		return nil
+	}
+	return stateStart
+}
+
 // stateLong handles arguments of the form --flag or --flag=value.
 func stateLong(arg string) stateFn {
 	return func(p *parser) stateFn {
@@ -108,8 +120,7 @@ func stateLong(arg string) stateFn {
 			return handleStatic(name, val, hasVal)
 
 		default:
-			p.err = fmt.Errorf("unknown flag: --%s", name)
-			return nil
+			return handleUnknown(p, "--"+name)
 		}
 	}
 }
@@ -194,8 +205,10 @@ func stateShort(arg string) stateFn {
 			char := string(shorts[i])
 			flag := findShortFlag(p.fs, char)
 			if flag == nil {
-				p.err = fmt.Errorf("unknown short flag: -%s", char)
-				return nil
+				if next := handleUnknown(p, "-"+char); next == nil {
+					return nil
+				}
+				continue
 			}
 
 			// Handle non-strict bools like -v

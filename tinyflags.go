@@ -69,6 +69,16 @@ func (f *FlagSet) Parse(args []string) error {
 	return f.impl.Parse(args)
 }
 
+// BeforeParse installs a hook to mutate arguments before parsing.
+func (f *FlagSet) BeforeParse(fn func([]string) ([]string, error)) {
+	f.impl.BeforeParse(fn)
+}
+
+// OnUnknownFlag installs a handler for unknown flags. Return nil to ignore.
+func (f *FlagSet) OnUnknownFlag(fn func(string) error) {
+	f.impl.OnUnknownFlag(fn)
+}
+
 // Name returns the flag set's name.
 func (f *FlagSet) Name() string { return f.impl.Name() }
 
@@ -100,25 +110,25 @@ func (f *FlagSet) NewReplacerEnvKeyFunc(replacer *strings.Replacer, upper bool) 
 func (f *FlagSet) HideEnvs() { f.impl.HideEnvs() }
 
 // Title sets the main title shown in usage output.
-func (f *FlagSet) Title(s string) { f.impl.Title(s) }
+func (f *FlagSet) Title(s string) { f.Help().Title(s) }
 
 // Authors sets the list of authors printed in help output.
-func (f *FlagSet) Authors(s string) { f.impl.Authors(s) }
+func (f *FlagSet) Authors(s string) { f.Help().Authors(s) }
 
 // Description sets the top description section of the help output.
-func (f *FlagSet) Description(s string) { f.impl.Description(s) }
+func (f *FlagSet) Description(s string) { f.Help().Description(s) }
 
 // Note sets the bottom note section of the help output.
-func (f *FlagSet) Note(s string) { f.impl.Note(s) }
+func (f *FlagSet) Note(s string) { f.Help().Note(s) }
 
 // HelpText sets the --help text.
-func (f *FlagSet) HelpText(s string) { f.impl.HelpText(s) }
+func (f *FlagSet) HelpText(s string) { f.Help().HelpText(s) }
 
 // DisableHelp disables the automatic --help flag.
-func (f *FlagSet) DisableHelp() { f.impl.DisableHelp() }
+func (f *FlagSet) DisableHelp() { f.Help().DisableHelp() }
 
 // DisableVersion disables the automatic --version flag.
-func (f *FlagSet) DisableVersion() { f.impl.DisableVersion() }
+func (f *FlagSet) DisableVersion() { f.Help().DisableVersion() }
 
 // SortedFlags enables sorted help output for static flags.
 func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
@@ -140,6 +150,16 @@ func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.impl.SetGetEnvFn(fn) }
 
 // Globaldelimiter sets the delimiter used for all slice flags.
 func (f *FlagSet) Globaldelimiter(s string) { f.impl.Globaldelimiter(s) }
+
+// AttachGroupToAllOrNone nests one AllOrNone group into another.
+func (f *FlagSet) AttachGroupToAllOrNone(parent, child string) {
+	f.impl.AttachGroupToAllOrNone(parent, child)
+}
+
+// AttachGroupToOneOf adds an AllOrNone group to a OneOf group.
+func (f *FlagSet) AttachGroupToOneOf(group, name string) {
+	f.impl.AttachGroupToOneOf(group, name)
+}
 
 // DefaultDelimiter returns the delimiter used for slice flags.
 func (f *FlagSet) DefaultDelimiter() string { return f.impl.DefaultDelimiter() }
@@ -244,31 +264,31 @@ func (f *FlagSet) PrintNotes(w io.Writer, indent, width int) {
 }
 
 // SetDescIndent sets the indentation for the description block.
-func (f *FlagSet) SetDescIndent(n int) { f.impl.SetDescIndent(n) }
+func (f *FlagSet) SetDescIndent(n int) { f.Layout().SetDescIndent(n) }
 
 // DescIndent returns the current indent used for the description block.
 func (f *FlagSet) DescIndent() int { return f.impl.DescIndent() }
 
 // SetDescWidth sets the wrapping width for the description block.
-func (f *FlagSet) SetDescWidth(max int) { f.impl.SetDescWidth(max) }
+func (f *FlagSet) SetDescWidth(max int) { f.Layout().SetDescWidth(max) }
 
 // DescWidth returns the wrapping width for the description block.
 func (f *FlagSet) DescWidth() int { return f.impl.DescWidth() }
 
 // SetStaticUsageIndent sets the indentation for static flag usage lines.
-func (f *FlagSet) SetStaticUsageIndent(n int) { f.impl.SetStaticUsageIndent(n) }
+func (f *FlagSet) SetStaticUsageIndent(n int) { f.Layout().SetStaticUsageIndent(n) }
 
 // StaticUsageIndent returns the static usage indentation.
 func (f *FlagSet) StaticUsageIndent() int { return f.impl.StaticUsageIndent() }
 
 // SetStaticUsageColumn sets the column at which static flag descriptions begin.
-func (f *FlagSet) SetStaticUsageColumn(col int) { f.impl.SetStaticUsageColumn(col) }
+func (f *FlagSet) SetStaticUsageColumn(col int) { f.Layout().SetStaticUsageColumn(col) }
 
 // StaticUsageColumn returns the description column for static flags.
 func (f *FlagSet) StaticUsageColumn() int { return f.impl.StaticUsageColumn() }
 
 // SetStaticUsageWidth sets the max wrapping width for static flag descriptions.
-func (f *FlagSet) SetStaticUsageWidth(maxWidth int) { f.impl.SetStaticUsageWidth(maxWidth) }
+func (f *FlagSet) SetStaticUsageWidth(maxWidth int) { f.Layout().SetStaticUsageWidth(maxWidth) }
 
 // StaticUsageWidth returns the wrapping width for static flag descriptions.
 func (f *FlagSet) StaticUsageWidth() int { return f.impl.StaticUsageWidth() }
@@ -279,25 +299,25 @@ func (f *FlagSet) StaticAutoUsageColumn(padding int) int {
 }
 
 // SetStaticUsageNote adds a note after the static flag block.
-func (f *FlagSet) SetStaticUsageNote(s string) { f.impl.SetStaticUsageNote(s) }
+func (f *FlagSet) SetStaticUsageNote(s string) { f.Layout().SetStaticUsageNote(s) }
 
 // StaticUsageNote returns the static flag section note.
 func (f *FlagSet) StaticUsageNote() string { return f.impl.StaticUsageNote() }
 
 // SetDynamicUsageIndent sets the indentation for dynamic flag usage lines.
-func (f *FlagSet) SetDynamicUsageIndent(n int) { f.impl.SetDynamicUsageIndent(n) }
+func (f *FlagSet) SetDynamicUsageIndent(n int) { f.Layout().SetDynamicUsageIndent(n) }
 
 // DynamicUsageIndent returns the dynamic flag usage indent.
 func (f *FlagSet) DynamicUsageIndent() int { return f.impl.DynamicUsageIndent() }
 
 // SetDynamicUsageColumn sets the column at which dynamic flag descriptions begin.
-func (f *FlagSet) SetDynamicUsageColumn(col int) { f.impl.SetDynamicUsageColumn(col) }
+func (f *FlagSet) SetDynamicUsageColumn(col int) { f.Layout().SetDynamicUsageColumn(col) }
 
 // DynamicUsageColumn returns the description column for dynamic flags.
 func (f *FlagSet) DynamicUsageColumn() int { return f.impl.DynamicUsageColumn() }
 
 // SetDynamicUsageWidth sets the max wrapping width for dynamic flags.
-func (f *FlagSet) SetDynamicUsageWidth(max int) { f.impl.SetDynamicUsageWidth(max) }
+func (f *FlagSet) SetDynamicUsageWidth(max int) { f.Layout().SetDynamicUsageWidth(max) }
 
 // DynamicUsageWidth returns the wrapping width for dynamic flag descriptions.
 func (f *FlagSet) DynamicUsageWidth() int { return f.impl.DynamicUsageWidth() }
@@ -308,19 +328,19 @@ func (f *FlagSet) DynamicAutoUsageColumn(padding int) int {
 }
 
 // SetDynamicUsageNote adds a note after the dynamic flag block.
-func (f *FlagSet) SetDynamicUsageNote(s string) { f.impl.SetDynamicUsageNote(s) }
+func (f *FlagSet) SetDynamicUsageNote(s string) { f.Layout().SetDynamicUsageNote(s) }
 
 // DynamicUsageNote returns the dynamic flag section note.
 func (f *FlagSet) DynamicUsageNote() string { return f.impl.DynamicUsageNote() }
 
 // SetNoteIndent sets the indentation for help notes.
-func (f *FlagSet) SetNoteIndent(n int) { f.impl.SetNoteIndent(n) }
+func (f *FlagSet) SetNoteIndent(n int) { f.Layout().SetNoteIndent(n) }
 
 // NoteIndent returns the note section indentation.
 func (f *FlagSet) NoteIndent() int { return f.impl.NoteIndent() }
 
 // SetNoteWidth sets the wrapping width for help notes.
-func (f *FlagSet) SetNoteWidth(max int) { f.impl.SetNoteWidth(max) }
+func (f *FlagSet) SetNoteWidth(max int) { f.Layout().SetNoteWidth(max) }
 
 // NoteWidth returns the wrapping width for help notes.
 func (f *FlagSet) NoteWidth() int { return f.impl.NoteWidth() }

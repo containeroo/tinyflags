@@ -14,6 +14,7 @@ type DynamicScalarValue[T any] struct {
 	format        func(T) string          // Formatter to string
 	validate      func(T) error           // Optional validation function
 	finalize      (func(T) T)             // Optional finalizer function
+	finalizeID    func(string, T) T       // Optional finalizer with ID
 	values        map[string]T            // Parsed values per ID
 	allowOverride bool                    // NEW: enforce per-id single assignment when true
 }
@@ -45,6 +46,9 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 	if err != nil {
 		return err
 	}
+	if d.finalizeID != nil {
+		val = d.finalizeID(id, val)
+	}
 	d.values[id] = val
 	d.changed = true
 	return nil
@@ -58,6 +62,11 @@ func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
 // setFinalize sets the optional finalizer function.
 func (d *DynamicScalarValue[T]) setFinalize(fn func(T) T) {
 	d.finalize = fn
+}
+
+// setFinalizeWithID sets the optional finalizer function with ID context.
+func (d *DynamicScalarValue[T]) setFinalizeWithID(fn func(string, T) T) {
+	d.finalizeID = fn
 }
 
 // Base returns itself for generic access.
