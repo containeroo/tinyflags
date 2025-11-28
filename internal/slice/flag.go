@@ -31,6 +31,12 @@ func (f *SliceFlag[T]) Validate(fn func(T) error) *SliceFlag[T] {
 	return f
 }
 
+// Finalize sets a custom finalizer function for each element.
+func (f *SliceFlag[T]) Finalize(fn func(T) T) *SliceFlag[T] {
+	f.val.setFinalize(fn)
+	return f
+}
+
 // Default returns the default value.
 func (f *SliceFlag[T]) Default() []T {
 	return f.val.def
