@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/containeroo/tinyflags"
 )
@@ -29,7 +29,8 @@ func main() {
 	fs.AttachGroupToAllOrNone("db", "cache")
 
 	if err := fs.Parse(nil); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	fmt.Println("api enabled:", *apiFlag)

@@ -144,6 +144,13 @@ func (f *FlagSet) checkPositionals() error {
 
 // checkOneOfGroups ensures only one flag per group is set.
 func (f *FlagSet) checkOneOfGroups() error {
+	if f.showHelp != nil && *f.showHelp {
+		return nil
+	}
+	if f.showVersion != nil && *f.showVersion {
+		return nil
+	}
+
 	for _, g := range f.oneOfGroup {
 		selections := 0
 		for _, fl := range g.Flags {
@@ -175,6 +182,13 @@ func (f *FlagSet) checkOneOfGroups() error {
 
 // checkAllOrNone ensures all required flags were set.
 func (f *FlagSet) checkAllOrNone() error {
+	if f.showHelp != nil && *f.showHelp {
+		return nil
+	}
+	if f.showVersion != nil && *f.showVersion {
+		return nil
+	}
+
 	for _, g := range f.allOrNoneGroup {
 		changed := 0
 		for _, fl := range g.Flags {
