@@ -11,6 +11,17 @@ import (
 func TestHideDefaultFromHelp(t *testing.T) {
 	t.Parallel()
 
+	t.Run("counterDefaultHidden", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Counter("verbose", 0, "Enable verbose mode")
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "Default:")
+	})
+
 	t.Run("staticHideDefault", func(t *testing.T) {
 		t.Parallel()
 
@@ -72,4 +83,18 @@ func TestDynamicGroupFooter(t *testing.T) {
 		assert.Contains(t, out, "note")
 		assert.Contains(t, out, "group")
 	})
+}
+
+func TestCounterPlaceholderHidden(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.Counter("verbose", 0, "Enable verbose logging").
+		Short("v")
+
+	err := fs.Parse([]string{"--help"})
+	require.Error(t, err)
+	out := err.Error()
+	assert.Contains(t, out, "-v, --verbose")
+	assert.NotContains(t, out, "VERBOSE")
 }

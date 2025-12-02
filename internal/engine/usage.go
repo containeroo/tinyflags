@@ -281,6 +281,9 @@ func getPlaceholder(flag *core.BaseFlag) string {
 	if isStrict {
 		return "<true|false>"
 	}
+	if _, ok := flag.Value.(core.Incrementable); ok {
+		return ""
+	}
 	placeholder := strings.ToUpper(flag.Name)
 	if _, ok := flag.Value.(core.SliceMarker); ok {
 		placeholder += "..."
@@ -307,9 +310,12 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 	}
 
 	// Determine whether to print the default value:
-	// For non-strict bools, suppress the default entirely.
+	// For non-strict bools and counters, suppress the default entirely.
 	showDefault := true
 	if bv, ok := flag.Value.(core.StrictBool); ok && !bv.IsStrictBool() {
+		showDefault = false
+	}
+	if _, ok := flag.Value.(core.Incrementable); ok {
 		showDefault = false
 	}
 
