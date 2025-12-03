@@ -5,37 +5,43 @@ import (
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
-// ScalarFlag is the user-facing scalar flag builder.
-type ScalarFlag[T any] struct {
-	builder.StaticFlag[T]
-	val *ScalarValue[T]
+// scalarFlagBase provides shared builder logic while preserving the concrete flag type.
+type scalarFlagBase[T any, Self any] struct {
+	builder.StaticFlag[T, Self]
+	val  *ScalarValue[T]
+	self Self
 }
 
 // Choices restricts allowed scalar values.
-func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
+func (f *scalarFlagBase[T, Self]) Choices(allowed ...T) Self {
 	f.val.setValidate(utils.AllowOnly(f.val.format, allowed))
 	f.Allowed(utils.FormatList(f.val.format, allowed)...)
-	return f
+	return f.self
 }
 
 // Validate lets you plug in arbitrary per‐element checks.
-func (f *ScalarFlag[T]) Validate(fn func(T) error) *ScalarFlag[T] {
+func (f *scalarFlagBase[T, Self]) Validate(fn func(T) error) Self {
 	f.val.setValidate(fn)
-	return f
+	return f.self
 }
 
-// Finalize sets a custom finalizer function for each
-func (f *ScalarFlag[T]) Finalize(fn func(T) T) *ScalarFlag[T] {
+// Finalize sets a custom finalizer function for each value.
+func (f *scalarFlagBase[T, Self]) Finalize(fn func(T) T) Self {
 	f.val.setFinalize(fn)
-	return f
+	return f.self
 }
 
 // Default returns the default value.
-func (f *ScalarFlag[T]) Default() T {
+func (f *scalarFlagBase[T, Self]) Default() T {
 	return f.val.def
 }
 
 // Changed returns true if the value was changed.
-func (f *ScalarFlag[T]) Changed() bool {
+func (f *scalarFlagBase[T, Self]) Changed() bool {
 	return f.val.changed
+}
+
+// ScalarFlag is the user-facing scalar flag builder.
+type ScalarFlag[T any] struct {
+	scalarFlagBase[T, *ScalarFlag[T]]
 }

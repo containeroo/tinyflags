@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/containeroo/tinyflags/internal/builder"
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
@@ -59,15 +60,26 @@ func (c *CounterValue) Set(s string) error {
 
 // CounterFlag provides fluent builder methods for counter flags.
 type CounterFlag struct {
-	*ScalarFlag[int]
+	scalarFlagBase[int, *CounterFlag]
 	val *CounterValue
 }
 
 // NewCounter creates a new counter flag.
 func NewCounter(r core.Registry, ptr *int, name string, def int, usage string) *CounterFlag {
 	val := NewCounterValue(ptr, def)
-	flag := RegisterScalar(r, name, usage, val, ptr)
-	return &CounterFlag{ScalarFlag: flag, val: val}
+	flag := &CounterFlag{val: val}
+	bf := &core.BaseFlag{
+		Name:  name,
+		Usage: usage,
+		Value: val,
+	}
+	r.RegisterFlag(name, bf)
+	flag.scalarFlagBase = scalarFlagBase[int, *CounterFlag]{
+		StaticFlag: builder.NewStaticFlag(r, bf, ptr, flag),
+		val:        val.Base(),
+		self:       flag,
+	}
+	return flag
 }
 
 // Max sets a maximum allowed value for the counter.

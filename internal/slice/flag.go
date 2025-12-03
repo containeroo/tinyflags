@@ -7,7 +7,7 @@ import (
 
 // SliceFlag is the user‐facing builder for slice flags.
 type SliceFlag[T any] struct {
-	builder.StaticFlag[[]T]
+	builder.StaticFlag[[]T, *SliceFlag[T]]
 	val *SliceValue[T]
 }
 

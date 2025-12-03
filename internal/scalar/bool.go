@@ -3,6 +3,7 @@ package scalar
 import (
 	"strconv"
 
+	"github.com/containeroo/tinyflags/internal/builder"
 	"github.com/containeroo/tinyflags/internal/core"
 )
 
@@ -10,12 +11,6 @@ import (
 type BoolValue struct {
 	*ScalarValue[bool]
 	strictMode *bool
-}
-
-// Strict marks this boolean flag as requiring an explicit value.
-func (b *BoolFlag) Strict() *BoolFlag {
-	*b.val.strictMode = true
-	return b
 }
 
 // IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
@@ -26,8 +21,14 @@ func (b *BoolValue) IsStrictBool() bool {
 // BoolFlag provides fluent builder methods for boolean flags,
 // including support for .Strict() to require explicit values.
 type BoolFlag struct {
-	*ScalarFlag[bool] // embeds core builder methods like Env(), Required(), etc.
-	val               *BoolValue
+	scalarFlagBase[bool, *BoolFlag]
+	val *BoolValue
+}
+
+// Strict marks this boolean flag as requiring an explicit value.
+func (b *BoolFlag) Strict() *BoolFlag {
+	*b.val.strictMode = true
+	return b
 }
 
 // NewBoolValue returns a BoolValue with parse/format logic and default value.
@@ -48,6 +49,17 @@ func NewBoolValue(ptr *bool, def bool) *BoolValue {
 func NewBool(r core.Registry, ptr *bool, name string, def bool, usage string) *BoolFlag {
 	val := NewBoolValue(ptr, def)
 
-	flag := RegisterScalar(r, name, usage, val, ptr)
-	return &BoolFlag{ScalarFlag: flag, val: val}
+	flag := &BoolFlag{val: val}
+	bf := &core.BaseFlag{
+		Name:  name,
+		Usage: usage,
+		Value: val,
+	}
+	r.RegisterFlag(name, bf)
+	flag.scalarFlagBase = scalarFlagBase[bool, *BoolFlag]{
+		StaticFlag: builder.NewStaticFlag(r, bf, ptr, flag),
+		val:        val.Base(),
+		self:       flag,
+	}
+	return flag
 }

@@ -25,8 +25,11 @@ func RegisterScalar[T any](
 	}
 	reg.RegisterFlag(name, bf)
 
-	return &ScalarFlag[T]{
-		StaticFlag: builder.NewStaticFlag(reg, bf, ptr),
+	flag := &ScalarFlag[T]{}
+	flag.scalarFlagBase = scalarFlagBase[T, *ScalarFlag[T]]{
+		StaticFlag: builder.NewStaticFlag(reg, bf, ptr, flag),
 		val:        val.Base(),
+		self:       flag,
 	}
+	return flag
 }

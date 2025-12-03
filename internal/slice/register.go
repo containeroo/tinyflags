@@ -26,8 +26,8 @@ func RegisterSlice[T any](
 
 	reg.RegisterFlag(name, bf)
 
-	return &SliceFlag[T]{
-		StaticFlag: builder.NewStaticFlag(reg, bf, ptr),
-		val:        val.Base(),
-	}
+	flag := &SliceFlag[T]{}
+	flag.StaticFlag = builder.NewStaticFlag(reg, bf, ptr, flag)
+	flag.val = val.Base()
+	return flag
 }
