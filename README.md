@@ -92,6 +92,26 @@ func main() {
 
 > Slice flags accept repeated use or custom-delimited strings.
 
+### Handling toggles with multiple flags
+
+You can model toggles with paired flags (e.g., `--debug` and `--no-debug`) and pick the first one the user set:
+
+```go
+debug := fs.Bool("debug", false, "Enable debug").Short("d").OneOfGroup("debug")
+noDebug := fs.Bool("no-debug", false, "Disable debug").Short("n").OneOfGroup("debug")
+
+// Use the order you prefer; first changed wins
+enabled, set := tinyflags.FirstChanged(false, debug, noDebug)
+fmt.Printf("debug: %t (set: %v)\n", enabled, set)
+```
+
+### Helpers and exported utilities
+
+- `FirstChanged[T](defaultValue, flags...)` — returns the value of the first changed flag (by order) plus whether any flag was set.
+- `IsHelpRequested(err)` / `IsVersionRequested(err)` — detect help/version parse exits.
+- `RequestHelp()` / `RequestVersion()` — trigger help/version errors manually.
+- `Flag[T]` — minimal interface implemented by flag handles (`Changed() bool`, `Value() *T`).
+
 ## FlagSet API
 
 ### Common Flag-Builder Methods
@@ -117,17 +137,17 @@ func main() {
 
 ### Static-Flag Extras
 
-| Method                         | Description                                                                                  | Example                                                                                                                           |
-| :----------------------------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| `Choices(v1, v2, ...)`         | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
-| `Validate(fn func(v T) error)` | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
-| `Finalize(fn func(v T) T)`     | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
-| `FinalizeWithID(fn func(id string, v T) T)` | _(dynamic only)_ Finalize with access to the instance ID.                                | `http.String("addr","","").FinalizeWithID(func(id, v string) string { return id+":"+v })`                                         |
-| `Delimiter(sep string)`        | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
-| `StrictDelimiter()`            | _(slice flags only)_ Reject mixed separators in one flag occurrence.                         |                                                                                                                                  |
-| `AllowEmpty()`                 | _(slice flags only)_ Allow empty items (e.g. `"a,,b"`).                                      |                                                                                                                                  |
-| `HideDefault()`                | Hide the default value from help output.                                                     |                                                                                                                                  |
-| `Section(name string)`         | Group flags under a section header in help output.                                           |                                                                                                                                  |
+| Method                                      | Description                                                                                  | Example                                                                                                                           |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `Choices(v1, v2, ...)`                      | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
+| `Validate(fn func(v T) error)`              | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
+| `Finalize(fn func(v T) T)`                  | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
+| `FinalizeWithID(fn func(id string, v T) T)` | _(dynamic only)_ Finalize with access to the instance ID.                                    | `http.String("addr","","").FinalizeWithID(func(id, v string) string { return id+":"+v })`                                         |
+| `Delimiter(sep string)`                     | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
+| `StrictDelimiter()`                         | _(slice flags only)_ Reject mixed separators in one flag occurrence.                         |                                                                                                                                   |
+| `AllowEmpty()`                              | _(slice flags only)_ Allow empty items (e.g. `"a,,b"`).                                      |                                                                                                                                   |
+| `HideDefault()`                             | Hide the default value from help output.                                                     |                                                                                                                                   |
+| `Section(name string)`                      | Group flags under a section header in help output.                                           |                                                                                                                                   |
 
 ### Dynamic-Flag Extras
 
@@ -144,43 +164,42 @@ func main() {
 
 ### FlagSet Core & Help Configuration
 
-| Method                                           | Description                                                    |
-| :----------------------------------------------- | :------------------------------------------------------------- |
-| `NewFlagSet(name string, mode ErrorHandling)`    | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`). |
-| `EnvPrefix(prefix string)`                       | Prefix all environment-variable lookups (e.g. `MYAPP_`).       |
-| `SetEnvKeyFunc`                                  | Set a function to derive env keys from prefix+flag name.       |
-| `EnvKeyForFlag`                                  | Derive the env key for a flag.                                 |
-| `NewReplacerEnvKeyFunc`                          | Build an `EnvKeyFunc` that applies the given replacer.         |
-| `Version(version string)`                        | Enable the `--version` flag, printing this string.             |
-| `Help()`                                         | Access grouped helpers for title/authors/description/note/help text. |
-| `Layout()`                                       | Access grouped helpers for usage/indent/width/note layout.     |
-| `BeforeParse(fn func([]string) ([]string, error))` | Mutate arguments before parsing (e.g., expand @files).         |
-| `OnUnknownFlag(fn func(name string) error)`      | Handle or ignore unknown flags instead of failing.             |
-| `VersionText(text string)`                       | Override the `--version` text. Default: `"Show version"`.      |
-| `HelpText(text string)`                          | Override the `--help` text. Default: `"Show help"`.            |
-| `DisableHelp()` / `DisableVersion()`             | Remove `--help` or `--version`.                                |
-| `Usage(fn func())`                               | Install a custom usage function in place of the default.       |
-| `Title(text string)`                             | Override the "Usage:" title heading.                           |
-| `Authors(names ...string)`                       | Add an "Authors:" section to help.                             |
-| `Description(text string)`                       | Add a free-form description block under the title.             |
-| `Note(text string)`                              | Add a footer note under the flags listing.                     |
-| `SetOutput(w io.Writer)` / `Output()`            | Redirect or retrieve where help/version is written.            |
-| `PrintUsage(w, mode)`                            | Print the `Usage:` line.                                       |
-| `PrintTitle(w)`                                  | Print title and description.                                   |
-| `PrintAuthors(w)`                                | Print authors section.                                         |
-| `PrintDescription(w,indent,width)`               | Print the description block.                                   |
-| `PrintNotes(w,indent,width)`                     | Print footer notes.                                            |
-| `PrintStaticDefaults(w,indent,startCol,width)`   | Print static flags help.                                       |
-| `PrintDynamicDefaults(w,indent,startCol,width)`  | Print dynamic flags help.                                      |
-| `RequirePositional(n int)`                       | Enforce at least `n` positional arguments.                     |
-| `Args() []string` / `Arg(i int) string`          | Access leftover positional args.                               |
-| `AddOneOfGroup(name string, flags []string)`     | Manually define a mutual-exclusion group.                      |
-| `AddAllOrNoneGroup(name string, flags []string)` | Manually define a require-together group.                      |
+| Method                                             | Description                                                          |
+| :------------------------------------------------- | :------------------------------------------------------------------- |
+| `NewFlagSet(name string, mode ErrorHandling)`      | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`).       |
+| `EnvPrefix(prefix string)`                         | Prefix all environment-variable lookups (e.g. `MYAPP_`).             |
+| `SetEnvKeyFunc`                                    | Set a function to derive env keys from prefix+flag name.             |
+| `EnvKeyForFlag`                                    | Derive the env key for a flag.                                       |
+| `NewReplacerEnvKeyFunc`                            | Build an `EnvKeyFunc` that applies the given replacer.               |
+| `Version(version string)`                          | Enable the `--version` flag, printing this string.                   |
+| `Help()`                                           | Access grouped helpers for title/authors/description/note/help text. |
+| `Layout()`                                         | Access grouped helpers for usage/indent/width/note layout.           |
+| `BeforeParse(fn func([]string) ([]string, error))` | Mutate arguments before parsing (e.g., expand @files).               |
+| `OnUnknownFlag(fn func(name string) error)`        | Handle or ignore unknown flags instead of failing.                   |
+| `VersionText(text string)`                         | Override the `--version` text. Default: `"Show version"`.            |
+| `HelpText(text string)`                            | Override the `--help` text. Default: `"Show help"`.                  |
+| `DisableHelp()` / `DisableVersion()`               | Remove `--help` or `--version`.                                      |
+| `Usage(fn func())`                                 | Install a custom usage function in place of the default.             |
+| `Title(text string)`                               | Override the "Usage:" title heading.                                 |
+| `Authors(names ...string)`                         | Add an "Authors:" section to help.                                   |
+| `Description(text string)`                         | Add a free-form description block under the title.                   |
+| `Note(text string)`                                | Add a footer note under the flags listing.                           |
+| `SetOutput(w io.Writer)` / `Output()`              | Redirect or retrieve where help/version is written.                  |
+| `PrintUsage(w, mode)`                              | Print the `Usage:` line.                                             |
+| `PrintTitle(w)`                                    | Print title and description.                                         |
+| `PrintAuthors(w)`                                  | Print authors section.                                               |
+| `PrintDescription(w,indent,width)`                 | Print the description block.                                         |
+| `PrintNotes(w,indent,width)`                       | Print footer notes.                                                  |
+| `PrintStaticDefaults(w,indent,startCol,width)`     | Print static flags help.                                             |
+| `PrintDynamicDefaults(w,indent,startCol,width)`    | Print dynamic flags help.                                            |
+| `RequirePositional(n int)`                         | Enforce at least `n` positional arguments.                           |
+| `Args() []string` / `Arg(i int) string`            | Access leftover positional args.                                     |
+| `AddOneOfGroup(name string, flags []string)`       | Manually define a mutual-exclusion group.                            |
+| `AddAllOrNoneGroup(name string, flags []string)`   | Manually define a require-together group.                            |
 
 ### How `Validate` and `Finalize` Work
 
 1. **Validate**
-
    - After parsing a flag's raw input into `T`, Tinyflags calls your validator:
 
    ```go
@@ -208,7 +227,6 @@ func main() {
    - On error, parsing aborts and your message is shown to the user.
 
 2. **Finalize**
-
    - Only after validation succeeds, Tinyflags passes the parsed value through your finalizer:
 
    ```go

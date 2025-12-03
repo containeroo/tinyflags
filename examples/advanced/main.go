@@ -38,8 +38,10 @@ func main() {
 			}
 			return strings.TrimSuffix(u, "/") + "/"
 		}).
-		Section("Networking").
-		Value()
+		Section("Networking")
+
+	debug := fs.Bool("debug", false, "Enable debug logs").Short("d")
+	noDebug := fs.Bool("no-debug", false, "Disable debug logs").Short("n")
 
 	if err := fs.Parse(os.Args); err != nil {
 		fmt.Println(err)
@@ -50,4 +52,15 @@ func main() {
 	fmt.Println("timeout:", *timeoutVal)
 	fmt.Println("tags:", *tagsVal)
 	fmt.Println("webhook:", *webhook)
+	debugVal, set := tinyflags.FirstChanged(false, debug, noDebug)
+	source := "default"
+	if set {
+		switch {
+		case debug.Changed():
+			source = "--debug/--d"
+		case noDebug.Changed():
+			source = "--no-debug/--n"
+		}
+	}
+	fmt.Printf("debug: %t (source: %s)\n", debugVal, source)
 }

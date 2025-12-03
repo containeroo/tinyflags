@@ -48,6 +48,7 @@ const (
 type (
 	DynamicGroup = dynamic.Group // Dynamic group of instance-scoped flags
 	StaticFlag   = core.BaseFlag // Static flag definition metadata
+	Flag[T any]  = core.Flag[T]  // Minimal flag handle interface
 )
 
 // FlagSet is the user-facing flag parser and usage configurator.
@@ -104,6 +105,12 @@ func (f *FlagSet) EnvKeyForFlag(name string) string { return f.impl.EnvKeyForFla
 // - upper-cases the result (if upper is true)
 func (f *FlagSet) NewReplacerEnvKeyFunc(replacer *strings.Replacer, upper bool) engine.EnvKeyFunc {
 	return engine.NewReplacerEnvKeyFunc(replacer, upper)
+}
+
+// FirstChanged returns the value of the first changed flag in the given order.
+// If no flag was changed, it returns defaultValue and false.
+func FirstChanged[T any](defaultValue T, flags ...Flag[T]) (T, bool) {
+	return engine.FirstChanged(defaultValue, flags...)
 }
 
 // HideEnvs disables all env-var annotations in help output.
