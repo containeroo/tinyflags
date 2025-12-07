@@ -20,4 +20,12 @@ func TestWrapText(t *testing.T) {
 			t.Fatalf("unexpected wrap: %q", got)
 		}
 	})
+
+	t.Run("preservesNewlines", func(t *testing.T) {
+		t.Parallel()
+		text := "first line\nsecond line"
+		if got := wrapText(text, 20); got != text {
+			t.Fatalf("expected newline preserved, got %q", got)
+		}
+	})
 }

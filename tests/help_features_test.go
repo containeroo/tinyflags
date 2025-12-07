@@ -85,6 +85,18 @@ func TestDynamicGroupFooter(t *testing.T) {
 	})
 }
 
+func TestNotesPreserveNewlines(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.Note("first line\nsecond line")
+
+	err := fs.Parse([]string{"--help"})
+	require.Error(t, err)
+	out := err.Error()
+	assert.Contains(t, out, "first line\nsecond line")
+}
+
 func TestCounterPlaceholderHidden(t *testing.T) {
 	t.Parallel()
 

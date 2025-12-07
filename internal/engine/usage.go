@@ -473,45 +473,18 @@ func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 
 // writeIndented writes text to w, indenting each line by indent spaces.
 func writeIndented(w io.Writer, text string, indent, maxWidth int) {
-	prefix := strings.Repeat(" ", indent)
-	paragraphs := splitParagraphs(text)
+	if text == "" {
+		return
+	}
 
-	for i, p := range paragraphs {
-		if strings.TrimSpace(p) == "" {
-			// blank line between paragraphs
+	prefix := strings.Repeat(" ", indent)
+	wrapped := wrapText(text, maxWidth-indent)
+
+	for _, line := range strings.Split(wrapped, "\n") {
+		if line == "" {
 			fmt.Fprintln(w) // nolint:errcheck
 			continue
 		}
-		wrapped := wrapText(strings.TrimSpace(p), maxWidth-indent)
-		for _, line := range strings.Split(wrapped, "\n") {
-			fmt.Fprintf(w, "%s%s\n", prefix, line) // nolint:errcheck
-		}
-		// Add blank line after each paragraph, unless it's the last
-		if i < len(paragraphs)-1 {
-			fmt.Fprintln(w)
-		}
+		fmt.Fprintf(w, "%s%s\n", prefix, line) // nolint:errcheck
 	}
-}
-
-// splitParagraphs splits text by double newlines and preserves spacing.
-func splitParagraphs(s string) []string {
-	lines := strings.Split(s, "\n")
-	var result []string
-	var paragraph []string
-
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			if len(paragraph) > 0 {
-				result = append(result, strings.Join(paragraph, " "))
-				paragraph = nil
-			}
-			result = append(result, "") // preserve blank
-			continue
-		}
-		paragraph = append(paragraph, strings.TrimSpace(line))
-	}
-	if len(paragraph) > 0 {
-		result = append(result, strings.Join(paragraph, " "))
-	}
-	return result
 }

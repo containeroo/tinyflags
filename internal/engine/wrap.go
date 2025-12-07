@@ -2,26 +2,39 @@ package engine
 
 import "strings"
 
-// wrapText wraps the input string s into lines no longer than width.
+// wrapText wraps the input string s into lines no longer than width while
+// preserving explicit newlines provided by the caller.
 func wrapText(s string, width int) string {
-	words := strings.Fields(s) // split into words by whitespace
-	if len(words) == 0 {
-		return ""
+	if width <= 0 {
+		return s
 	}
 
-	var lines []string
-	line := words[0] // start with the first word
+	lines := strings.Split(s, "\n")
+	var wrapped []string
 
-	// add words to the current line until width is exceeded
-	for _, word := range words[1:] {
-		if len(line)+len(word)+1 > width {
-			lines = append(lines, line) // push current line
-			line = word                 // start new line
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			wrapped = append(wrapped, "")
 			continue
 		}
-		line += " " + word // append word to current line
+
+		words := strings.Fields(line)
+		if len(words) == 0 {
+			wrapped = append(wrapped, "")
+			continue
+		}
+
+		cur := words[0]
+		for _, word := range words[1:] {
+			if len(cur)+len(word)+1 > width {
+				wrapped = append(wrapped, cur)
+				cur = word
+				continue
+			}
+			cur += " " + word
+		}
+		wrapped = append(wrapped, cur)
 	}
 
-	lines = append(lines, line)      // push the final line
-	return strings.Join(lines, "\n") // join lines with newline
+	return strings.Join(wrapped, "\n")
 }

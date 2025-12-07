@@ -14,6 +14,17 @@ func main() {
 	fs.Authors("Tinyflags Team")
 	fs.Title("Advanced Example")
 	fs.Description("Demonstrates slices, sections, and advanced flag options.")
+	fs.Note("This example demonstrates the following features:\n\n" +
+		"- Slices\n" +
+		"- Sections\n" +
+		"- Finalize\n" +
+		"- Choices\n" +
+		"- StrictDelimiter\n" +
+		"- AllowEmpty\n" +
+		"- Default values\n" +
+		"- Environment variables\n" +
+		"- Short options\n" +
+		"- Debug logs\n")
 
 	env := fs.String("env", "dev", "Deployment environment").
 		Choices("dev", "staging", "prod").
