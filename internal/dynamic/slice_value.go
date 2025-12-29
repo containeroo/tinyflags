@@ -9,18 +9,20 @@ import (
 
 // DynamicSliceValue holds parsed slice values per ID with parsing, formatting, and validation.
 type DynamicSliceValue[T any] struct {
-	field      string                  // Flag field name
-	def        []T                     // Default slice value
-	changed    bool                    // Whether the value was changed
-	parse      func(string) (T, error) // Function to parse a single element
-	format     func(T) string          // Function to format a single element
-	delimiter  string                  // Separator used to split input
-	validate   func(T) error           // Optional validation function
-	finalize   (func(T) T)             // Optional finalizer function
-	finalizeID func(string, T) T       // Optional finalizer function with ID
-	strictDel  bool                    // Reject mixed delimiters when true
-	allowEmpty bool                    // Allow empty items when true
-	values     map[string][]T          // Parsed values per ID
+	field            string                  // Flag field name
+	def              []T                     // Default slice value
+	changed          bool                    // Whether the value was changed
+	parse            func(string) (T, error) // Function to parse a single element
+	format           func(T) string          // Function to format a single element
+	delimiter        string                  // Separator used to split input
+	validate         func(T) error           // Optional validation function
+	finalize         func(T) T               // Optional finalizer function
+	finalizeDefault  bool                    // Run finalizer on defaults when unset
+	finalizeID       func(string, T) T       // Optional finalizer function with ID
+	strictDel        bool                    // Reject mixed delimiters when true
+	allowEmpty       bool                    // Allow empty items when true
+	values           map[string][]T          // Parsed values per ID
+	defaultFinalized bool                    // Whether the default was finalized
 }
 
 // NewDynamicSliceValue creates a new dynamic slice value.
@@ -87,6 +89,11 @@ func (d *DynamicSliceValue[T]) setFinalize(fn func(T) T) {
 	d.finalize = fn
 }
 
+// setFinalizeDefaultValue enables running the finalizer on defaults when unset.
+func (d *DynamicSliceValue[T]) setFinalizeDefaultValue() {
+	d.finalizeDefault = true
+}
+
 // setFinalizeWithID sets a per-item finalizer with access to the ID.
 func (d *DynamicSliceValue[T]) setFinalizeWithID(fn func(string, T) T) {
 	d.finalizeID = fn
@@ -110,6 +117,17 @@ func (d *DynamicSliceValue[T]) setAllowEmpty(allow bool) {
 // FieldName returns the field name of the flag.
 func (d *DynamicSliceValue[T]) FieldName() string {
 	return d.field
+}
+
+// ApplyDefaultFinalize applies the default-only finalizer for unset IDs.
+func (d *DynamicSliceValue[T]) ApplyDefaultFinalize() {
+	if d.defaultFinalized || !d.finalizeDefault || d.finalize == nil {
+		return
+	}
+	for i, item := range d.def {
+		d.def[i] = d.finalize(item)
+	}
+	d.defaultFinalized = true
 }
 
 // GetAny returns the slice as any for a given ID, falling back to default.

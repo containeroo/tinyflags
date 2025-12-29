@@ -18,6 +18,7 @@ func main() {
 		"- Slices\n" +
 		"- Sections\n" +
 		"- Finalize\n" +
+		"- FinalizeDefaultValue\n" +
 		"- Choices\n" +
 		"- StrictDelimiter\n" +
 		"- AllowEmpty\n" +
@@ -42,6 +43,12 @@ func main() {
 		Section("Metadata")
 	tagsVal := tags.Value()
 
+	configDir := fs.String("config-dir", " /etc/app ", "Config directory").
+		Finalize(strings.TrimSpace).
+		FinalizeDefaultValue().
+		Section("General")
+	configDirVal := configDir.Value()
+
 	webhook := fs.String("webhook", "", "Webhook URL").
 		Finalize(func(u string) string {
 			if u == "" {
@@ -62,6 +69,7 @@ func main() {
 	fmt.Println("env:", *envVal)
 	fmt.Println("timeout:", *timeoutVal)
 	fmt.Println("tags:", *tagsVal)
+	fmt.Println("config-dir:", *configDirVal)
 	fmt.Println("webhook:", *webhook)
 	debugVal, set := tinyflags.FirstChanged(false, debug, noDebug)
 	source := "default"

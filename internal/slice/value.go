@@ -18,7 +18,10 @@ type SliceValue[T any] struct {
 	parse      func(string) (T, error)
 	format     func(T) string
 	validate   func(T) error
-	finalize   (func(T) T)
+	finalize   func(T) T
+
+	finalizeDefault  bool
+	defaultFinalized bool
 }
 
 // NewSliceValue creates a new slice value.
@@ -99,6 +102,9 @@ func (v *SliceValue[T]) setValidate(fn func(T) error) { v.validate = fn }
 // setFinalize sets a per-item finalizer function.
 func (v *SliceValue[T]) setFinalize(fn func(T) T) { v.finalize = fn }
 
+// setFinalizeDefaultValue enables running the finalizer on defaults when unset.
+func (v *SliceValue[T]) setFinalizeDefaultValue() { v.finalizeDefault = true }
+
 // setStrictDelimiter toggles mixed-delimiter rejection.
 func (v *SliceValue[T]) setStrictDelimiter(strict bool) { v.strictDel = strict }
 
@@ -107,6 +113,17 @@ func (v *SliceValue[T]) setAllowEmpty(allow bool) { v.allowEmpty = allow }
 
 // Base returns the underlying value.
 func (v *SliceValue[T]) Base() *SliceValue[T] { return v }
+
+// ApplyDefaultFinalize applies the default-only finalizer when unset.
+func (v *SliceValue[T]) ApplyDefaultFinalize() {
+	if v.changed || v.defaultFinalized || !v.finalizeDefault || v.finalize == nil {
+		return
+	}
+	for i, item := range *v.ptr {
+		(*v.ptr)[i] = v.finalize(item)
+	}
+	v.defaultFinalized = true
+}
 
 // isSlice is a no-op marker method to implement core.SliceMarker.
 func (v *SliceValue[T]) IsSlice() {}

@@ -142,6 +142,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `Choices(v1, v2, ...)`                      | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
 | `Validate(fn func(v T) error)`              | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
 | `Finalize(fn func(v T) T)`                  | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
+| `FinalizeDefaultValue()`                    | Run the existing finalizer on default values when the flag is unset.                          | `go<br>fs.String("name","","...").Finalize(strings.TrimSpace).FinalizeDefaultValue()<br>`                                        |
 | `FinalizeWithID(fn func(id string, v T) T)` | _(dynamic only)_ Finalize with access to the instance ID.                                    | `http.String("addr","","").FinalizeWithID(func(id, v string) string { return id+":"+v })`                                         |
 | `Delimiter(sep string)`                     | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
 | `StrictDelimiter()`                         | _(slice flags only)_ Reject mixed separators in one flag occurrence.                         |                                                                                                                                   |
@@ -160,7 +161,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `ValuesAny() map[string]interface{}` | Same as `Values()`, but values are `interface{}`.                                 |                                                              |
 | `AllowOverride()`                    | Allow re-assignment of a dynamic flag per-ID. Only for Scalar flags.              |                                                              |
 
-> All **common** methods (Required, Hidden, etc.) and **static extras** (Choices, Validate, Finalize, Delimiter) also apply to dynamic flags.
+> All **common** methods (Required, Hidden, etc.) and **static extras** (Choices, Validate, Finalize, FinalizeDefaultValue, Delimiter) also apply to dynamic flags.
 
 ### FlagSet Core & Help Configuration
 
@@ -257,6 +258,10 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
    ```
 
    _Output:_
+
+3. **FinalizeDefaultValue**
+   - Runs only when a flag is *unset* (after env parsing), and does not mark it as changed.
+   - Uses the flag’s `Finalize(...)` function; no separate function is provided.
 
    ```text
    Hello, Alice Smith

@@ -7,16 +7,18 @@ import (
 
 // DynamicScalarValue holds parsed scalar values per ID with parsing, formatting, and validation.
 type DynamicScalarValue[T any] struct {
-	field         string                  // Flag field name
-	def           T                       // Default value
-	changed       bool                    // Whether the value was changed
-	parse         func(string) (T, error) // Parser from raw input
-	format        func(T) string          // Formatter to string
-	validate      func(T) error           // Optional validation function
-	finalize      (func(T) T)             // Optional finalizer function
-	finalizeID    func(string, T) T       // Optional finalizer with ID
-	values        map[string]T            // Parsed values per ID
-	allowOverride bool                    // NEW: enforce per-id single assignment when true
+	field            string                  // Flag field name
+	def              T                       // Default value
+	changed          bool                    // Whether the value was changed
+	parse            func(string) (T, error) // Parser from raw input
+	format           func(T) string          // Formatter to string
+	validate         func(T) error           // Optional validation function
+	finalize         func(T) T               // Optional finalizer function
+	finalizeDefault  bool                    // Run finalizer on defaults when unset
+	finalizeID       func(string, T) T       // Optional finalizer with ID
+	values           map[string]T            // Parsed values per ID
+	allowOverride    bool                    // NEW: enforce per-id single assignment when true
+	defaultFinalized bool                    // Whether the default was finalized
 }
 
 // NewDynamicScalarValue creates a new dynamic scalar value.
@@ -64,6 +66,11 @@ func (d *DynamicScalarValue[T]) setFinalize(fn func(T) T) {
 	d.finalize = fn
 }
 
+// setFinalizeDefaultValue enables running the finalizer on defaults when unset.
+func (d *DynamicScalarValue[T]) setFinalizeDefaultValue() {
+	d.finalizeDefault = true
+}
+
 // setFinalizeWithID sets the optional finalizer function with ID context.
 func (d *DynamicScalarValue[T]) setFinalizeWithID(fn func(string, T) T) {
 	d.finalizeID = fn
@@ -72,6 +79,15 @@ func (d *DynamicScalarValue[T]) setFinalizeWithID(fn func(string, T) T) {
 // Base returns itself for generic access.
 func (d *DynamicScalarValue[T]) Base() *DynamicScalarValue[T] {
 	return d
+}
+
+// ApplyDefaultFinalize applies the default-only finalizer for unset IDs.
+func (d *DynamicScalarValue[T]) ApplyDefaultFinalize() {
+	if d.defaultFinalized || !d.finalizeDefault || d.finalize == nil {
+		return
+	}
+	d.def = d.finalize(d.def)
+	d.defaultFinalized = true
 }
 
 // FieldName returns the field name of the flag.

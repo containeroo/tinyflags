@@ -31,6 +31,12 @@ func (f *scalarFlagBase[T, Self]) Finalize(fn func(T) T) Self {
 	return f.self
 }
 
+// FinalizeDefaultValue runs the finalizer for defaults when the flag is unset.
+func (f *scalarFlagBase[T, Self]) FinalizeDefaultValue() Self {
+	f.val.setFinalizeDefaultValue()
+	return f.self
+}
+
 // Default returns the default value.
 func (f *scalarFlagBase[T, Self]) Default() T {
 	return f.val.def

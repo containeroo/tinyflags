@@ -37,6 +37,12 @@ func (f *SliceFlag[T]) Finalize(fn func(T) T) *SliceFlag[T] {
 	return f
 }
 
+// FinalizeDefaultValue runs the finalizer for defaults when the flag is unset.
+func (f *SliceFlag[T]) FinalizeDefaultValue() *SliceFlag[T] {
+	f.val.setFinalizeDefaultValue()
+	return f
+}
+
 // StrictDelimiter rejects inputs that mix different separators.
 func (f *SliceFlag[T]) StrictDelimiter() *SliceFlag[T] {
 	f.val.setStrictDelimiter(true)

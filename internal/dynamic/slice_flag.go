@@ -38,6 +38,12 @@ func (f *SliceFlag[T]) Finalize(fn func(T) T) *SliceFlag[T] {
 	return f
 }
 
+// FinalizeDefaultValue runs the finalizer for defaults when unset.
+func (f *SliceFlag[T]) FinalizeDefaultValue() *SliceFlag[T] {
+	f.item.setFinalizeDefaultValue()
+	return f
+}
+
 // FinalizeWithID sets a finalizer that receives the instance ID.
 func (f *SliceFlag[T]) FinalizeWithID(fn func(string, T) T) *SliceFlag[T] {
 	f.item.setFinalizeWithID(fn)

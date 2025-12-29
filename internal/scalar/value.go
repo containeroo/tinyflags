@@ -10,7 +10,10 @@ type ScalarValue[T any] struct {
 	parse    func(string) (T, error)
 	format   func(T) string
 	validate func(T) error
-	finalize (func(T) T)
+	finalize func(T) T
+
+	finalizeDefault  bool
+	defaultFinalized bool
 }
 
 // NewScalarValue creates a new scalar value.
@@ -54,5 +57,17 @@ func (f *ScalarValue[T]) setValidate(fn func(T) error) { f.validate = fn }
 // setFinalize sets a per-item finalizer function.
 func (f *ScalarValue[T]) setFinalize(fn func(T) T) { f.finalize = fn }
 
+// setFinalizeDefaultValue enables running the finalizer on defaults when unset.
+func (f *ScalarValue[T]) setFinalizeDefaultValue() { f.finalizeDefault = true }
+
 // Base returns the underlying value.
 func (f *ScalarValue[T]) Base() *ScalarValue[T] { return f }
+
+// ApplyDefaultFinalize applies the default-only finalizer when unset.
+func (f *ScalarValue[T]) ApplyDefaultFinalize() {
+	if f.changed || f.defaultFinalized || !f.finalizeDefault || f.finalize == nil {
+		return
+	}
+	*f.ptr = f.finalize(*f.ptr)
+	f.defaultFinalized = true
+}

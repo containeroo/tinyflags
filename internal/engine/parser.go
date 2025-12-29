@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
@@ -41,6 +42,7 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.parseEnv(); err != nil {
 		return f.handleError(err)
 	}
+	f.applyDefaultFinalizers()
 	if err := f.checkRequired(); err != nil { // static
 		return f.handleError(err)
 	}
@@ -112,6 +114,25 @@ func (f *FlagSet) parseEnv() error {
 		}
 	}
 	return nil
+}
+
+func (f *FlagSet) applyDefaultFinalizers() {
+	for _, fl := range f.staticFlagsMap {
+		if fl.Value == nil {
+			continue
+		}
+		if finalizer, ok := fl.Value.(core.DefaultFinalizer); ok {
+			finalizer.ApplyDefaultFinalize()
+		}
+	}
+
+	for _, group := range f.dynamicGroups() {
+		for _, item := range group.Items() {
+			if finalizer, ok := item.Value.(core.DefaultFinalizer); ok {
+				finalizer.ApplyDefaultFinalize()
+			}
+		}
+	}
 }
 
 // checkRequirements ensures all flags which requrie others are set.

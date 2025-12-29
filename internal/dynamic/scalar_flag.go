@@ -38,6 +38,12 @@ func (f *ScalarFlag[T]) Finalize(fn func(T) T) *ScalarFlag[T] {
 	return f
 }
 
+// FinalizeDefaultValue runs the finalizer for defaults when unset.
+func (f *ScalarFlag[T]) FinalizeDefaultValue() *ScalarFlag[T] {
+	f.item.setFinalizeDefaultValue()
+	return f
+}
+
 // FinalizeWithID adds a custom finalizer that receives the instance ID.
 func (f *ScalarFlag[T]) FinalizeWithID(fn func(string, T) T) *ScalarFlag[T] {
 	f.item.setFinalizeWithID(fn)
