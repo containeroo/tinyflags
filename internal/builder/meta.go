@@ -62,3 +62,5 @@ func (m *flagMeta) hideRequires() { m.bf.HideRequires = true }
 func (m *flagMeta) hideDefault() { m.bf.HideDefault = true }
 
 func (m *flagMeta) section(name string) { m.bf.Section = name }
+
+func (m *flagMeta) maskFn(fn func(any) any) { m.bf.MaskFn = fn }

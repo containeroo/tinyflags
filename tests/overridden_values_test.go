@@ -42,3 +42,35 @@ func TestOverriddenValuesDynamic(t *testing.T) {
 	_, ok := got["http.b.port"]
 	assert.False(t, ok)
 }
+
+func TestOverriddenValuesMaskFn(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	secret := fs.String("secret", "", "secret").
+		OverriddenValueMaskFn(tinyflags.MaskFirstLast).
+		Value()
+
+	err := fs.Parse([]string{"--secret=opensesame"})
+	require.NoError(t, err)
+
+	got := fs.OverriddenValues()
+	assert.Equal(t, "opensesame", *secret)
+	assert.Equal(t, "o********e", got["secret"])
+}
+
+func TestMaskPostgresURL(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	dsn := fs.String("dsn", "", "dsn").
+		OverriddenValueMaskFn(tinyflags.MaskPostgresURL).
+		Value()
+
+	err := fs.Parse([]string{"--dsn=postgres://user:pass@localhost:5432/app"})
+	require.NoError(t, err)
+
+	got := fs.OverriddenValues()
+	assert.Equal(t, "postgres://user:pass@localhost:5432/app", *dsn)
+	assert.Equal(t, "postgres://*********@localhost:5432/app", got["dsn"])
+}

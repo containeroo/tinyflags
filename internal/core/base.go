@@ -22,4 +22,5 @@ type BaseFlag struct {
 	HideRequires bool             // Hide “(Requires)” in help.
 	HideDefault  bool             // Hide default value in help.
 	Section      string           // Optional section name for grouping in help.
+	MaskFn       func(any) any    // Optional mask for overridden values.
 }

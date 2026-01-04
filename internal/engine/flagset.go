@@ -227,7 +227,11 @@ func (f *FlagSet) overriddenValues() map[string]any {
 		if fl.Value == nil || !fl.Value.Changed() {
 			continue
 		}
-		out[fl.Name] = fl.Value.Get()
+		val := fl.Value.Get()
+		if fl.MaskFn != nil {
+			val = fl.MaskFn(val)
+		}
+		out[fl.Name] = val
 	}
 
 	for _, group := range f.dynamicGroups() {
@@ -237,6 +241,9 @@ func (f *FlagSet) overriddenValues() map[string]any {
 				continue
 			}
 			for id, val := range di.ValuesAny() {
+				if item.Flag != nil && item.Flag.MaskFn != nil {
+					val = item.Flag.MaskFn(val)
+				}
 				key := group.Name() + "." + id + "." + field
 				out[key] = val
 			}

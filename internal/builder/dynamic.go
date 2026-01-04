@@ -88,6 +88,12 @@ func (d *DynamicFlag[T]) HideAllowed() *DynamicFlag[T] {
 	return d
 }
 
+// OverriddenValueMaskFn sets a mask function used by OverriddenValues().
+func (d *DynamicFlag[T]) OverriddenValueMaskFn(fn func(any) any) *DynamicFlag[T] {
+	d.meta.maskFn(fn)
+	return d
+}
+
 // HideDefault hides the default value from help output.
 func (d *DynamicFlag[T]) HideDefault() *DynamicFlag[T] {
 	d.meta.hideDefault()
