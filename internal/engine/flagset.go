@@ -140,6 +140,7 @@ func (f *FlagSet) SetOutput(w io.Writer)                           { f.output = 
 func (f *FlagSet) Output() io.Writer                               { return f.output }
 func (f *FlagSet) IgnoreInvalidEnv(enable bool)                    { f.ignoreInvalidEnv = enable }
 func (f *FlagSet) SetGetEnvFn(fn func(string) string)              { f.getEnv = fn }
+func (f *FlagSet) OverriddenValues() map[string]any                { return f.overriddenValues() }
 
 // --- Positional Arguments ---
 
@@ -217,6 +218,32 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	f.dynamicGroupsMap[name] = g
 	f.dynamicGroupsOrder = append(f.dynamicGroupsOrder, g)
 	return g
+}
+
+func (f *FlagSet) overriddenValues() map[string]any {
+	out := make(map[string]any)
+
+	for _, fl := range f.staticFlagsMap {
+		if fl.Value == nil || !fl.Value.Changed() {
+			continue
+		}
+		out[fl.Name] = fl.Value.Get()
+	}
+
+	for _, group := range f.dynamicGroups() {
+		for field, item := range group.Items() {
+			di, ok := item.Value.(core.DynamicItemValues)
+			if !ok {
+				continue
+			}
+			for id, val := range di.ValuesAny() {
+				key := group.Name() + "." + id + "." + field
+				out[key] = val
+			}
+		}
+	}
+
+	return out
 }
 
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {

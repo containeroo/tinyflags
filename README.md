@@ -195,6 +195,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `PrintDynamicDefaults(w,indent,startCol,width)`    | Print dynamic flags help.                                            |
 | `RequirePositional(n int)`                         | Enforce at least `n` positional arguments.                           |
 | `Args() []string` / `Arg(i int) string`            | Access leftover positional args.                                     |
+| `OverriddenValues() map[string]any`                | Return flags explicitly set via args/env (dynamic keys: `group.id.flag`). |
 | `AddOneOfGroup(name string, flags []string)`       | Manually define a mutual-exclusion group.                            |
 | `AddAllOrNoneGroup(name string, flags []string)`   | Manually define a require-together group.                            |
 

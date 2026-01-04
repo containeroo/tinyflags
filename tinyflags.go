@@ -186,6 +186,10 @@ func (f *FlagSet) SetPositionalValidate(fn func(string) error) { f.impl.SetPosit
 // SetPositionalFinalize sets a function to finalize positional arguments.
 func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.impl.SetPositionalFinalize(fn) }
 
+// OverriddenValues returns all flags that were explicitly set (args or env).
+// Dynamic flags use the key format "group.id.flag".
+func (f *FlagSet) OverriddenValues() map[string]any { return f.impl.OverriddenValues() }
+
 // OneOfGroups returns all registered OneOfGroups groups.
 func (f *FlagSet) OneOfGroups() []*core.OneOfGroupGroup { return f.impl.OneOfGroups() }
 
