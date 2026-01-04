@@ -72,5 +72,5 @@ func TestMaskPostgresURL(t *testing.T) {
 
 	got := fs.OverriddenValues()
 	assert.Equal(t, "postgres://user:pass@localhost:5432/app", *dsn)
-	assert.Equal(t, "postgres://*********@localhost:5432/app", got["dsn"])
+	assert.Equal(t, "postgres://****:****@localhost:5432/app", got["dsn"])
 }

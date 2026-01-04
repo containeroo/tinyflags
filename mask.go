@@ -55,8 +55,32 @@ func maskPostgresURLString(s string) string {
 			if at == 0 {
 				return s
 			}
-			return prefix + strings.Repeat("*", at) + rest[at:]
+			creds := rest[:at]
+			masked := maskCredentialPair(creds)
+			return prefix + masked + rest[at:]
 		}
 	}
 	return s
+}
+
+func maskCredentialPair(creds string) string {
+	parts := strings.SplitN(creds, ":", 2)
+	if len(parts) == 1 {
+		if parts[0] == "" {
+			return creds
+		}
+		return strings.Repeat("*", len(parts[0]))
+	}
+	user := parts[0]
+	pass := parts[1]
+	if user == "" && pass == "" {
+		return creds
+	}
+	if user == "" {
+		return ":" + strings.Repeat("*", len(pass))
+	}
+	if pass == "" {
+		return strings.Repeat("*", len(user)) + ":"
+	}
+	return strings.Repeat("*", len(user)) + ":" + strings.Repeat("*", len(pass))
 }
