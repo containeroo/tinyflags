@@ -182,3 +182,35 @@ func TestDynamicFinalizeWithID(t *testing.T) {
 		assert.False(t, ok)
 	})
 }
+
+func TestContinueOnErrorParsesAllFlags(t *testing.T) {
+	t.Parallel()
+
+	t.Run("unknownFlagDoesNotStopParsing", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		a := fs.String("a", "", "a").Value()
+		b := fs.String("b", "", "b").Value()
+
+		err := fs.Parse([]string{"--a=ok", "--unknown", "--b=ok"})
+		require.Error(t, err)
+		assert.Equal(t, "ok", *a)
+		assert.Equal(t, "ok", *b)
+		assert.Contains(t, err.Error(), "unknown flag")
+	})
+
+	t.Run("missingValueDoesNotStopParsing", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		a := fs.String("a", "", "a").Value()
+		b := fs.String("b", "", "b").Value()
+
+		err := fs.Parse([]string{"--a", "--b=ok"})
+		require.Error(t, err)
+		assert.Equal(t, "", *a)
+		assert.Equal(t, "ok", *b)
+		assert.Contains(t, err.Error(), "missing value for flag")
+	})
+}

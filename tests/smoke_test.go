@@ -335,7 +335,8 @@ Flags:
 			"--http.beta.list=a|b|c",
 		})
 		require.Error(t, err)
-		require.EqualError(t, err, "invalid value for dynamic flag --http.beta.address: cannot use localhost")
+		assert.Contains(t, err.Error(), "invalid value for dynamic flag --http.beta.address: cannot use localhost")
+		assert.Contains(t, err.Error(), "invalid value for dynamic flag --http.beta.list: invalid value \"a|b|c\": must be one of: a, b, c")
 	})
 
 	t.Run("smoke dyn choices", func(t *testing.T) {

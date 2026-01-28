@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,7 @@ type parser struct {
 	fs    *FlagSet // reference to the defined flag set
 	out   []string // collected positional arguments
 	err   error    // first error encountered, if any
+	errs  []error  // collected errors (ContinueOnError)
 }
 
 // next returns the next argument and advances the index.
@@ -47,10 +49,21 @@ func (p *parser) run() error {
 	for state != nil {
 		state = state(p)
 		if p.err != nil {
+			if p.fs.errorHandling == ContinueOnError {
+				p.errs = append(p.errs, p.err)
+				p.err = nil
+				if state == nil {
+					state = stateStart
+				}
+				continue
+			}
 			return p.err
 		}
 	}
-	return p.err
+	if len(p.errs) > 0 {
+		return errors.Join(p.errs...)
+	}
+	return nil
 }
 
 // parseArgsWithFSM initializes the parser and runs it.
