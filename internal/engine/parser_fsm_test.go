@@ -55,4 +55,33 @@ func TestParseArgsWithFSMHandlesUnknown(t *testing.T) {
 			t.Fatalf("flag should not be set when after --")
 		}
 	})
+
+	t.Run("unknownDynamicGroupShowsFlag", func(t *testing.T) {
+		t.Parallel()
+
+		fs := NewFlagSet("app", ContinueOnError)
+		_, err := parseArgsWithFSM(fs, []string{"--target.unknown.http=service"})
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if got := err.Error(); got != "unknown dynamic group \"target\" in flag --target.unknown.http=service" {
+			t.Fatalf("unexpected error: %q", got)
+		}
+	})
+
+	t.Run("unknownDynamicFieldShowsFlag", func(t *testing.T) {
+		t.Parallel()
+
+		fs := NewFlagSet("app", ContinueOnError)
+		g := fs.DynamicGroup("http")
+		g.String("addr", "", "addr")
+
+		_, err := parseArgsWithFSM(fs, []string{"--http.alpha.port=8080"})
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if got := err.Error(); got != "unknown dynamic field \"port\" in flag --http.alpha.port=8080" {
+			t.Fatalf("unexpected error: %q", got)
+		}
+	})
 }

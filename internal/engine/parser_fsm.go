@@ -127,7 +127,7 @@ func stateLong(arg string) stateFn {
 
 		switch {
 		case isDynamicFlag(name):
-			return handleDynamic(name, val, hasVal)
+			return handleDynamic(name, val, hasVal, arg)
 
 		case isKnownStaticFlag(p, name):
 			return handleStatic(name, val, hasVal)
@@ -139,9 +139,9 @@ func stateLong(arg string) stateFn {
 }
 
 // handleDynamic processes a dynamic flag using the provided name, value, and format.
-func handleDynamic(name, val string, hasVal bool) stateFn {
+func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 	return func(p *parser) stateFn {
-		item, id := lookupDynamic(p, name)
+		item, id := lookupDynamic(p, name, raw)
 		if p.err != nil {
 			return nil
 		}
@@ -354,7 +354,7 @@ func isKnownStaticFlag(p *parser, name string) bool {
 
 // lookupDynamic locates a dynamic flag and its instance ID from the full name.
 // Returns the dynamic value and ID, or sets p.err if lookup fails.
-func lookupDynamic(p *parser, name string) (core.DynamicValue, string) {
+func lookupDynamic(p *parser, name string, raw string) (core.DynamicValue, string) {
 	parts := strings.Split(name, ".")
 	if len(parts) != 3 {
 		p.err = fmt.Errorf("invalid dynamic flag: --%s", name)
@@ -364,13 +364,13 @@ func lookupDynamic(p *parser, name string) (core.DynamicValue, string) {
 
 	group, ok := p.fs.dynamicGroupsMap[groupName]
 	if !ok {
-		p.err = fmt.Errorf("unknown dynamic group: %s", groupName)
+		p.err = fmt.Errorf("unknown dynamic group %q in flag %s", groupName, raw)
 		return nil, ""
 	}
 
 	item, ok := group.Items()[field]
 	if !ok {
-		p.err = fmt.Errorf("unknown dynamic field: %s", field)
+		p.err = fmt.Errorf("unknown dynamic field %q in flag %s", field, raw)
 		return nil, ""
 	}
 
