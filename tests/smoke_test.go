@@ -156,6 +156,25 @@ Flags:
 `)
 	})
 
+	t.Run("smoke help/version helpers", func(t *testing.T) {
+		t.Parallel()
+
+		fsHelp := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fsHelp.Version("1.2.3")
+
+		err := fsHelp.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.True(t, tinyflags.IsHelpRequested(err))
+
+		fsVersion := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fsVersion.Version("1.2.3")
+
+		err = fsVersion.Parse([]string{"--version"})
+		require.Error(t, err)
+		assert.True(t, tinyflags.IsVersionRequested(err))
+		assert.EqualError(t, err, "1.2.3")
+	})
+
 	t.Run("smoke custom help", func(t *testing.T) {
 		t.Parallel()
 

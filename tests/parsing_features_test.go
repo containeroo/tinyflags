@@ -214,3 +214,34 @@ func TestContinueOnErrorParsesAllFlags(t *testing.T) {
 		assert.Contains(t, err.Error(), "missing value for flag")
 	})
 }
+
+func TestOneOfGroupVerboseToggle(t *testing.T) {
+	t.Parallel()
+
+	t.Run("verboseDefaultIncludesConflicts", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Bool("debug", false, "debug").OneOfGroup("dbg")
+		fs.Bool("no-debug", false, "no-debug").OneOfGroup("dbg")
+
+		err := fs.Parse([]string{"--debug", "--no-debug"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "vs")
+		assert.Contains(t, err.Error(), "--debug")
+		assert.Contains(t, err.Error(), "--no-debug")
+	})
+
+	t.Run("verboseDisabledOmitsConflicts", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.SetOneOfGroupVerbose(false)
+		fs.Bool("debug", false, "debug").OneOfGroup("dbg")
+		fs.Bool("no-debug", false, "no-debug").OneOfGroup("dbg")
+
+		err := fs.Parse([]string{"--debug", "--no-debug"})
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "vs")
+	})
+}

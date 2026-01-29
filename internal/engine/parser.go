@@ -174,9 +174,13 @@ func (f *FlagSet) checkOneOfGroups() error {
 
 	for _, g := range f.oneOfGroup {
 		selections := 0
+		var conflicting []string
 		for _, fl := range g.Flags {
 			if fl.Value.Changed() {
 				selections++
+				if f.oneOfVerbose {
+					conflicting = append(conflicting, "--"+fl.Name)
+				}
 			}
 		}
 		for _, grp := range g.RequiredGroups {
@@ -188,10 +192,23 @@ func (f *FlagSet) checkOneOfGroups() error {
 			}
 			if changed == len(grp.Flags) && len(grp.Flags) > 0 {
 				selections++
+				if f.oneOfVerbose {
+					names := make([]string, 0, len(grp.Flags))
+					for _, fl := range grp.Flags {
+						names = append(names, "--"+fl.Name)
+					}
+					conflicting = append(conflicting, fmt.Sprintf("[%s]", strings.Join(names, ", ")))
+				}
 			}
 		}
 
 		if selections > 1 {
+			if f.oneOfVerbose && len(conflicting) > 1 {
+				return fmt.Errorf(
+					"only one of the flags in group %q may be used: %s",
+					g.Name, strings.Join(conflicting, " vs "),
+				)
+			}
 			return fmt.Errorf("only one of the flags in group %q may be used", g.Name)
 		}
 		if g.IsRequired() && selections == 0 {

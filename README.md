@@ -186,6 +186,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `Authors(names ...string)`                         | Add an "Authors:" section to help.                                   |
 | `Description(text string)`                         | Add a free-form description block under the title.                   |
 | `Note(text string)`                                | Add a footer note under the flags listing.                           |
+| `SetOneOfGroupVerbose(bool)`                       | Toggle detailed OneOfGroup errors with conflicting flags.            |
 | `SetOutput(w io.Writer)` / `Output()`              | Redirect or retrieve where help/version is written.                  |
 | `PrintUsage(w, mode)`                              | Print the `Usage:` line.                                             |
 | `PrintTitle(w)`                                    | Print title and description.                                         |

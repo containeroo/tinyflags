@@ -143,6 +143,12 @@ func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
 // SortedGroups enables sorted help output for dynamic groups.
 func (f *FlagSet) SortedGroups() { f.impl.SortedGroups(true) }
 
+// SetOneOfGroupVerbose toggles verbose OneOfGroup error messages.
+func (f *FlagSet) SetOneOfGroupVerbose(enable bool) { f.impl.SetOneOfGroupVerbose(enable) }
+
+// OneOfGroupVerbose reports whether OneOfGroup errors include conflicting flags.
+func (f *FlagSet) OneOfGroupVerbose() bool { return f.impl.OneOfGroupVerbose() }
+
 // SetOutput changes the destination writer for usage and error messages.
 func (f *FlagSet) SetOutput(w io.Writer) { f.impl.SetOutput(w) }
 

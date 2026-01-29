@@ -46,6 +46,7 @@ type FlagSet struct {
 	Usage              func()                           // Custom usage function (optional)
 	sortFlags          bool                             // Enable static flag sorting
 	sortGroups         bool                             // Enable dynamic group sorting
+	oneOfVerbose       bool                             // Include conflicting flags in OneOf errors
 	authors            string                           // Optional authors block
 	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
 	unknownFlag        func(string) error               // Handler for unknown flags
@@ -88,6 +89,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		descWidth:          400,
 		usageStaticIndent:  4,
 		usageDynamicIndent: 4,
+		oneOfVerbose:       true,
 		noteIndent:         0,
 		noteWidth:          400,
 		title:              "Flags:",
@@ -136,6 +138,8 @@ func (f *FlagSet) DisableHelp()                                    { f.enableHel
 func (f *FlagSet) DisableVersion()                                 { f.enableVer = false; f.versionString = "" }
 func (f *FlagSet) SortedFlags(enable bool)                         { f.sortFlags = enable }
 func (f *FlagSet) SortedGroups(enable bool)                        { f.sortGroups = enable }
+func (f *FlagSet) SetOneOfGroupVerbose(enable bool)                { f.oneOfVerbose = enable }
+func (f *FlagSet) OneOfGroupVerbose() bool                         { return f.oneOfVerbose }
 func (f *FlagSet) SetOutput(w io.Writer)                           { f.output = w }
 func (f *FlagSet) Output() io.Writer                               { return f.output }
 func (f *FlagSet) IgnoreInvalidEnv(enable bool)                    { f.ignoreInvalidEnv = enable }
