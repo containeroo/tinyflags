@@ -3,6 +3,8 @@ package engine
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestBeforeParseHookErrors(t *testing.T) {
@@ -14,7 +16,6 @@ func TestBeforeParseHookErrors(t *testing.T) {
 	})
 
 	err := fs.Parse([]string{"--help"})
-	if err == nil || err.Error() != "hook failure" {
-		t.Fatalf("expected hook failure, got %v", err)
-	}
+	require.Error(t, err)
+	require.EqualError(t, err, "hook failure")
 }

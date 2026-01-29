@@ -1,31 +1,29 @@
 package engine
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestWrapText(t *testing.T) {
 	t.Parallel()
 
 	t.Run("emptyString", func(t *testing.T) {
 		t.Parallel()
-		if got := wrapText("", 10); got != "" {
-			t.Fatalf("expected empty, got %q", got)
-		}
+		assert.Equal(t, "", wrapText("", 10))
 	})
 
 	t.Run("wrapsAtWidth", func(t *testing.T) {
 		t.Parallel()
 		text := "a bb ccc dddd"
 		got := wrapText(text, 6)
-		if got != "a bb\nccc\ndddd" {
-			t.Fatalf("unexpected wrap: %q", got)
-		}
+		assert.Equal(t, "a bb\nccc\ndddd", got)
 	})
 
 	t.Run("preservesNewlines", func(t *testing.T) {
 		t.Parallel()
 		text := "first line\nsecond line"
-		if got := wrapText(text, 20); got != text {
-			t.Fatalf("expected newline preserved, got %q", got)
-		}
+		assert.Equal(t, text, wrapText(text, 20))
 	})
 }

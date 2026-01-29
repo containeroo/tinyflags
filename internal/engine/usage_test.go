@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/containeroo/tinyflags/internal/core"
+	"github.com/stretchr/testify/assert"
 )
 
 type dummyValue struct {
@@ -32,8 +33,6 @@ func TestBuildFlagDescriptionHideDefault(t *testing.T) {
 		}
 
 		desc := buildFlagDescription(flag, false, "app")
-		if desc != "short desc" {
-			t.Fatalf("expected short description only, got %q", desc)
-		}
+		assert.Equal(t, "short desc", desc)
 	})
 }

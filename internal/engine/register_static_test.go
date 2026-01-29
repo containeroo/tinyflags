@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/containeroo/tinyflags/internal/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegisterStaticScalarInt(t *testing.T) {
@@ -18,9 +20,7 @@ func TestRegisterStaticScalarInt(t *testing.T) {
 		var value int
 		RegisterStaticScalar(fs, &value, "num", "usage", 7, strconv.Atoi, strconv.Itoa)
 
-		if value != 7 {
-			t.Fatalf("expected default 7, got %d", value)
-		}
+		assert.Equal(t, 7, value)
 	})
 
 	t.Run("parsesInput", func(t *testing.T) {
@@ -31,13 +31,8 @@ func TestRegisterStaticScalarInt(t *testing.T) {
 		num := new(int)
 		RegisterStaticScalar(fs, num, "num", "usage", 0, strconv.Atoi, strconv.Itoa)
 
-		if err := fs.Parse([]string{"--num=5"}); err != nil {
-			t.Fatalf("parse failed: %v", err)
-		}
-
-		if *num != 5 {
-			t.Fatalf("expected parsed value 5, got %d", *num)
-		}
+		require.NoError(t, fs.Parse([]string{"--num=5"}))
+		assert.Equal(t, 5, *num)
 	})
 }
 
@@ -52,9 +47,7 @@ func TestRegisterStaticSliceString(t *testing.T) {
 		var names []string
 		RegisterStaticSlice(fs, &names, "names", "usage", []string{"a", "b"}, utils.ParseString, utils.FormatString, ";")
 
-		if got := len(names); got != 2 || names[0] != "a" || names[1] != "b" {
-			t.Fatalf("expected default [a b], got %v", names)
-		}
+		assert.Equal(t, []string{"a", "b"}, names)
 	})
 
 	t.Run("parsesInputWithDelimiter", func(t *testing.T) {
@@ -65,14 +58,9 @@ func TestRegisterStaticSliceString(t *testing.T) {
 		names := new([]string)
 		RegisterStaticSlice(fs, names, "names", "usage", nil, utils.ParseString, utils.FormatString, ";")
 
-		if err := fs.Parse([]string{"--names=a; b"}); err != nil {
-			t.Fatalf("parse failed: %v", err)
-		}
+		require.NoError(t, fs.Parse([]string{"--names=a; b"}))
 
 		want := []string{"a", "b"}
-		got := *names
-		if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
-			t.Fatalf("expected %v, got %v", want, got)
-		}
+		assert.Equal(t, want, *names)
 	})
 }

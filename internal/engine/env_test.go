@@ -3,6 +3,8 @@ package engine
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewReplacerEnvKeyFunc(t *testing.T) {
@@ -12,17 +14,13 @@ func TestNewReplacerEnvKeyFunc(t *testing.T) {
 		t.Parallel()
 
 		fn := NewReplacerEnvKeyFunc(strings.NewReplacer("-", "_"), true)
-		if got := fn("", "flag-name"); got != "" {
-			t.Fatalf("expected empty string, got %q", got)
-		}
+		assert.Equal(t, "", fn("", "flag-name"))
 	})
 
 	t.Run("replacesAndUppercases", func(t *testing.T) {
 		t.Parallel()
 
 		fn := NewReplacerEnvKeyFunc(strings.NewReplacer("-", "_", ".", "_"), true)
-		if got := fn("app", "flag-name.more"); got != "APP_FLAG_NAME_MORE" {
-			t.Fatalf("unexpected env key: %q", got)
-		}
+		assert.Equal(t, "APP_FLAG_NAME_MORE", fn("app", "flag-name.more"))
 	})
 }
