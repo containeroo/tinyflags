@@ -123,6 +123,7 @@ func (f *FlagSet) EnvPrefix(prefix string)                         { f.envPrefix
 func (f *FlagSet) SetEnvKeyFunc(fn EnvKeyFunc)                     { f.envKeyFunc = fn }
 func (f *FlagSet) EnvKeyForFlag(name string) string                { return f.envKeyFunc(f.envPrefix, name) }
 func (f *FlagSet) DefaultDelimiter() string                        { return f.defaultDelimiter }
+func (f *FlagSet) GlobalDelimiter(s string)                        { f.defaultDelimiter = s }
 func (f *FlagSet) Globaldelimiter(s string)                        { f.defaultDelimiter = s }
 func (f *FlagSet) BeforeParse(fn func([]string) ([]string, error)) { f.beforeParse = fn }
 func (f *FlagSet) OnUnknownFlag(fn func(string) error)             { f.unknownFlag = fn }

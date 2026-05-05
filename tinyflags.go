@@ -161,8 +161,12 @@ func (f *FlagSet) IgnoreInvalidEnv(b bool) { f.impl.IgnoreInvalidEnv(b) }
 // SetGetEnvFn overrides the function used to look up environment variables.
 func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.impl.SetGetEnvFn(fn) }
 
+// GlobalDelimiter sets the delimiter used for all slice flags.
+func (f *FlagSet) GlobalDelimiter(s string) { f.impl.GlobalDelimiter(s) }
+
 // Globaldelimiter sets the delimiter used for all slice flags.
-func (f *FlagSet) Globaldelimiter(s string) { f.impl.Globaldelimiter(s) }
+// Deprecated: use GlobalDelimiter.
+func (f *FlagSet) Globaldelimiter(s string) { f.impl.GlobalDelimiter(s) }
 
 // AttachGroupToAllOrNone nests one AllOrNone group into another.
 func (f *FlagSet) AttachGroupToAllOrNone(parent, child string) {
@@ -216,6 +220,11 @@ func (f *FlagSet) AttachToOneOfGroup(flag *core.BaseFlag, group string) {
 
 // AllOrNoneGroup returns all registered AllOrNoneGroup group.
 func (f *FlagSet) AllOrNoneGroup() []*core.AllOrNoneGroup {
+	return f.impl.AllOrNoneGroups()
+}
+
+// AllOrNoneGroups returns all registered AllOrNone groups.
+func (f *FlagSet) AllOrNoneGroups() []*core.AllOrNoneGroup {
 	return f.impl.AllOrNoneGroups()
 }
 

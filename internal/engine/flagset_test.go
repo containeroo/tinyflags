@@ -122,6 +122,15 @@ func TestNewFlagSet(t *testing.T) {
 		assert.Equal(t, []string{"a", "b", "c"}, *s)
 	})
 
+	t.Run("GlobalDelimiter", func(t *testing.T) {
+		t.Parallel()
+		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
+		fs.GlobalDelimiter("|")
+		s := fs.StringSlice("s", nil, "desc").Value()
+		require.NoError(t, fs.Parse([]string{"--s=a|b|c"}))
+		assert.Equal(t, []string{"a", "b", "c"}, *s)
+	})
+
 	t.Run("Positional args", func(t *testing.T) {
 		t.Parallel()
 		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)

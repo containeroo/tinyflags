@@ -56,3 +56,19 @@ func TestBuilderChainingPreservesFlagType(t *testing.T) {
 		assert.Equal(t, []string{"a", "b"}, *hosts)
 	})
 }
+
+func TestNamingCompatibilityHelpers(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	api := fs.GetAllOrNoneGroup("api")
+	require.NotNil(t, api)
+
+	groupsSingular := fs.AllOrNoneGroup()
+	groupsPlural := fs.AllOrNoneGroups()
+
+	require.Len(t, groupsSingular, 1)
+	require.Len(t, groupsPlural, 1)
+	assert.Same(t, groupsSingular[0], groupsPlural[0])
+	assert.Same(t, api, groupsPlural[0])
+}
