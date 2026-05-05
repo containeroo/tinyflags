@@ -65,16 +65,10 @@ func (f *ScalarValue[T]) Base() *ScalarValue[T] { return f }
 
 // ApplyDefaultFinalize applies the default-only finalizer when unset.
 func (f *ScalarValue[T]) ApplyDefaultFinalize() {
-	if f.changed || f.defaultFinalized || !f.finalizeDefault || f.finalize == nil {
-		return
-	}
-	*f.ptr = f.finalize(*f.ptr)
-	f.defaultFinalized = true
+	utils.ApplyDefaultValueFinalize(f.ptr, f.changed, &f.defaultFinalized, f.finalizeDefault, f.finalize)
 }
 
 // ResetParseState restores the default value and clears changed/finalized state.
 func (f *ScalarValue[T]) ResetParseState() {
-	*f.ptr = f.def
-	f.changed = false
-	f.defaultFinalized = false
+	utils.ResetScalarState(f.ptr, f.def, &f.changed, &f.defaultFinalized)
 }

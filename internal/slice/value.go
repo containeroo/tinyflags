@@ -49,13 +49,8 @@ func (v *SliceValue[T]) Set(s string) error {
 	}
 	parts := strings.Split(s, v.delimiter)
 	if v.strictDel {
-		for _, alt := range []string{",", ";", "|"} {
-			if alt == v.delimiter {
-				continue
-			}
-			if strings.Contains(s, alt) {
-				return fmt.Errorf("mixed delimiters: found %q while using %q", alt, v.delimiter)
-			}
+		if err := utils.CheckMixedDelimiters(s, v.delimiter); err != nil {
+			return err
 		}
 	}
 	for _, raw := range parts {
@@ -116,13 +111,7 @@ func (v *SliceValue[T]) Base() *SliceValue[T] { return v }
 
 // ApplyDefaultFinalize applies the default-only finalizer when unset.
 func (v *SliceValue[T]) ApplyDefaultFinalize() {
-	if v.changed || v.defaultFinalized || !v.finalizeDefault || v.finalize == nil {
-		return
-	}
-	for i, item := range *v.ptr {
-		(*v.ptr)[i] = v.finalize(item)
-	}
-	v.defaultFinalized = true
+	utils.ApplyDefaultSliceFinalize(*v.ptr, v.changed, &v.defaultFinalized, v.finalizeDefault, v.finalize)
 }
 
 // isSlice is a no-op marker method to implement core.SliceMarker.
@@ -130,7 +119,5 @@ func (v *SliceValue[T]) IsSlice() {}
 
 // ResetParseState restores the default slice and clears changed/finalized state.
 func (v *SliceValue[T]) ResetParseState() {
-	*v.ptr = append((*v.ptr)[:0], v.def...)
-	v.changed = false
-	v.defaultFinalized = false
+	utils.ResetSliceState(v.ptr, v.def, &v.changed, &v.defaultFinalized)
 }

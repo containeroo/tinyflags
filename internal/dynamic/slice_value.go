@@ -48,13 +48,8 @@ func NewDynamicSliceValue[T any](
 // Set parses and stores one or more values for a given ID.
 func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 	if d.strictDel {
-		for _, alt := range []string{",", ";", "|"} {
-			if alt == d.delimiter {
-				continue
-			}
-			if strings.Contains(raw, alt) {
-				return fmt.Errorf("mixed delimiters: found %q while using %q", alt, d.delimiter)
-			}
+		if err := utils.CheckMixedDelimiters(raw, d.delimiter); err != nil {
+			return err
 		}
 	}
 
@@ -123,13 +118,7 @@ func (d *DynamicSliceValue[T]) FieldName() string {
 
 // ApplyDefaultFinalize applies the default-only finalizer for unset IDs.
 func (d *DynamicSliceValue[T]) ApplyDefaultFinalize() {
-	if d.defaultFinalized || !d.finalizeDefault || d.finalize == nil {
-		return
-	}
-	for i, item := range d.def {
-		d.def[i] = d.finalize(item)
-	}
-	d.defaultFinalized = true
+	utils.ApplyDefaultSliceFinalize(d.def, false, &d.defaultFinalized, d.finalizeDefault, d.finalize)
 }
 
 // GetAny returns the slice as any for a given ID, falling back to default.
@@ -153,7 +142,5 @@ func (d *DynamicSliceValue[T]) ValuesAny() map[string]any {
 // ResetParseState clears all parsed IDs and restores the original defaults.
 func (d *DynamicSliceValue[T]) ResetParseState() {
 	clear(d.values)
-	d.changed = false
-	d.def = append(d.def[:0], d.baseDef...)
-	d.defaultFinalized = false
+	utils.ResetSliceState(&d.def, d.baseDef, &d.changed, &d.defaultFinalized)
 }

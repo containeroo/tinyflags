@@ -85,11 +85,7 @@ func (d *DynamicScalarValue[T]) Base() *DynamicScalarValue[T] {
 
 // ApplyDefaultFinalize applies the default-only finalizer for unset IDs.
 func (d *DynamicScalarValue[T]) ApplyDefaultFinalize() {
-	if d.defaultFinalized || !d.finalizeDefault || d.finalize == nil {
-		return
-	}
-	d.def = d.finalize(d.def)
-	d.defaultFinalized = true
+	utils.ApplyDefaultValueFinalize(&d.def, false, &d.defaultFinalized, d.finalizeDefault, d.finalize)
 }
 
 // FieldName returns the field name of the flag.
@@ -118,7 +114,5 @@ func (d *DynamicScalarValue[T]) ValuesAny() map[string]any {
 // ResetParseState clears all parsed IDs and restores default-finalizer state.
 func (d *DynamicScalarValue[T]) ResetParseState() {
 	clear(d.values)
-	d.changed = false
-	d.def = d.baseDef
-	d.defaultFinalized = false
+	utils.ResetScalarState(&d.def, d.baseDef, &d.changed, &d.defaultFinalized)
 }
