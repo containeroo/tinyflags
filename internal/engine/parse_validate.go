@@ -5,14 +5,9 @@ import "fmt"
 // checkRequirements ensures all flags which requrie others are set.
 func (f *FlagSet) checkRequirements() error {
 	for _, fl := range f.staticFlagsMap {
-		if fl.Value == nil || !fl.Value.Changed() {
-			continue
-		}
-		for _, req := range fl.Requires {
-			rfl, ok := f.staticFlagsMap[req]
-			if !ok || rfl.Value == nil || !rfl.Value.Changed() {
-				return fmt.Errorf("--%s requires --%s", fl.Name, req)
-			}
+		req, missing := fl.FirstMissingRequirement(f.staticFlagsMap)
+		if missing {
+			return fmt.Errorf("--%s requires --%s", fl.Name, req)
 		}
 	}
 	return nil
@@ -133,7 +128,7 @@ func (f *FlagSet) finalizePositionals() error {
 // checkRequired ensures all required flags were set.
 func (f *FlagSet) checkRequired() error {
 	for _, fl := range f.staticFlagsMap {
-		if fl.Required && !fl.Value.Changed() {
+		if fl.MissingRequired() {
 			return fmt.Errorf("flag --%s is required", fl.Name)
 		}
 	}
