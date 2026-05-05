@@ -215,6 +215,36 @@ func TestContinueOnErrorParsesAllFlags(t *testing.T) {
 	})
 }
 
+func TestParseResetsStateBetweenCalls(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.RequirePositional(1)
+
+	name := fs.String("name", "default", "name")
+	http := fs.DynamicGroup("http")
+	port := http.Int("port", 80, "port")
+
+	err := fs.Parse([]string{"--name=alice", "--http.a.port=8080", "one"})
+	require.NoError(t, err)
+	assert.Equal(t, "alice", *name.Value())
+	assert.True(t, name.Changed())
+	assert.Equal(t, 8080, port.MustGet("a"))
+	assert.Equal(t, []string{"one"}, fs.Args())
+	assert.Equal(t, map[string]any{
+		"http.a.port": 8080,
+		"name":        "alice",
+	}, fs.OverriddenValues())
+
+	err = fs.Parse([]string{"two"})
+	require.NoError(t, err)
+	assert.Equal(t, "default", *name.Value())
+	assert.False(t, name.Changed())
+	assert.False(t, port.Has("a"))
+	assert.Equal(t, []string{"two"}, fs.Args())
+	assert.Empty(t, fs.OverriddenValues())
+}
+
 func TestOneOfGroupVerboseToggle(t *testing.T) {
 	t.Parallel()
 

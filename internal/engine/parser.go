@@ -12,6 +12,7 @@ import (
 // Parse parses CLI arguments, env vars, built-in help/version, and validations.
 func (f *FlagSet) Parse(args []string) error {
 	f.maybeAddBuiltinFlags()
+	f.resetParseState()
 
 	if f.beforeParse != nil {
 		var err error
@@ -62,6 +63,26 @@ func (f *FlagSet) Parse(args []string) error {
 		return f.handleError(err)
 	}
 	return nil
+}
+
+func (f *FlagSet) resetParseState() {
+	f.positional = nil
+
+	for _, fl := range f.staticFlagsMap {
+		resetter, ok := fl.Value.(core.ParseStateResetter)
+		if ok {
+			resetter.ResetParseState()
+		}
+	}
+
+	for _, group := range f.dynamicGroups() {
+		for _, item := range group.Items() {
+			resetter, ok := item.Value.(core.ParseStateResetter)
+			if ok {
+				resetter.ResetParseState()
+			}
+		}
+	}
 }
 
 // parseArgs processes CLI arguments and sets flags or positional args.

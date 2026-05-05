@@ -9,6 +9,7 @@ import (
 type DynamicScalarValue[T any] struct {
 	field            string                  // Flag field name
 	def              T                       // Default value
+	baseDef          T                       // Original default value
 	changed          bool                    // Whether the value was changed
 	parse            func(string) (T, error) // Parser from raw input
 	format           func(T) string          // Formatter to string
@@ -24,11 +25,12 @@ type DynamicScalarValue[T any] struct {
 // NewDynamicScalarValue creates a new dynamic scalar value.
 func NewDynamicScalarValue[T any](field string, def T, parse func(string) (T, error), format func(T) string) *DynamicScalarValue[T] {
 	return &DynamicScalarValue[T]{
-		field:  field,
-		def:    def,
-		parse:  parse,
-		format: format,
-		values: make(map[string]T),
+		field:   field,
+		def:     def,
+		baseDef: def,
+		parse:   parse,
+		format:  format,
+		values:  make(map[string]T),
 	}
 }
 
@@ -111,4 +113,12 @@ func (d *DynamicScalarValue[T]) ValuesAny() map[string]any {
 		out[k] = v
 	}
 	return out
+}
+
+// ResetParseState clears all parsed IDs and restores default-finalizer state.
+func (d *DynamicScalarValue[T]) ResetParseState() {
+	clear(d.values)
+	d.changed = false
+	d.def = d.baseDef
+	d.defaultFinalized = false
 }

@@ -127,3 +127,10 @@ func (v *SliceValue[T]) ApplyDefaultFinalize() {
 
 // isSlice is a no-op marker method to implement core.SliceMarker.
 func (v *SliceValue[T]) IsSlice() {}
+
+// ResetParseState restores the default slice and clears changed/finalized state.
+func (v *SliceValue[T]) ResetParseState() {
+	*v.ptr = append((*v.ptr)[:0], v.def...)
+	v.changed = false
+	v.defaultFinalized = false
+}

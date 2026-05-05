@@ -11,6 +11,7 @@ import (
 type DynamicSliceValue[T any] struct {
 	field            string                  // Flag field name
 	def              []T                     // Default slice value
+	baseDef          []T                     // Original default slice value
 	changed          bool                    // Whether the value was changed
 	parse            func(string) (T, error) // Function to parse a single element
 	format           func(T) string          // Function to format a single element
@@ -35,7 +36,8 @@ func NewDynamicSliceValue[T any](
 ) *DynamicSliceValue[T] {
 	return &DynamicSliceValue[T]{
 		field:     field,
-		def:       def,
+		def:       append([]T(nil), def...),
+		baseDef:   append([]T(nil), def...),
 		parse:     parse,
 		format:    format,
 		delimiter: delimiter,
@@ -146,4 +148,12 @@ func (d *DynamicSliceValue[T]) ValuesAny() map[string]any {
 		out[k] = v
 	}
 	return out
+}
+
+// ResetParseState clears all parsed IDs and restores the original defaults.
+func (d *DynamicSliceValue[T]) ResetParseState() {
+	clear(d.values)
+	d.changed = false
+	d.def = append(d.def[:0], d.baseDef...)
+	d.defaultFinalized = false
 }

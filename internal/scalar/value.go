@@ -71,3 +71,10 @@ func (f *ScalarValue[T]) ApplyDefaultFinalize() {
 	*f.ptr = f.finalize(*f.ptr)
 	f.defaultFinalized = true
 }
+
+// ResetParseState restores the default value and clears changed/finalized state.
+func (f *ScalarValue[T]) ResetParseState() {
+	*f.ptr = f.def
+	f.changed = false
+	f.defaultFinalized = false
+}

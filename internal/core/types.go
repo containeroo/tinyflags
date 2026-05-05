@@ -22,6 +22,11 @@ type DefaultFinalizer interface {
 	ApplyDefaultFinalize()
 }
 
+// ParseStateResetter clears value state between Parse calls.
+type ParseStateResetter interface {
+	ResetParseState()
+}
+
 // GroupItem holds a single flag and its value for a dynamic group.
 type GroupItem struct {
 	Value DynamicValue
