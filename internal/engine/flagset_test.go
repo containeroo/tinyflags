@@ -51,17 +51,19 @@ func TestNewFlagSet(t *testing.T) {
 		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
 		fs.EnvPrefix("PRE")
 		f := fs.String("f", "fallback", "desc")
-		fs.String("ignore", "x", "desc").DisableEnv().Value()
+		ignored := fs.String("ignore", "x", "desc").DisableEnv().Value()
 		fs.IgnoreInvalidEnv(true)
 		fs.SetGetEnvFn(func(k string) string {
 			m := map[string]string{
-				"PRE_F": "fromenv",
+				"PRE_F":      "fromenv",
+				"PRE_IGNORE": "should-not-apply",
 			}
 			return m[k]
 		})
 		val := f.Value()
 		require.NoError(t, fs.Parse([]string{}))
 		assert.Equal(t, "fromenv", *val)
+		assert.Equal(t, "x", *ignored)
 	})
 
 	t.Run("Help sections", func(t *testing.T) {

@@ -95,6 +95,9 @@ func (f *FlagSet) parseEnv() error {
 			// dynamically‐registered flags aren’t loaded from ENV
 			continue
 		}
+		if fl.DisableEnv {
+			continue
+		}
 		if fl.Value.Changed() {
 			continue
 		}
