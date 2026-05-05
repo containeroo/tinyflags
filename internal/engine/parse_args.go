@@ -8,7 +8,7 @@ import (
 
 // parseArgs processes CLI arguments and sets flags or positional args.
 func (f *FlagSet) parseArgs(args []string) error {
-	positional, err := parseArgsWithFSM(f, args)
+	positional, err := runArgParserFSM(f, args)
 	if err != nil {
 		return err
 	}

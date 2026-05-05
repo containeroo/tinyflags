@@ -9,11 +9,11 @@ import (
 )
 
 // stateFn defines a function representing a parser state.
-// It takes a parser pointer and returns the next state function.
-type stateFn func(*parser) stateFn
+// It takes an argParser pointer and returns the next state function.
+type stateFn func(*argParser) stateFn
 
-// parser holds parsing state and context for command-line argument parsing.
-type parser struct {
+// argParser holds parsing state and context for command-line argument parsing.
+type argParser struct {
 	args  []string // CLI arguments to parse
 	index int      // current index in args
 	fs    *FlagSet // reference to the defined flag set
@@ -24,7 +24,7 @@ type parser struct {
 
 // next returns the next argument and advances the index.
 // If all args are consumed, it returns ok=false.
-func (p *parser) next() (arg string, ok bool) {
+func (p *argParser) next() (arg string, ok bool) {
 	if p.index < len(p.args) {
 		arg = p.args[p.index]
 		p.index++
@@ -34,7 +34,7 @@ func (p *parser) next() (arg string, ok bool) {
 }
 
 // peek returns the next argument without advancing the index.
-func (p *parser) peek() (arg string, ok bool) {
+func (p *argParser) peek() (arg string, ok bool) {
 	if p.index < len(p.args) {
 		arg = p.args[p.index]
 		ok = true
@@ -44,8 +44,8 @@ func (p *parser) peek() (arg string, ok bool) {
 
 // run executes the parser state machine starting from stateStart.
 // It continues until no further state is returned or an error is encountered.
-func (p *parser) run() error {
-	state := stateStart
+func (p *argParser) run() error {
+	state := argParserStateStart
 	for state != nil {
 		state = state(p)
 		if p.err != nil {
@@ -53,7 +53,7 @@ func (p *parser) run() error {
 				p.errs = append(p.errs, p.err)
 				p.err = nil
 				if state == nil {
-					state = stateStart
+					state = argParserStateStart
 				}
 				continue
 			}
@@ -66,10 +66,10 @@ func (p *parser) run() error {
 	return nil
 }
 
-// parseArgsWithFSM initializes the parser and runs it.
+// runArgParserFSM initializes the argument parser and runs it.
 // It returns any remaining positional arguments and a parsing error if any.
-func parseArgsWithFSM(fs *FlagSet, args []string) ([]string, error) {
-	p := &parser{
+func runArgParserFSM(fs *FlagSet, args []string) ([]string, error) {
+	p := &argParser{
 		fs:   fs,
 		args: args,
 	}
@@ -79,7 +79,7 @@ func parseArgsWithFSM(fs *FlagSet, args []string) ([]string, error) {
 
 // stateStart determines what kind of argument we're looking at (flag, positional, etc.)
 // and returns the appropriate handler state function.
-func stateStart(p *parser) stateFn {
+func argParserStateStart(p *argParser) stateFn {
 	arg, ok := p.next()
 	if !ok {
 		return nil // no more arguments → done
@@ -94,20 +94,20 @@ func stateStart(p *parser) stateFn {
 
 	case strings.HasPrefix(arg, "--"):
 		// long form: --flag or --flag=value
-		return stateLong(arg)
+		return argParserStateLong(arg)
 
 	case strings.HasPrefix(arg, "-") && len(arg) > 1:
 		// short form: -f, -abc, or -fvalue
-		return stateShort(arg)
+		return argParserStateShort(arg)
 
 	default:
 		// positional argument
 		p.out = append(p.out, arg)
-		return stateStart
+		return argParserStateStart
 	}
 }
 
-func handleUnknown(p *parser, name string) stateFn {
+func handleUnknown(p *argParser, name string) stateFn {
 	if p.fs.unknownFlag == nil {
 		p.err = fmt.Errorf("unknown flag: %s", name)
 		return nil
@@ -116,12 +116,12 @@ func handleUnknown(p *parser, name string) stateFn {
 		p.err = err
 		return nil
 	}
-	return stateStart
+	return argParserStateStart
 }
 
-// stateLong handles arguments of the form --flag or --flag=value.
-func stateLong(arg string) stateFn {
-	return func(p *parser) stateFn {
+// argParserStateLong handles arguments of the form --flag or --flag=value.
+func argParserStateLong(arg string) stateFn {
+	return func(p *argParser) stateFn {
 		nameval := strings.TrimPrefix(arg, "--")
 		name, val, hasVal := splitFlagArg(nameval)
 
@@ -140,7 +140,7 @@ func stateLong(arg string) stateFn {
 
 // handleDynamic processes a dynamic flag using the provided name, value, and format.
 func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
-	return func(p *parser) stateFn {
+	return func(p *argParser) stateFn {
 		item, id := lookupDynamic(p, name, raw)
 		if p.err != nil {
 			return nil
@@ -148,7 +148,7 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 
 		// Support non-strict bools like --group.id.flag
 		if handled := tryDynBool(item, id); handled {
-			return stateStart
+			return argParserStateStart
 		}
 
 		item.GetAny(name)
@@ -156,7 +156,7 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 		// Handle --group.id.flag=value
 		if hasVal {
 			p.err = trySetDynamic(item, id, val, name)
-			return stateStart
+			return argParserStateStart
 		}
 
 		// Handle --group.id.flag value
@@ -164,12 +164,12 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 			return nil
 		}
 
-		return stateStart
+		return argParserStateStart
 	}
 }
 
 // handleDynamicValue parses and sets the next token as the value of a dynamic flag.
-func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool {
+func handleDynamicValue(p *argParser, item core.DynamicValue, id, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
 		p.err = fmt.Errorf("missing value for flag: --%s", name)
@@ -183,25 +183,25 @@ func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool
 
 // handleStatic processes a known static flag by name.
 func handleStatic(name, val string, hasVal bool) stateFn {
-	return func(p *parser) stateFn {
+	return func(p *argParser) stateFn {
 		fl := p.fs.staticFlagsMap[name]
 
 		// Handle non-strict bools like -v
 		if handled := tryBool(fl); handled {
-			return stateStart
+			return argParserStateStart
 		}
 		// Support implicit increment if applicable
 		if handled := tryCounter(p, fl); handled {
-			return stateStart
+			return argParserStateStart
 		}
 		// Handle --flag=value
 		if hasVal {
 			p.err = trySet(fl.Value, val, "invalid value for flag --%s: %s.", name)
-			return stateStart
+			return argParserStateStart
 		}
 		// Handle --flag value
 		if handled := tryLongValue(p, fl, name); handled {
-			return stateStart
+			return argParserStateStart
 		}
 
 		p.err = fmt.Errorf("missing value for flag: --%s", name)
@@ -209,9 +209,9 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 	}
 }
 
-// stateShort handles grouped short flags like -abc or -p8080.
-func stateShort(arg string) stateFn {
-	return func(p *parser) stateFn {
+// argParserStateShort handles grouped short flags like -abc or -p8080.
+func argParserStateShort(arg string) stateFn {
+	return func(p *argParser) stateFn {
 		shorts := strings.TrimPrefix(arg, "-")
 
 		for i := 0; i < len(shorts); i++ {
@@ -242,7 +242,7 @@ func stateShort(arg string) stateFn {
 			break
 		}
 
-		return stateStart
+		return argParserStateStart
 	}
 }
 
@@ -275,7 +275,7 @@ func tryDynBool(item core.DynamicValue, id string) bool {
 }
 
 // tryCounter calls Increment on a flag if it supports it.
-func tryCounter(p *parser, flag *core.BaseFlag) bool {
+func tryCounter(p *argParser, flag *core.BaseFlag) bool {
 	if inc, ok := flag.Value.(core.Incrementable); ok {
 		p.err = inc.Increment()
 		return true
@@ -284,7 +284,7 @@ func tryCounter(p *parser, flag *core.BaseFlag) bool {
 }
 
 // tryShortCombined parses short flag with immediate value like -p8080.
-func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char string) bool {
+func tryShortCombined(p *argParser, flag *core.BaseFlag, i int, shorts string, char string) bool {
 	if i < len(shorts)-1 {
 		val := shorts[i+1:]
 		p.err = trySet(flag.Value, val, "invalid value for flag -%s: %w", char)
@@ -294,7 +294,7 @@ func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char
 }
 
 // tryLongValue consumes the next argument as a value for a long flag.
-func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
+func tryLongValue(p *argParser, flag *core.BaseFlag, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
 		return false
@@ -306,7 +306,7 @@ func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 }
 
 // tryShortValue consumes the next argument as a value for a short flag.
-func tryShortValue(p *parser, flag *core.BaseFlag, short string) error {
+func tryShortValue(p *argParser, flag *core.BaseFlag, short string) error {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
 		return fmt.Errorf("missing value for flag: -%s", flag.Short)
@@ -347,14 +347,14 @@ func isDynamicFlag(name string) bool {
 }
 
 // isKnownStaticFlag reports whether a flag is registered statically.
-func isKnownStaticFlag(p *parser, name string) bool {
+func isKnownStaticFlag(p *argParser, name string) bool {
 	_, ok := p.fs.staticFlagsMap[name]
 	return ok
 }
 
 // lookupDynamic locates a dynamic flag and its instance ID from the full name.
 // Returns the dynamic value and ID, or sets p.err if lookup fails.
-func lookupDynamic(p *parser, name string, raw string) (core.DynamicValue, string) {
+func lookupDynamic(p *argParser, name string, raw string) (core.DynamicValue, string) {
 	parts := strings.Split(name, ".")
 	if len(parts) != 3 {
 		p.err = fmt.Errorf("invalid dynamic flag: --%s", name)

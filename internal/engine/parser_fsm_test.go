@@ -17,7 +17,7 @@ func (v *testValue) Get() any           { return v.set }
 func (v *testValue) Changed() bool      { return v.set != "" }
 func (v *testValue) Default() string    { return "" }
 
-func TestParseArgsWithFSMHandlesUnknown(t *testing.T) {
+func TestRunArgParserFSMHandlesUnknown(t *testing.T) {
 	t.Parallel()
 
 	t.Run("unknownHandled", func(t *testing.T) {
@@ -30,7 +30,7 @@ func TestParseArgsWithFSMHandlesUnknown(t *testing.T) {
 			Value: &testValue{},
 		})
 
-		_, err := parseArgsWithFSM(fs, []string{"--unknown", "--known=ok"})
+		_, err := runArgParserFSM(fs, []string{"--unknown", "--known=ok"})
 		require.NoError(t, err)
 	})
 
@@ -44,7 +44,7 @@ func TestParseArgsWithFSMHandlesUnknown(t *testing.T) {
 			Value: val,
 		})
 
-		out, err := parseArgsWithFSM(fs, []string{"--", "--known=skip", "pos"})
+		out, err := runArgParserFSM(fs, []string{"--", "--known=skip", "pos"})
 		require.NoError(t, err)
 		assert.Equal(t, []string{"--known=skip", "pos"}, out)
 		assert.Equal(t, "", val.set)
@@ -54,7 +54,7 @@ func TestParseArgsWithFSMHandlesUnknown(t *testing.T) {
 		t.Parallel()
 
 		fs := NewFlagSet("app", ContinueOnError)
-		_, err := parseArgsWithFSM(fs, []string{"--target.unknown.http=service"})
+		_, err := runArgParserFSM(fs, []string{"--target.unknown.http=service"})
 		require.Error(t, err)
 		assert.EqualError(t, err, "unknown dynamic group \"target\" in flag --target.unknown.http=service")
 	})
@@ -66,8 +66,8 @@ func TestParseArgsWithFSMHandlesUnknown(t *testing.T) {
 		g := fs.DynamicGroup("http")
 		g.String("addr", "", "addr")
 
-		_, err := parseArgsWithFSM(fs, []string{"--http.alpha.port=8080"})
-		require.Error(t, err)
-		assert.EqualError(t, err, "unknown dynamic field \"port\" in flag --http.alpha.port=8080")
+		_, err := runArgParserFSM(fs, []string{"--http.alpha.port=8080"})
+	require.Error(t, err)
+	assert.EqualError(t, err, "unknown dynamic field \"port\" in flag --http.alpha.port=8080")
 	})
 }
