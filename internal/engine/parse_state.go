@@ -4,38 +4,30 @@ import "github.com/containeroo/tinyflags/internal/core"
 
 func (f *FlagSet) resetParseState() {
 	f.positional = nil
-
-	for _, fl := range f.staticFlagsMap {
-		resetter, ok := fl.Value.(core.ParseStateResetter)
-		if ok {
-			resetter.ResetParseState()
-		}
-	}
-
-	for _, group := range f.dynamicGroups() {
-		for _, item := range group.Items() {
-			resetter, ok := item.Value.(core.ParseStateResetter)
-			if ok {
-				resetter.ResetParseState()
-			}
-		}
-	}
+	f.visitParseLifecycles(func(lifecycle core.ParseLifecycle) {
+		lifecycle.ResetParseState()
+	})
 }
 
 func (f *FlagSet) applyDefaultFinalizers() {
+	f.visitParseLifecycles(func(lifecycle core.ParseLifecycle) {
+		lifecycle.ApplyDefaultFinalize()
+	})
+}
+
+func (f *FlagSet) visitParseLifecycles(visit func(core.ParseLifecycle)) {
 	for _, fl := range f.staticFlagsMap {
-		if fl.Value == nil {
-			continue
-		}
-		if finalizer, ok := fl.Value.(core.DefaultFinalizer); ok {
-			finalizer.ApplyDefaultFinalize()
+		lifecycle, ok := fl.Value.(core.ParseLifecycle)
+		if ok {
+			visit(lifecycle)
 		}
 	}
 
 	for _, group := range f.dynamicGroups() {
 		for _, item := range group.Items() {
-			if finalizer, ok := item.Value.(core.DefaultFinalizer); ok {
-				finalizer.ApplyDefaultFinalize()
+			lifecycle, ok := item.Value.(core.ParseLifecycle)
+			if ok {
+				visit(lifecycle)
 			}
 		}
 	}

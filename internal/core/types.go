@@ -27,6 +27,12 @@ type ParseStateResetter interface {
 	ResetParseState()
 }
 
+// ParseLifecycle covers the full parse-time lifecycle shared by value types.
+type ParseLifecycle interface {
+	DefaultFinalizer
+	ParseStateResetter
+}
+
 // GroupItem holds a single flag and its value for a dynamic group.
 type GroupItem struct {
 	Value DynamicValue
