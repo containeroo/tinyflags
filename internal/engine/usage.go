@@ -93,7 +93,7 @@ func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth in
 	}
 
 	if f.StaticUsageNote() != "" {
-		fmt.Println(f.StaticUsageNote())
+		fmt.Fprintln(w, f.StaticUsageNote()) // nolint:errcheck
 	}
 }
 
@@ -163,7 +163,7 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 	}
 
 	if f.DynamicUsageNote() != "" {
-		fmt.Println(f.DynamicUsageNote())
+		fmt.Fprintln(w, f.DynamicUsageNote()) // nolint:errcheck
 	}
 }
 

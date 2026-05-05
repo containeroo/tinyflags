@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/containeroo/tinyflags/internal/core"
@@ -34,5 +35,39 @@ func TestBuildFlagDescriptionHideDefault(t *testing.T) {
 
 		desc := buildFlagDescription(flag, false, "app")
 		assert.Equal(t, "short desc", desc)
+	})
+}
+
+func TestUsageNotesUseConfiguredWriter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("staticUsageNote", func(t *testing.T) {
+		t.Parallel()
+
+		fs := NewFlagSet("app", ContinueOnError)
+		var buf bytes.Buffer
+		fs.RegisterFlag("name", &core.BaseFlag{
+			Name:  "name",
+			Usage: "name",
+			Value: &dummyValue{},
+		})
+		fs.SetStaticUsageNote("static note")
+
+		fs.PrintStaticDefaults(&buf, 2, 20, 80)
+
+		assert.Contains(t, buf.String(), "static note")
+	})
+
+	t.Run("dynamicUsageNote", func(t *testing.T) {
+		t.Parallel()
+
+		fs := NewFlagSet("app", ContinueOnError)
+		var buf bytes.Buffer
+		fs.DynamicGroup("http").String("host", "", "host")
+		fs.SetDynamicUsageNote("dynamic note")
+
+		fs.PrintDynamicDefaults(&buf, 2, 20, 80)
+
+		assert.Contains(t, buf.String(), "dynamic note")
 	})
 }
