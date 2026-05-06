@@ -5,5 +5,5 @@ Flags:
 HTTP Targets
 Configure per-target HTTP settings.
   --http.<TARGET>.addr ADDR          Target address
-  --http.<TARGET>.port PORT          Target port (Default: 80)
+  --http.<TARGET>.port PORT          Target port (default: 80)
   Every target may define its own address and port.

@@ -462,8 +462,8 @@ Flags:
 Flags:
     -h, --help  Show help
         --http.<ID>.address ADDRESS       API address
-        --http.<ID>.port PORT             API port (Default: 0)
-        --http.<ID>.enabled <true|false>  Enable service (Default: true)
+        --http.<ID>.port PORT             API port (default: 0)
+        --http.<ID>.enabled <true|false>  Enable service (default: true)
         --http.<ID>.verbose               Enable verbose mode
 `)
 	})

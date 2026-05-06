@@ -23,5 +23,5 @@ func TestHideRequires_RemovesSuffixFromHelp(t *testing.T) {
 	err := fs.Parse([]string{"--help"})
 	require.Error(t, err)
 
-	assert.NotContains(t, err.Error(), "(Requires: db)")
+	assert.NotContains(t, err.Error(), "(requires: db)")
 }
