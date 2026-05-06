@@ -11,29 +11,16 @@ import (
 func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string) string {
 	desc := flag.Usage
 
-	var allowed []string
-	if len(flag.Allowed) > 0 {
-		allowed = append(allowed, flag.Allowed...)
-	} else if bv, ok := flag.Value.(core.StrictBool); ok && bv.IsStrictBool() {
-		allowed = append(allowed, "true", "false")
-	}
+	allowed := flag.AllowedValues()
 	if !flag.HideAllowed && len(allowed) > 0 {
 		desc += " (Allowed: " + strings.Join(allowed, ", ") + ")"
-	}
-
-	showDefault := true
-	if bv, ok := flag.Value.(core.StrictBool); ok && !bv.IsStrictBool() {
-		showDefault = false
-	}
-	if _, ok := flag.Value.(core.Incrementable); ok {
-		showDefault = false
 	}
 
 	if flag.Deprecated != "" {
 		desc += " [DEPRECATED: " + flag.Deprecated + "]"
 	}
 
-	if flag.Value != nil && showDefault && !flag.HideDefault {
+	if flag.ShouldShowDefaultInHelp() {
 		if def := flag.Value.Default(); def != "" {
 			desc += " (Default: " + def + ")"
 		}
@@ -43,11 +30,9 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 		desc += " (Requires: " + strings.Join(flag.Requires, ", ") + ")"
 	}
 
-	if shouldInjectEnvKey(flag, globalHideEnvs, name) {
-		flag.EnvKey = strings.ToUpper(name + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
-	}
+	flag.ResolveUsageEnvKey(name, globalHideEnvs)
 
-	if shouldShowEnv(flag, globalHideEnvs) {
+	if flag.ShouldShowUsageEnv(globalHideEnvs) {
 		desc += " (Env: " + flag.EnvKey + ")"
 	}
 
@@ -65,17 +50,6 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 
 	return desc
 }
-
-// shouldInjectEnvKey decides whether to compute EnvKey from prefix.
-func shouldInjectEnvKey(flag *core.BaseFlag, globalHideEnvs bool, prefix string) bool {
-	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey == "" && prefix != ""
-}
-
-// shouldShowEnv decides whether to include EnvKey in help.
-func shouldShowEnv(flag *core.BaseFlag, globalHideEnvs bool) bool {
-	return !globalHideEnvs && !flag.DisableEnv && !flag.HideEnv && flag.EnvKey != ""
-}
-
 // buildGroupInfo returns group info suffix if flag belongs to a one of group.
 func buildGroupInfo(group *core.OneOfGroupGroup) string {
 	var b strings.Builder

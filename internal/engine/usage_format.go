@@ -14,7 +14,7 @@ func (f *FlagSet) calcStaticUsageColumn(padding int) int {
 	for _, fl := range f.staticFlags() {
 		var b strings.Builder
 		formatStaticFlagNames(&b, fl)
-		if meta := getPlaceholder(fl); meta != "" {
+		if meta := fl.UsagePlaceholder(); meta != "" {
 			b.WriteString(" ")
 			b.WriteString(meta)
 		}
@@ -48,7 +48,7 @@ func printFlagUsage(w io.Writer, indent, startCol, maxWidth int, globalHideEnvs 
 	var b strings.Builder
 	formatStaticFlagNames(&b, flag)
 
-	if meta := getPlaceholder(flag); meta != "" {
+	if meta := flag.UsagePlaceholder(); meta != "" {
 		b.WriteString(" ")
 		b.WriteString(meta)
 	}
@@ -91,7 +91,7 @@ func formatDynamicFlagLine(groupName, idPlaceholder string, fl *core.BaseFlag) s
 	b.WriteString(".")
 	b.WriteString(fl.Name)
 
-	if meta := getPlaceholder(fl); meta != "" {
+	if meta := fl.UsagePlaceholder(); meta != "" {
 		b.WriteString(" ")
 		b.WriteString(meta)
 	}
@@ -99,41 +99,9 @@ func formatDynamicFlagLine(groupName, idPlaceholder string, fl *core.BaseFlag) s
 	return b.String()
 }
 
-// getPlaceholder returns the appropriate help placeholder string.
-func getPlaceholder(flag *core.BaseFlag) string {
-	isBool := false
-	isStrict := false
-
-	if bv, ok := flag.Value.(core.StrictBool); ok {
-		isBool = true
-		isStrict = bv.IsStrictBool()
-	}
-
-	if isBool && !isStrict {
-		return ""
-	}
-	if flag.Placeholder != "" {
-		return flag.Placeholder
-	}
-	if len(flag.Allowed) > 0 {
-		return "<" + strings.Join(flag.Allowed, "|") + ">"
-	}
-	if isStrict {
-		return "<true|false>"
-	}
-	if _, ok := flag.Value.(core.Incrementable); ok {
-		return ""
-	}
-	placeholder := strings.ToUpper(flag.Name)
-	if _, ok := flag.Value.(core.SliceMarker); ok {
-		placeholder += "..."
-	}
-	return placeholder
-}
-
 // printUsageToken prints short, long, or combined flag usage.
 func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
-	meta := getPlaceholder(fl)
+	meta := fl.UsagePlaceholder()
 	switch mode {
 	case PrintShort:
 		if fl.Short != "" {
