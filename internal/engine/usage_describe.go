@@ -50,6 +50,7 @@ func buildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, name string)
 
 	return desc
 }
+
 // buildGroupInfo returns group info suffix if flag belongs to a one of group.
 func buildGroupInfo(group *core.OneOfGroupGroup) string {
 	var b strings.Builder

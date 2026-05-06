@@ -67,7 +67,7 @@ func TestRunArgParserFSMHandlesUnknown(t *testing.T) {
 		g.String("addr", "", "addr")
 
 		_, err := runArgParserFSM(fs, []string{"--http.alpha.port=8080"})
-	require.Error(t, err)
-	assert.EqualError(t, err, "unknown dynamic field \"port\" in flag --http.alpha.port=8080")
+		require.Error(t, err)
+		assert.EqualError(t, err, "unknown dynamic field \"port\" in flag --http.alpha.port=8080")
 	})
 }

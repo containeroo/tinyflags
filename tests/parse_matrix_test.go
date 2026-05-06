@@ -19,8 +19,8 @@ func TestParseValuePrecedenceMatrix(t *testing.T) {
 		wantSource map[string]any
 	}{
 		{
-			name:      "defaultOnly",
-			wantValue: "default",
+			name:       "defaultOnly",
+			wantValue:  "default",
 			wantSource: map[string]any{},
 		},
 		{
@@ -63,11 +63,11 @@ func TestParseConstraintMatrix(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		build      func(*tinyflags.FlagSet)
-		args       []string
-		wantErr    string
-		wantNoErr  bool
+		name      string
+		build     func(*tinyflags.FlagSet)
+		args      []string
+		wantErr   string
+		wantNoErr bool
 	}{
 		{
 			name: "requiredSatisfied",

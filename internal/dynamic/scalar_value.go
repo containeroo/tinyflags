@@ -7,14 +7,14 @@ import (
 
 // DynamicScalarValue holds parsed scalar values per ID with parsing, formatting, and validation.
 type DynamicScalarValue[T any] struct {
-	field            string                  // Flag field name
-	def              T                       // Default value
-	baseDef          T                       // Original default value
-	changed          bool                    // Whether the value was changed
-	hooks            core.ValueHooks[T]      // Shared parse/format/validate/finalize behavior
-	finalizeID       func(string, T) T       // Optional finalizer with ID
-	values           map[string]T            // Parsed values per ID
-	allowOverride    bool                    // Allow re-assignment per ID when true.
+	field         string             // Flag field name
+	def           T                  // Default value
+	baseDef       T                  // Original default value
+	changed       bool               // Whether the value was changed
+	hooks         core.ValueHooks[T] // Shared parse/format/validate/finalize behavior
+	finalizeID    func(string, T) T  // Optional finalizer with ID
+	values        map[string]T       // Parsed values per ID
+	allowOverride bool               // Allow re-assignment per ID when true.
 }
 
 // NewDynamicScalarValue creates a new dynamic scalar value.

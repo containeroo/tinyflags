@@ -10,14 +10,14 @@ import (
 
 // DynamicSliceValue holds parsed slice values per ID with parsing, formatting, and validation.
 type DynamicSliceValue[T any] struct {
-	field            string                  // Flag field name
-	def              []T                     // Default slice value
-	baseDef          []T                     // Original default slice value
-	changed          bool                    // Whether the value was changed
-	input            core.SliceInputConfig   // Shared slice-input behavior
-	hooks            core.ValueHooks[T]      // Shared parse/format/validate/finalize behavior
-	finalizeID       func(string, T) T       // Optional finalizer function with ID
-	values           map[string][]T          // Parsed values per ID
+	field      string                // Flag field name
+	def        []T                   // Default slice value
+	baseDef    []T                   // Original default slice value
+	changed    bool                  // Whether the value was changed
+	input      core.SliceInputConfig // Shared slice-input behavior
+	hooks      core.ValueHooks[T]    // Shared parse/format/validate/finalize behavior
+	finalizeID func(string, T) T     // Optional finalizer function with ID
+	values     map[string][]T        // Parsed values per ID
 }
 
 // NewDynamicSliceValue creates a new dynamic slice value.
@@ -29,12 +29,12 @@ func NewDynamicSliceValue[T any](
 	delimiter string,
 ) *DynamicSliceValue[T] {
 	return &DynamicSliceValue[T]{
-		field:     field,
-		def:       append([]T(nil), def...),
-		baseDef:   append([]T(nil), def...),
-		input:     core.SliceInputConfig{Delimiter: delimiter},
-		hooks:     core.NewValueHooks(parse, format),
-		values:    make(map[string][]T),
+		field:   field,
+		def:     append([]T(nil), def...),
+		baseDef: append([]T(nil), def...),
+		input:   core.SliceInputConfig{Delimiter: delimiter},
+		hooks:   core.NewValueHooks(parse, format),
+		values:  make(map[string][]T),
 	}
 }
 
