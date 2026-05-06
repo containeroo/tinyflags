@@ -118,91 +118,206 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 
 // --- Metadata Configuration ---
 
-func (f *FlagSet) Name() string                                    { return f.name }
-func (f *FlagSet) EnvPrefix(prefix string)                         { f.envPrefix = prefix }
-func (f *FlagSet) SetEnvKeyFunc(fn EnvKeyFunc)                     { f.envKeyFunc = fn }
-func (f *FlagSet) EnvKeyForFlag(name string) string                { return f.envKeyFunc(f.envPrefix, name) }
-func (f *FlagSet) DefaultDelimiter() string                        { return f.defaultDelimiter }
-func (f *FlagSet) GlobalDelimiter(s string)                        { f.defaultDelimiter = s }
-func (f *FlagSet) Globaldelimiter(s string)                        { f.defaultDelimiter = s }
+// Name returns the flag set name.
+func (f *FlagSet) Name() string { return f.name }
+
+// EnvPrefix sets the environment variable prefix.
+func (f *FlagSet) EnvPrefix(prefix string) { f.envPrefix = prefix }
+
+// SetEnvKeyFunc sets the environment variable naming function.
+func (f *FlagSet) SetEnvKeyFunc(fn EnvKeyFunc) { f.envKeyFunc = fn }
+
+// EnvKeyForFlag derives the environment key for a flag name.
+func (f *FlagSet) EnvKeyForFlag(name string) string { return f.envKeyFunc(f.envPrefix, name) }
+
+// DefaultDelimiter returns the default slice delimiter.
+func (f *FlagSet) DefaultDelimiter() string { return f.defaultDelimiter }
+
+// GlobalDelimiter sets the default slice delimiter.
+func (f *FlagSet) GlobalDelimiter(s string) { f.defaultDelimiter = s }
+
+// Globaldelimiter sets the default slice delimiter.
+func (f *FlagSet) Globaldelimiter(s string) { f.defaultDelimiter = s }
+
+// BeforeParse sets a hook that can rewrite args before parsing.
 func (f *FlagSet) BeforeParse(fn func([]string) ([]string, error)) { f.beforeParse = fn }
-func (f *FlagSet) OnUnknownFlag(fn func(string) error)             { f.unknownFlag = fn }
-func (f *FlagSet) Version(s string)                                { f.versionString = s; f.enableVer = true }
-func (f *FlagSet) VersionText(s string)                            { f.versionText = s }
-func (f *FlagSet) HelpText(s string)                               { f.helpText = s }
-func (f *FlagSet) Title(s string)                                  { f.title = s }
-func (f *FlagSet) Authors(s string)                                { f.authors = s }
-func (f *FlagSet) Description(s string)                            { f.desc = s }
-func (f *FlagSet) Note(s string)                                   { f.notes = s }
-func (f *FlagSet) HideEnvs()                                       { f.hideEnvs = true }
-func (f *FlagSet) DisableHelp()                                    { f.enableHelp = false }
-func (f *FlagSet) DisableVersion()                                 { f.enableVer = false; f.versionString = "" }
-func (f *FlagSet) SortedFlags(enable bool)                         { f.sortFlags = enable }
-func (f *FlagSet) SortedGroups(enable bool)                        { f.sortGroups = enable }
-func (f *FlagSet) SetOneOfGroupVerbose(enable bool)                { f.oneOfVerbose = enable }
-func (f *FlagSet) OneOfGroupVerbose() bool                         { return f.oneOfVerbose }
-func (f *FlagSet) SetOutput(w io.Writer)                           { f.output = w }
-func (f *FlagSet) Output() io.Writer                               { return f.output }
-func (f *FlagSet) IgnoreInvalidEnv(enable bool)                    { f.ignoreInvalidEnv = enable }
-func (f *FlagSet) SetGetEnvFn(fn func(string) string)              { f.getEnv = fn }
-func (f *FlagSet) OverriddenValues() map[string]any                { return f.overriddenValues() }
+
+// OnUnknownFlag sets the callback for unknown flags.
+func (f *FlagSet) OnUnknownFlag(fn func(string) error) { f.unknownFlag = fn }
+
+// Version enables the version flag and sets its output string.
+func (f *FlagSet) Version(s string) { f.versionString = s; f.enableVer = true }
+
+// VersionText sets the help text for the version flag.
+func (f *FlagSet) VersionText(s string) { f.versionText = s }
+
+// HelpText sets the help text for the help flag.
+func (f *FlagSet) HelpText(s string) { f.helpText = s }
+
+// Title sets the title shown above flag listings.
+func (f *FlagSet) Title(s string) { f.title = s }
+
+// Authors sets the authors block shown in help output.
+func (f *FlagSet) Authors(s string) { f.authors = s }
+
+// Description sets the prose shown before flags.
+func (f *FlagSet) Description(s string) { f.desc = s }
+
+// Note sets the prose shown after flags.
+func (f *FlagSet) Note(s string) { f.notes = s }
+
+// HideEnvs hides environment variable hints in help output.
+func (f *FlagSet) HideEnvs() { f.hideEnvs = true }
+
+// DisableHelp disables the built-in help flag.
+func (f *FlagSet) DisableHelp() { f.enableHelp = false }
+
+// DisableVersion disables the built-in version flag.
+func (f *FlagSet) DisableVersion() { f.enableVer = false; f.versionString = "" }
+
+// SortedFlags enables or disables sorted static help output.
+func (f *FlagSet) SortedFlags(enable bool) { f.sortFlags = enable }
+
+// SortedGroups enables or disables sorted dynamic help output.
+func (f *FlagSet) SortedGroups(enable bool) { f.sortGroups = enable }
+
+// SetOneOfGroupVerbose toggles verbose one-of validation errors.
+func (f *FlagSet) SetOneOfGroupVerbose(enable bool) { f.oneOfVerbose = enable }
+
+// OneOfGroupVerbose reports whether one-of validation is verbose.
+func (f *FlagSet) OneOfGroupVerbose() bool { return f.oneOfVerbose }
+
+// SetOutput sets the writer used for help output.
+func (f *FlagSet) SetOutput(w io.Writer) { f.output = w }
+
+// Output returns the configured help output writer.
+func (f *FlagSet) Output() io.Writer { return f.output }
+
+// IgnoreInvalidEnv toggles ignoring invalid environment overrides.
+func (f *FlagSet) IgnoreInvalidEnv(enable bool) { f.ignoreInvalidEnv = enable }
+
+// SetGetEnvFn replaces the environment lookup function.
+func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.getEnv = fn }
+
+// OverriddenValues returns the changed values after masking.
+func (f *FlagSet) OverriddenValues() map[string]any { return f.overriddenValues() }
 
 // --- Positional Arguments ---
 
+// RequirePositional sets the required positional argument count.
 func (f *FlagSet) RequirePositional(n int) { f.requiredPositional = n }
-func (f *FlagSet) Args() []string          { return f.positional }
+
+// Args returns the parsed positional arguments.
+func (f *FlagSet) Args() []string { return f.positional }
+
+// Arg returns the positional argument at index i.
 func (f *FlagSet) Arg(i int) (string, bool) {
 	if i >= 0 && i < len(f.positional) {
 		return f.positional[i], true
 	}
 	return "", false
 }
-func (f *FlagSet) SetPositionalValidate(fn func(string) error)  { f.validatePositional = fn }
+
+// SetPositionalValidate sets the positional validation hook.
+func (f *FlagSet) SetPositionalValidate(fn func(string) error) { f.validatePositional = fn }
+
+// SetPositionalFinalize sets the positional finalization hook.
 func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.finalizePositional = fn }
 
 // --- Usage Formatting Configuration ---
 
-func (f *FlagSet) SetDescIndent(n int)  { f.descIndent = n }
-func (f *FlagSet) DescIndent() int      { return f.descIndent }
+// SetDescIndent sets the description indentation.
+func (f *FlagSet) SetDescIndent(n int) { f.descIndent = n }
+
+// DescIndent returns the description indentation.
+func (f *FlagSet) DescIndent() int { return f.descIndent }
+
+// SetDescWidth sets the description wrap width.
 func (f *FlagSet) SetDescWidth(max int) { f.descWidth = max }
-func (f *FlagSet) DescWidth() int       { return f.descWidth }
 
-func (f *FlagSet) SetStaticUsageIndent(n int)            { f.usageStaticIndent = n }
-func (f *FlagSet) StaticUsageIndent() int                { return f.usageStaticIndent }
-func (f *FlagSet) SetStaticUsageColumn(col int)          { f.usageStaticCol = col }
-func (f *FlagSet) StaticUsageColumn() int                { return f.usageStaticCol }
-func (f *FlagSet) SetStaticUsageWidth(maxWidth int)      { f.usageStaticWidth = maxWidth }
-func (f *FlagSet) StaticUsageWidth() int                 { return f.usageStaticWidth }
+// DescWidth returns the description wrap width.
+func (f *FlagSet) DescWidth() int { return f.descWidth }
+
+// SetStaticUsageIndent sets the static usage indentation.
+func (f *FlagSet) SetStaticUsageIndent(n int) { f.usageStaticIndent = n }
+
+// StaticUsageIndent returns the static usage indentation.
+func (f *FlagSet) StaticUsageIndent() int { return f.usageStaticIndent }
+
+// SetStaticUsageColumn sets the static usage description column.
+func (f *FlagSet) SetStaticUsageColumn(col int) { f.usageStaticCol = col }
+
+// StaticUsageColumn returns the static usage description column.
+func (f *FlagSet) StaticUsageColumn() int { return f.usageStaticCol }
+
+// SetStaticUsageWidth sets the static usage wrap width.
+func (f *FlagSet) SetStaticUsageWidth(maxWidth int) { f.usageStaticWidth = maxWidth }
+
+// StaticUsageWidth returns the static usage wrap width.
+func (f *FlagSet) StaticUsageWidth() int { return f.usageStaticWidth }
+
+// StaticAutoUsageColumn calculates a static usage column automatically.
 func (f *FlagSet) StaticAutoUsageColumn(padding int) int { return f.calcStaticUsageColumn(padding) }
-func (f *FlagSet) SetStaticUsageNote(s string)           { f.usageStaticNote = s }
-func (f *FlagSet) StaticUsageNote() string               { return f.usageStaticNote }
 
-func (f *FlagSet) SetDynamicUsageIndent(n int)            { f.usageDynamicIndent = n }
-func (f *FlagSet) DynamicUsageIndent() int                { return f.usageDynamicIndent }
-func (f *FlagSet) SetDynamicUsageColumn(col int)          { f.usageDynamicCol = col }
-func (f *FlagSet) DynamicUsageColumn() int                { return f.usageDynamicCol }
-func (f *FlagSet) SetDynamicUsageWidth(max int)           { f.usageDynamicWidth = max }
-func (f *FlagSet) DynamicUsageWidth() int                 { return f.usageDynamicWidth }
+// SetStaticUsageNote sets the note shown after static flags.
+func (f *FlagSet) SetStaticUsageNote(s string) { f.usageStaticNote = s }
+
+// StaticUsageNote returns the note shown after static flags.
+func (f *FlagSet) StaticUsageNote() string { return f.usageStaticNote }
+
+// SetDynamicUsageIndent sets the dynamic usage indentation.
+func (f *FlagSet) SetDynamicUsageIndent(n int) { f.usageDynamicIndent = n }
+
+// DynamicUsageIndent returns the dynamic usage indentation.
+func (f *FlagSet) DynamicUsageIndent() int { return f.usageDynamicIndent }
+
+// SetDynamicUsageColumn sets the dynamic usage description column.
+func (f *FlagSet) SetDynamicUsageColumn(col int) { f.usageDynamicCol = col }
+
+// DynamicUsageColumn returns the dynamic usage description column.
+func (f *FlagSet) DynamicUsageColumn() int { return f.usageDynamicCol }
+
+// SetDynamicUsageWidth sets the dynamic usage wrap width.
+func (f *FlagSet) SetDynamicUsageWidth(max int) { f.usageDynamicWidth = max }
+
+// DynamicUsageWidth returns the dynamic usage wrap width.
+func (f *FlagSet) DynamicUsageWidth() int { return f.usageDynamicWidth }
+
+// DynamicAutoUsageColumn calculates a dynamic usage column automatically.
 func (f *FlagSet) DynamicAutoUsageColumn(padding int) int { return f.calcDynamicUsageColumn(padding) }
-func (f *FlagSet) SetDynamicUsageNote(s string)           { f.usageDynamicNote = s }
-func (f *FlagSet) DynamicUsageNote() string               { return f.usageDynamicNote }
 
-func (f *FlagSet) SetNoteIndent(n int)  { f.noteIndent = n }
-func (f *FlagSet) NoteIndent() int      { return f.noteIndent }
+// SetDynamicUsageNote sets the note shown after dynamic flags.
+func (f *FlagSet) SetDynamicUsageNote(s string) { f.usageDynamicNote = s }
+
+// DynamicUsageNote returns the note shown after dynamic flags.
+func (f *FlagSet) DynamicUsageNote() string { return f.usageDynamicNote }
+
+// SetNoteIndent sets the notes indentation.
+func (f *FlagSet) SetNoteIndent(n int) { f.noteIndent = n }
+
+// NoteIndent returns the notes indentation.
+func (f *FlagSet) NoteIndent() int { return f.noteIndent }
+
+// SetNoteWidth sets the notes wrap width.
 func (f *FlagSet) SetNoteWidth(max int) { f.noteWidth = max }
-func (f *FlagSet) NoteWidth() int       { return f.noteWidth }
+
+// NoteWidth returns the notes wrap width.
+func (f *FlagSet) NoteWidth() int { return f.noteWidth }
 
 // --- Flag & Group Registration ---
 
+// RegisterFlag registers a static flag in the set.
 func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
 	f.staticFlagsMap[name] = bf
 	f.staticFlagsOrder = append(f.staticFlagsOrder, bf)
 }
 
+// LookupFlag returns a registered static flag by name.
 func (f *FlagSet) LookupFlag(name string) *core.BaseFlag {
 	return f.staticFlagsMap[name]
 }
 
+// OrderedStaticFlags returns static flags sorted by name.
 func (f *FlagSet) OrderedStaticFlags() []*core.BaseFlag {
 	all := make([]*core.BaseFlag, 0, len(f.staticFlagsMap))
 	for _, fl := range f.staticFlagsMap {
@@ -212,6 +327,7 @@ func (f *FlagSet) OrderedStaticFlags() []*core.BaseFlag {
 	return all
 }
 
+// DynamicGroup returns or creates a dynamic flag group.
 func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	if f.dynamicGroupsMap == nil {
 		f.dynamicGroupsMap = make(map[string]*dynamic.Group)
@@ -225,6 +341,7 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return g
 }
 
+// overriddenValues returns masked values that changed during parsing.
 func (f *FlagSet) overriddenValues() map[string]any {
 	out := make(map[string]any)
 
@@ -258,10 +375,12 @@ func (f *FlagSet) overriddenValues() map[string]any {
 	return out
 }
 
+// DynamicGroups returns dynamic groups in registration order.
 func (f *FlagSet) DynamicGroups() []*dynamic.Group {
 	return f.dynamicGroupsOrder
 }
 
+// OrderedDynamicGroups returns dynamic groups sorted by name.
 func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
 	groups := make([]*dynamic.Group, len(f.dynamicGroupsOrder))
 	copy(groups, f.dynamicGroupsOrder)
@@ -273,8 +392,10 @@ func (f *FlagSet) OrderedDynamicGroups() []*dynamic.Group {
 
 // --- AllOrNone Group Handling ---
 
+// AllOrNoneGroups returns the registered all-or-none groups.
 func (f *FlagSet) AllOrNoneGroups() []*core.AllOrNoneGroup { return f.allOrNoneGroup }
 
+// AddAllOrNoneGroup registers an all-or-none group.
 func (f *FlagSet) AddAllOrNoneGroup(name string, g *core.AllOrNoneGroup) {
 	f.allOrNoneGroup = append(f.allOrNoneGroup, g)
 }
@@ -307,14 +428,17 @@ func (f *FlagSet) AttachGroupToAllOrNone(parent string, child string) {
 
 // --- Mutual Group Handling ---
 
+// OneOfGroups returns the registered one-of groups.
 func (f *FlagSet) OneOfGroups() []*core.OneOfGroupGroup {
 	return f.oneOfGroup
 }
 
+// AddOneOfGroup registers a one-of group.
 func (f *FlagSet) AddOneOfGroup(name string, g *core.OneOfGroupGroup) {
 	f.oneOfGroup = append(f.oneOfGroup, g)
 }
 
+// GetOneOfGroup returns or creates a one-of group.
 func (f *FlagSet) GetOneOfGroup(name string) *core.OneOfGroupGroup {
 	for _, g := range f.oneOfGroup {
 		if g.Name == name {
@@ -326,6 +450,7 @@ func (f *FlagSet) GetOneOfGroup(name string) *core.OneOfGroupGroup {
 	return group
 }
 
+// AttachToOneOfGroup attaches a flag to a one-of group.
 func (f *FlagSet) AttachToOneOfGroup(bf *core.BaseFlag, group string) {
 	g := f.GetOneOfGroup(group)
 	g.Flags = append(g.Flags, bf)
@@ -341,6 +466,7 @@ func (f *FlagSet) AttachGroupToOneOf(group string, aon string) {
 
 // --- Builtin Flags ---
 
+// maybeAddBuiltinFlags registers built-in help and version flags lazily.
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.staticFlagsMap["help"]; !exists {

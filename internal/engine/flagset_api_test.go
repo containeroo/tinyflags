@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewFlagSet verifies public flag-set API behavior.
 func TestNewFlagSet(t *testing.T) {
 	t.Parallel()
 

@@ -9,6 +9,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// main demonstrates advanced tinyflags features.
 func main() {
 	fs := tinyflags.NewFlagSet("advanced", tinyflags.ExitOnError)
 	fs.Authors("Tinyflags Team")

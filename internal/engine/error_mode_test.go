@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestHelpAndVersionErrors verifies sentinel help and version errors.
 func TestHelpAndVersionErrors(t *testing.T) {
 	t.Parallel()
 

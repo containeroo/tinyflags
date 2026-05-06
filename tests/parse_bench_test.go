@@ -7,6 +7,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// BenchmarkParseStaticFlags benchmarks parsing common static flags.
 func BenchmarkParseStaticFlags(b *testing.B) {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.EnvPrefix("APP")
@@ -30,6 +31,7 @@ func BenchmarkParseStaticFlags(b *testing.B) {
 	}
 }
 
+// BenchmarkParseDynamicFlags benchmarks parsing common dynamic flags.
 func BenchmarkParseDynamicFlags(b *testing.B) {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	http := fs.DynamicGroup("http")
@@ -54,6 +56,7 @@ func BenchmarkParseDynamicFlags(b *testing.B) {
 	}
 }
 
+// BenchmarkParseEnvOverrides benchmarks loading values from environment variables.
 func BenchmarkParseEnvOverrides(b *testing.B) {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.EnvPrefix("APP")
@@ -77,6 +80,7 @@ func BenchmarkParseEnvOverrides(b *testing.B) {
 	}
 }
 
+// BenchmarkUsageRendering benchmarks help rendering for larger flag sets.
 func BenchmarkUsageRendering(b *testing.B) {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.EnvPrefix("APP")
@@ -101,6 +105,7 @@ func BenchmarkUsageRendering(b *testing.B) {
 
 type ioDiscard struct{}
 
+// Write discards all bytes and reports success.
 func (ioDiscard) Write(p []byte) (int, error) {
 	return len(p), nil
 }

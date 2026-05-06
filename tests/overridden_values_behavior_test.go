@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestOverriddenValuesStatic verifies overridden values for static flags.
 func TestOverriddenValuesStatic(t *testing.T) {
 	t.Parallel()
 
@@ -27,6 +28,7 @@ func TestOverriddenValuesStatic(t *testing.T) {
 	}, got)
 }
 
+// TestOverriddenValuesDynamic verifies overridden values for dynamic flags.
 func TestOverriddenValuesDynamic(t *testing.T) {
 	t.Parallel()
 
@@ -43,6 +45,7 @@ func TestOverriddenValuesDynamic(t *testing.T) {
 	assert.False(t, ok)
 }
 
+// TestOverriddenValuesMaskFn verifies masking in overridden values.
 func TestOverriddenValuesMaskFn(t *testing.T) {
 	t.Parallel()
 
@@ -59,6 +62,7 @@ func TestOverriddenValuesMaskFn(t *testing.T) {
 	assert.Equal(t, "o********e", got["secret"])
 }
 
+// TestMaskPostgresURL verifies Postgres URL masking in overridden values.
 func TestMaskPostgresURL(t *testing.T) {
 	t.Parallel()
 

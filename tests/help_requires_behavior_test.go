@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestHideRequires_RemovesSuffixFromHelp verifies hidden requires annotations in help output.
 func TestHideRequires_RemovesSuffixFromHelp(t *testing.T) {
 	t.Parallel()
 

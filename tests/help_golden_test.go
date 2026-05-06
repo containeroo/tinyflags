@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestHelpOutputGolden_Static verifies static help output against a golden file.
 func TestHelpOutputGolden_Static(t *testing.T) {
 	t.Parallel()
 
@@ -30,6 +31,7 @@ func TestHelpOutputGolden_Static(t *testing.T) {
 	assertGolden(t, "testdata/help_static.golden", err.Error())
 }
 
+// TestHelpOutputGolden_Dynamic verifies dynamic help output against a golden file.
 func TestHelpOutputGolden_Dynamic(t *testing.T) {
 	t.Parallel()
 
@@ -53,6 +55,7 @@ func TestHelpOutputGolden_Dynamic(t *testing.T) {
 	assertGolden(t, "testdata/help_dynamic.golden", err.Error())
 }
 
+// assertGolden compares rendered output against a golden file.
 func assertGolden(t *testing.T, relativePath string, actual string) {
 	t.Helper()
 

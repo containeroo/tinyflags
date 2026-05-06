@@ -7,6 +7,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// main demonstrates paired toggle flags.
 func main() {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ExitOnError)
 

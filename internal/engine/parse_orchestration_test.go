@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestBeforeParseHookErrors verifies before-parse hook failures bubble up.
 func TestBeforeParseHookErrors(t *testing.T) {
 	t.Parallel()
 

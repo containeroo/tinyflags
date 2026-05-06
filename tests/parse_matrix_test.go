@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestParseValuePrecedenceMatrix verifies default, env, and CLI precedence.
 func TestParseValuePrecedenceMatrix(t *testing.T) {
 	t.Parallel()
 
@@ -59,6 +60,7 @@ func TestParseValuePrecedenceMatrix(t *testing.T) {
 	}
 }
 
+// TestParseConstraintMatrix verifies grouped parse constraint behavior.
 func TestParseConstraintMatrix(t *testing.T) {
 	t.Parallel()
 

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSlice_Finalize verifies slice finalization for static flags.
 func TestSlice_Finalize(t *testing.T) {
 	t.Parallel()
 
@@ -32,6 +33,7 @@ func TestSlice_Finalize(t *testing.T) {
 	assert.Equal(t, 3, calls)
 }
 
+// TestDynamicSlice_Finalize verifies slice finalization for dynamic flags.
 func TestDynamicSlice_Finalize(t *testing.T) {
 	t.Parallel()
 

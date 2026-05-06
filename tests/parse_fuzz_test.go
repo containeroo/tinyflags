@@ -7,6 +7,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// FuzzParseStaticArgs fuzzes parsing of static flag arguments.
 func FuzzParseStaticArgs(f *testing.F) {
 	seeds := [][]string{
 		{"--name=alice", "--count=3", "--debug"},
@@ -32,6 +33,7 @@ func FuzzParseStaticArgs(f *testing.F) {
 	})
 }
 
+// FuzzParseDynamicArgs fuzzes parsing of dynamic flag arguments.
 func FuzzParseDynamicArgs(f *testing.F) {
 	seeds := [][]string{
 		{"--http.alpha.addr=127.0.0.1", "--http.alpha.port=8080"},
@@ -57,6 +59,7 @@ func FuzzParseDynamicArgs(f *testing.F) {
 	})
 }
 
+// fuzzArgs converts a fuzz seed into a bounded argument slice.
 func fuzzArgs(joined string) []string {
 	if joined == "" {
 		return nil

@@ -15,6 +15,7 @@ func (g *Group) StrictBool(field string, def bool, usage string) *BoolFlag {
 	return registerDynamicBool(g, field, def, usage, strconv.ParseBool, strconv.FormatBool)
 }
 
+// Bool registers a dynamic bool flag.
 func (g *Group) Bool(field string, def bool, usage string) *BoolFlag {
 	return registerDynamicBool(g, field, def, usage, strconv.ParseBool, strconv.FormatBool)
 }

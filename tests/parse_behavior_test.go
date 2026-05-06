@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSliceStrictDelimiter verifies strict delimiter handling for slice flags.
 func TestSliceStrictDelimiter(t *testing.T) {
 	t.Parallel()
 
@@ -29,6 +30,7 @@ func TestSliceStrictDelimiter(t *testing.T) {
 	})
 }
 
+// TestSliceAllowEmpty verifies empty-item handling for slice flags.
 func TestSliceAllowEmpty(t *testing.T) {
 	t.Parallel()
 
@@ -61,6 +63,7 @@ func TestSliceAllowEmpty(t *testing.T) {
 	})
 }
 
+// TestUnknownFlagHandler verifies custom handling for unknown flags.
 func TestUnknownFlagHandler(t *testing.T) {
 	t.Parallel()
 
@@ -92,6 +95,7 @@ func TestUnknownFlagHandler(t *testing.T) {
 	})
 }
 
+// TestBeforeParseHook verifies argument preprocessing hooks.
 func TestBeforeParseHook(t *testing.T) {
 	t.Parallel()
 
@@ -126,6 +130,7 @@ func TestBeforeParseHook(t *testing.T) {
 	})
 }
 
+// TestDynamicFinalizeWithID verifies dynamic finalizers that receive IDs.
 func TestDynamicFinalizeWithID(t *testing.T) {
 	t.Parallel()
 
@@ -183,6 +188,7 @@ func TestDynamicFinalizeWithID(t *testing.T) {
 	})
 }
 
+// TestContinueOnErrorParsesAllFlags verifies continued parsing after recoverable errors.
 func TestContinueOnErrorParsesAllFlags(t *testing.T) {
 	t.Parallel()
 
@@ -215,6 +221,7 @@ func TestContinueOnErrorParsesAllFlags(t *testing.T) {
 	})
 }
 
+// TestParseResetsStateBetweenCalls verifies FlagSet state resets on repeated parses.
 func TestParseResetsStateBetweenCalls(t *testing.T) {
 	t.Parallel()
 
@@ -245,6 +252,7 @@ func TestParseResetsStateBetweenCalls(t *testing.T) {
 	assert.Empty(t, fs.OverriddenValues())
 }
 
+// TestOneOfGroupVerboseToggle verifies verbose one-of error toggling.
 func TestOneOfGroupVerboseToggle(t *testing.T) {
 	t.Parallel()
 

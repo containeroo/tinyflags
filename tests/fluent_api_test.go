@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestBuilderChainingPreservesFlagType verifies fluent builders preserve flag types.
 func TestBuilderChainingPreservesFlagType(t *testing.T) {
 	t.Parallel()
 
@@ -57,6 +58,7 @@ func TestBuilderChainingPreservesFlagType(t *testing.T) {
 	})
 }
 
+// TestNamingCompatibilityHelpers verifies naming compatibility helpers.
 func TestNamingCompatibilityHelpers(t *testing.T) {
 	t.Parallel()
 

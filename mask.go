@@ -19,6 +19,7 @@ func MaskFirstLast(v any) any {
 	}
 }
 
+// maskFirstLastString masks a string while preserving its first and last characters.
 func maskFirstLastString(s string) string {
 	runes := []rune(s)
 	if len(runes) <= 2 {
@@ -44,6 +45,7 @@ func MaskPostgresURL(v any) any {
 	}
 }
 
+// maskPostgresURLString masks credentials in a Postgres connection string.
 func maskPostgresURLString(s string) string {
 	for _, prefix := range []string{"postgres://", "postgresql://"} {
 		if strings.HasPrefix(s, prefix) {
@@ -63,6 +65,7 @@ func maskPostgresURLString(s string) string {
 	return s
 }
 
+// maskCredentialPair masks a username/password credential pair.
 func maskCredentialPair(creds string) string {
 	parts := strings.SplitN(creds, ":", 2)
 	if len(parts) == 1 {

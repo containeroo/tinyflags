@@ -1,6 +1,9 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // CheckMixedDelimiters rejects common alternate delimiters when a specific delimiter is in use.
 func CheckMixedDelimiters(raw, delimiter string) error {
@@ -15,8 +18,10 @@ func CheckMixedDelimiters(raw, delimiter string) error {
 	return nil
 }
 
+// containsAlt returns true if the given string contains the given alternate.
+// containsAlt reports whether raw contains an alternate delimiter candidate.
 func containsAlt(raw, alt string) bool {
-	return len(alt) > 0 && len(raw) > 0 && stringContains(raw, alt)
+	return len(alt) > 0 && len(raw) > 0 && strings.Contains(raw, alt)
 }
 
 // ApplyDefaultValueFinalize applies the default-only finalizer to a scalar value when eligible.

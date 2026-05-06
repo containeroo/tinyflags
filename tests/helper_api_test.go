@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestFirstChanged verifies the exported FirstChanged helper.
 func TestFirstChanged(t *testing.T) {
 	t.Parallel()
 

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestSmoke_ParseArgs exercises representative parser flows end to end.
 func TestSmoke_ParseArgs(t *testing.T) {
 	t.Parallel()
 

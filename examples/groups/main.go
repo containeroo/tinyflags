@@ -7,6 +7,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// main demonstrates grouped flag constraints.
 func main() {
 	fs := tinyflags.NewFlagSet("groups", tinyflags.ExitOnError)
 

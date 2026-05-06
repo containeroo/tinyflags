@@ -7,6 +7,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// main demonstrates basic tinyflags usage.
 func main() {
 	fs := tinyflags.NewFlagSet("hello", tinyflags.ExitOnError)
 

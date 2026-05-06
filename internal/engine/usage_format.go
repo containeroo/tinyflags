@@ -26,6 +26,7 @@ func (f *FlagSet) calcStaticUsageColumn(padding int) int {
 	return maxFlagLen + padding
 }
 
+// calcDynamicUsageColumn calculates the maximum dynamic flag line length.
 func (f *FlagSet) calcDynamicUsageColumn(padding int) int {
 	maxLen := 0
 	for _, group := range f.dynamicGroups() {

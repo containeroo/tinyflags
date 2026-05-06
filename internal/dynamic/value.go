@@ -10,21 +10,37 @@ type placeholderValue struct {
 	def string // String form of default value (for help)
 }
 
+// Set ignores placeholder input.
 func (p *placeholderValue) Set(string) error { return nil }
-func (p *placeholderValue) Get() any         { return nil }
-func (p *placeholderValue) Changed() bool    { return false }
-func (p *placeholderValue) Default() string  { return p.def }
+
+// Get returns no concrete placeholder value.
+func (p *placeholderValue) Get() any { return nil }
+
+// Changed reports that placeholders are never user-set.
+func (p *placeholderValue) Changed() bool { return false }
+
+// Default returns the placeholder default string.
+func (p *placeholderValue) Default() string { return p.def }
 
 // slicePlaceholder is a dummy Value used for slice flags.
 type slicePlaceholder struct {
 	def string // String form of default value (e.g. comma-separated)
 }
 
+// Set ignores placeholder input.
 func (v *slicePlaceholder) Set(string) error { return nil }
-func (v *slicePlaceholder) Get() any         { return nil }
-func (v *slicePlaceholder) Changed() bool    { return false }
-func (v *slicePlaceholder) Default() string  { return v.def }
-func (v *slicePlaceholder) IsSlice()         {} // Marker method
+
+// Get returns no concrete placeholder value.
+func (v *slicePlaceholder) Get() any { return nil }
+
+// Changed reports that placeholders are never user-set.
+func (v *slicePlaceholder) Changed() bool { return false }
+
+// Default returns the placeholder default string.
+func (v *slicePlaceholder) Default() string { return v.def }
+
+// IsSlice marks the placeholder as slice-backed.
+func (v *slicePlaceholder) IsSlice() {} // Marker method
 
 // boolPlaceholder is a dummy Value used for bool flags with strict support.
 type boolPlaceholder struct {
@@ -32,8 +48,17 @@ type boolPlaceholder struct {
 	strictMode *bool  // Shared strict-mode marker
 }
 
-func (v *boolPlaceholder) Set(string) error   { return nil }
-func (v *boolPlaceholder) Get() any           { return nil }
-func (v *boolPlaceholder) Changed() bool      { return false }
-func (v *boolPlaceholder) Default() string    { return v.def }
+// Set ignores placeholder input.
+func (v *boolPlaceholder) Set(string) error { return nil }
+
+// Get returns no concrete placeholder value.
+func (v *boolPlaceholder) Get() any { return nil }
+
+// Changed reports that placeholders are never user-set.
+func (v *boolPlaceholder) Changed() bool { return false }
+
+// Default returns the placeholder default string.
+func (v *boolPlaceholder) Default() string { return v.def }
+
+// IsStrictBool reports whether strict bool parsing is enabled.
 func (v *boolPlaceholder) IsStrictBool() bool { return v.strictMode != nil && *v.strictMode }

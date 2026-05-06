@@ -13,6 +13,7 @@ type DuplicatePerIDError struct {
 	ID    string // instance id, e.g. "alpha"
 }
 
+// Error returns the duplicate-per-id error message.
 func (e *DuplicatePerIDError) Error() string {
 	return fmt.Sprintf("duplicate value for field %q in ID %q", e.Field, e.ID)
 }

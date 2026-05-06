@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestNewReplacerEnvKeyFunc verifies env key normalization behavior.
 func TestNewReplacerEnvKeyFunc(t *testing.T) {
 	t.Parallel()
 

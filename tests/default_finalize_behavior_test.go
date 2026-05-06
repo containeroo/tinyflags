@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestFinalizeDefaultValueScalar verifies default finalization for static scalars.
 func TestFinalizeDefaultValueScalar(t *testing.T) {
 	t.Parallel()
 
@@ -24,6 +25,7 @@ func TestFinalizeDefaultValueScalar(t *testing.T) {
 	assert.Equal(t, "/config", *val)
 }
 
+// TestFinalizeDefaultValueScalarSetValue verifies explicit values bypass default finalization.
 func TestFinalizeDefaultValueScalarSetValue(t *testing.T) {
 	t.Parallel()
 
@@ -44,6 +46,7 @@ func TestFinalizeDefaultValueScalarSetValue(t *testing.T) {
 	assert.Equal(t, 1, calls)
 }
 
+// TestFinalizeDefaultValueSlice verifies default finalization for static slices.
 func TestFinalizeDefaultValueSlice(t *testing.T) {
 	t.Parallel()
 
@@ -59,6 +62,7 @@ func TestFinalizeDefaultValueSlice(t *testing.T) {
 	assert.Equal(t, []string{"alice", "bob"}, *val)
 }
 
+// TestFinalizeDefaultValueDynamic verifies default finalization for dynamic values.
 func TestFinalizeDefaultValueDynamic(t *testing.T) {
 	t.Parallel()
 

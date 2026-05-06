@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestExportedCompatibilityAliases verifies exported compatibility aliases.
 func TestExportedCompatibilityAliases(t *testing.T) {
 	t.Parallel()
 
@@ -36,6 +37,7 @@ func TestExportedCompatibilityAliases(t *testing.T) {
 	})
 }
 
+// TestExportedHelpVersionSentinels verifies exported help/version sentinels.
 func TestExportedHelpVersionSentinels(t *testing.T) {
 	t.Parallel()
 

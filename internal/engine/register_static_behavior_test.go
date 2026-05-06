@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestRegisterStaticScalarInt verifies static scalar registration behavior.
 func TestRegisterStaticScalarInt(t *testing.T) {
 	t.Parallel()
 
@@ -36,6 +37,7 @@ func TestRegisterStaticScalarInt(t *testing.T) {
 	})
 }
 
+// TestRegisterStaticSliceString verifies static slice registration behavior.
 func TestRegisterStaticSliceString(t *testing.T) {
 	t.Parallel()
 

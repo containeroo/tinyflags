@@ -8,6 +8,7 @@ import (
 	"github.com/containeroo/tinyflags"
 )
 
+// main demonstrates dynamic tinyflags groups.
 func main() {
 	fs := tinyflags.NewFlagSet("dynamic", tinyflags.ExitOnError)
 

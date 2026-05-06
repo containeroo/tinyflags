@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestWrapText verifies usage text wrapping behavior.
 func TestWrapText(t *testing.T) {
 	t.Parallel()
 

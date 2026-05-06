@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestHideDefaultFromHelp verifies hidden defaults in help output.
 func TestHideDefaultFromHelp(t *testing.T) {
 	t.Parallel()
 
@@ -46,6 +47,7 @@ func TestHideDefaultFromHelp(t *testing.T) {
 	})
 }
 
+// TestHelpSections verifies help section headings.
 func TestHelpSections(t *testing.T) {
 	t.Parallel()
 
@@ -64,6 +66,7 @@ func TestHelpSections(t *testing.T) {
 	})
 }
 
+// TestDynamicGroupFooter verifies dynamic group footer notes in help output.
 func TestDynamicGroupFooter(t *testing.T) {
 	t.Parallel()
 
@@ -85,6 +88,7 @@ func TestDynamicGroupFooter(t *testing.T) {
 	})
 }
 
+// TestNotesPreserveNewlines verifies help notes preserve explicit newlines.
 func TestNotesPreserveNewlines(t *testing.T) {
 	t.Parallel()
 
@@ -97,6 +101,7 @@ func TestNotesPreserveNewlines(t *testing.T) {
 	assert.Contains(t, out, "first line\nsecond line")
 }
 
+// TestCounterPlaceholderHidden verifies counters do not render value placeholders.
 func TestCounterPlaceholderHidden(t *testing.T) {
 	t.Parallel()
 

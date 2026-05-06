@@ -107,6 +107,7 @@ func argParserStateStart(p *argParser) stateFn {
 	}
 }
 
+// handleUnknown routes an unknown flag through the configured handler.
 func handleUnknown(p *argParser, name string) stateFn {
 	if p.fs.unknownFlag == nil {
 		p.err = fmt.Errorf("unknown flag: %s", name)

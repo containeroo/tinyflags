@@ -13,12 +13,22 @@ type dummyValue struct {
 	changed bool
 }
 
+// Set records that a value was supplied.
 func (d *dummyValue) Set(s string) error { d.changed = true; return nil }
-func (d *dummyValue) Get() any           { return d.def }
-func (d *dummyValue) Changed() bool      { return d.changed }
-func (d *dummyValue) Default() string    { return d.def }
-func (d *dummyValue) IsSlice()           {}
 
+// Get returns the stored default representation.
+func (d *dummyValue) Get() any { return d.def }
+
+// Changed reports whether the value was supplied.
+func (d *dummyValue) Changed() bool { return d.changed }
+
+// Default returns the default string representation.
+func (d *dummyValue) Default() string { return d.def }
+
+// IsSlice marks the dummy value as slice-backed.
+func (d *dummyValue) IsSlice() {}
+
+// TestBuildFlagDescriptionHideDefault verifies hidden defaults are omitted.
 func TestBuildFlagDescriptionHideDefault(t *testing.T) {
 	t.Parallel()
 
@@ -38,6 +48,7 @@ func TestBuildFlagDescriptionHideDefault(t *testing.T) {
 	})
 }
 
+// TestUsageNotesUseConfiguredWriter verifies usage notes use the provided writer.
 func TestUsageNotesUseConfiguredWriter(t *testing.T) {
 	t.Parallel()
 

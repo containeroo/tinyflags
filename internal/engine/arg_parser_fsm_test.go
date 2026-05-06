@@ -12,11 +12,19 @@ type testValue struct {
 	set string
 }
 
+// Set records the parsed value.
 func (v *testValue) Set(s string) error { v.set = s; return nil }
-func (v *testValue) Get() any           { return v.set }
-func (v *testValue) Changed() bool      { return v.set != "" }
-func (v *testValue) Default() string    { return "" }
 
+// Get returns the current parsed value.
+func (v *testValue) Get() any { return v.set }
+
+// Changed reports whether a value was set.
+func (v *testValue) Changed() bool { return v.set != "" }
+
+// Default returns the default string value.
+func (v *testValue) Default() string { return "" }
+
+// TestRunArgParserFSMHandlesUnknown verifies unknown-flag handling paths.
 func TestRunArgParserFSMHandlesUnknown(t *testing.T) {
 	t.Parallel()
 
