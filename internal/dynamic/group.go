@@ -87,7 +87,7 @@ func (g *Group) Flags() []*core.BaseFlag {
 	return g.itemOrder
 }
 
-// DynamicFlags returns flags
+// DynamicFlags returns the group's flags in display order.
 func (g *Group) DynamicFlags() []*core.BaseFlag {
 	if g.sortFlags {
 		out := make([]*core.BaseFlag, len(g.itemOrder))

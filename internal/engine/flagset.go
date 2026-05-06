@@ -20,13 +20,13 @@ type FlagSet struct {
 	dynamicGroupsMap   map[string]*dynamic.Group        // All dynamic groups by name
 	dynamicGroupsOrder []*dynamic.Group                 // Dynamic groups in registration order
 	oneOfGroup         []*core.OneOfGroupGroup          // All oneOfGroup groups
-	allOrNoneGroup     []*core.AllOrNoneGroup           // All AllOrNoneGroup groups
+	allOrNoneGroup     []*core.AllOrNoneGroup           // All all-or-none groups
 	positional         []string                         // Remaining non-flag arguments
 	requiredPositional int                              // Required positional argument count
 	validatePositional func(string) error               // Function to validate positional arguments
 	finalizePositional func(string) string              // Function to finalize positional arguments
 	envPrefix          string                           // Optional ENV prefix (e.g. "APP_")
-	envKeyFunc         EnvKeyFunc                       // Function to derive env keys from prefix+flag name  <-- NEW
+	envKeyFunc         EnvKeyFunc                       // Function to derive env keys from prefix+flag name
 	getEnv             func(string) string              // Function used to read ENV vars (default: os.Getenv)
 	hideEnvs           bool                             // Globally hide environment key hints
 	ignoreInvalidEnv   bool                             // Whether to ignore unknown ENV overrides

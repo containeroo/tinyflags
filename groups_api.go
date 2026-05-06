@@ -5,55 +5,55 @@ import (
 	"github.com/containeroo/tinyflags/internal/dynamic"
 )
 
-// AttachGroupToAllOrNone nests one AllOrNone group into another.
+// AttachGroupToAllOrNone nests one all-or-none group into another.
 func (f *FlagSet) AttachGroupToAllOrNone(parent, child string) {
 	f.impl.AttachGroupToAllOrNone(parent, child)
 }
 
-// AttachGroupToOneOf adds an AllOrNone group to a OneOf group.
+// AttachGroupToOneOf adds an all-or-none group to a one-of group.
 func (f *FlagSet) AttachGroupToOneOf(group, name string) {
 	f.impl.AttachGroupToOneOf(group, name)
 }
 
-// OneOfGroups returns all registered OneOfGroups groups.
+// OneOfGroups returns all registered one-of groups.
 func (f *FlagSet) OneOfGroups() []*core.OneOfGroupGroup { return f.impl.OneOfGroups() }
 
-// AddOneOfGroup adds a AddOneOfGroup group.
+// AddOneOfGroup registers a one-of group.
 func (f *FlagSet) AddOneOfGroup(name string, g *core.OneOfGroupGroup) {
 	f.impl.AddOneOfGroup(name, g)
 }
 
-// GetOneOfGroup retrieves or creates a named OneOfGroup group.
+// GetOneOfGroup retrieves or creates a named one-of group.
 func (f *FlagSet) GetOneOfGroup(name string) *core.OneOfGroupGroup {
 	return f.impl.GetOneOfGroup(name)
 }
 
-// AttachToOneOfGroup attaches a static flag to a OneOfGroup group.
+// AttachToOneOfGroup attaches a static flag to a one-of group.
 func (f *FlagSet) AttachToOneOfGroup(flag *core.BaseFlag, group string) {
 	f.impl.AttachToOneOfGroup(flag, group)
 }
 
-// AllOrNoneGroup returns all registered AllOrNoneGroup group.
+// AllOrNoneGroup returns all registered all-or-none groups.
 func (f *FlagSet) AllOrNoneGroup() []*core.AllOrNoneGroup {
 	return f.impl.AllOrNoneGroups()
 }
 
-// AllOrNoneGroups returns all registered AllOrNone groups.
+// AllOrNoneGroups returns all registered all-or-none groups.
 func (f *FlagSet) AllOrNoneGroups() []*core.AllOrNoneGroup {
 	return f.impl.AllOrNoneGroups()
 }
 
-// AddAllOrNoneGroup adds a AllOrNoneGroup group.
+// AddAllOrNoneGroup registers an all-or-none group.
 func (f *FlagSet) AddAllOrNoneGroup(name string, g *core.AllOrNoneGroup) {
 	f.impl.AddAllOrNoneGroup(name, g)
 }
 
-// GetAllOrNoneGroup retrieves or creates a named AllOrNoneGroup group.
+// GetAllOrNoneGroup retrieves or creates a named all-or-none group.
 func (f *FlagSet) GetAllOrNoneGroup(name string) *core.AllOrNoneGroup {
 	return f.impl.GetAllOrNoneGroup(name)
 }
 
-// AttachToAllOrNoneGroup attaches a flag to a AllOrNoneGroup group.
+// AttachToAllOrNoneGroup attaches a flag to an all-or-none group.
 func (f *FlagSet) AttachToAllOrNoneGroup(flag *core.BaseFlag, group string) {
 	f.impl.AttachToAllOrNoneGroup(flag, group)
 }

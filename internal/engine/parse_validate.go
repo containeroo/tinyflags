@@ -2,7 +2,7 @@ package engine
 
 import "fmt"
 
-// checkRequirements ensures all flags which requrie others are set.
+// checkRequirements ensures all flag dependencies are satisfied.
 func (f *FlagSet) checkRequirements() error {
 	for _, fl := range f.staticFlagsMap {
 		req, missing := fl.FirstMissingRequirement(f.staticFlagsMap)

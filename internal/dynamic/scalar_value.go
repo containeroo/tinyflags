@@ -14,7 +14,7 @@ type DynamicScalarValue[T any] struct {
 	hooks            core.ValueHooks[T]      // Shared parse/format/validate/finalize behavior
 	finalizeID       func(string, T) T       // Optional finalizer with ID
 	values           map[string]T            // Parsed values per ID
-	allowOverride    bool                    // NEW: enforce per-id single assignment when true
+	allowOverride    bool                    // Allow re-assignment per ID when true.
 }
 
 // NewDynamicScalarValue creates a new dynamic scalar value.
