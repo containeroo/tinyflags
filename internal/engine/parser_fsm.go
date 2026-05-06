@@ -196,7 +196,7 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 		}
 		// Handle --flag=value
 		if hasVal {
-			p.err = trySet(fl.Value, val, "invalid value for flag --%s: %s.", name)
+			p.err = trySet(fl.Value, val, "invalid value for flag --%s: %w", name)
 			return argParserStateStart
 		}
 		// Handle --flag value
@@ -301,7 +301,7 @@ func tryLongValue(p *argParser, flag *core.BaseFlag, name string) bool {
 	}
 
 	p.next()
-	p.err = trySet(flag.Value, next, "invalid value for flag --%s: %s.", name)
+	p.err = trySet(flag.Value, next, "invalid value for flag --%s: %w", name)
 	return true
 }
 

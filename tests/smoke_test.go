@@ -304,7 +304,7 @@ Flags:
 		err := fs.Parse([]string{
 			"--list=a|b|c", "--list", "d",
 		})
-		require.EqualError(t, err, "invalid value for flag --list: invalid value \"d\": must be one of: a, b, c.")
+		require.EqualError(t, err, "invalid value for flag --list: invalid value \"d\": must be one of: a, b, c")
 		assert.Equal(t, []string{"a", "b", "c"}, *list) // defaults
 	})
 
@@ -323,7 +323,7 @@ Flags:
 			"--port", "80",
 		})
 		require.Error(t, err)
-		require.EqualError(t, err, "invalid value for flag --port: port must be greater than 1000.")
+		require.EqualError(t, err, "invalid value for flag --port: port must be greater than 1000")
 	})
 
 	t.Run("smoke dyn validator error", func(t *testing.T) {
