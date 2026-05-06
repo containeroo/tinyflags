@@ -44,7 +44,7 @@ func (f *FlagSet) calcDynamicUsageColumn(padding int) int {
 }
 
 // printFlagUsage renders a single usage line with wrapping and alignment.
-func printFlagUsage(w io.Writer, indent, startCol, maxWidth int, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
+func printFlagUsage(w io.Writer, layout usageLayout, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
 	var b strings.Builder
 	formatStaticFlagNames(&b, flag)
 
@@ -54,17 +54,7 @@ func printFlagUsage(w io.Writer, indent, startCol, maxWidth int, globalHideEnvs 
 	}
 	flagLine := b.String()
 	desc := buildFlagDescription(flag, globalHideEnvs, prefix)
-
-	descWidth := max(maxWidth-indent-startCol-1, 100)
-	wrapped := wrapText(desc, descWidth)
-	lines := strings.Split(wrapped, "\n")
-
-	fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, lines[0]) // nolint:errcheck
-
-	padding := strings.Repeat(" ", indent+startCol+1)
-	for _, line := range lines[1:] {
-		fmt.Fprintf(w, "%s%s\n", padding, line) // nolint:errcheck
-	}
+	layout.writeWrappedRow(w, flagLine, desc)
 }
 
 // formatStaticFlagNames builds the flag name string for help output.
@@ -124,23 +114,5 @@ func printUsageToken(w io.Writer, fl *core.BaseFlag, mode FlagPrintMode) {
 		if meta != "" {
 			fmt.Fprintf(w, " %s", meta) // nolint:errcheck
 		}
-	}
-}
-
-// writeIndented writes text to w, indenting each line by indent spaces.
-func writeIndented(w io.Writer, text string, indent, maxWidth int) {
-	if text == "" {
-		return
-	}
-
-	prefix := strings.Repeat(" ", indent)
-	wrapped := wrapText(text, maxWidth-indent)
-
-	for _, line := range strings.Split(wrapped, "\n") {
-		if line == "" {
-			fmt.Fprintln(w) // nolint:errcheck
-			continue
-		}
-		fmt.Fprintf(w, "%s%s\n", prefix, line) // nolint:errcheck
 	}
 }

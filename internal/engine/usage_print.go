@@ -53,19 +53,20 @@ func (f *FlagSet) PrintAuthors(w io.Writer) {
 // PrintDescription renders description block above flags.
 func (f *FlagSet) PrintDescription(w io.Writer, indent, maxWidth int) {
 	if f.desc != "" {
-		writeIndented(w, f.desc, indent, maxWidth)
+		newUsageLayout(indent, 0, maxWidth).writeIndented(w, f.desc)
 	}
 }
 
 // PrintNotes renders notes block below flags.
 func (f *FlagSet) PrintNotes(w io.Writer, indent, maxWidth int) {
 	if f.notes != "" {
-		writeIndented(w, f.notes, indent, maxWidth)
+		newUsageLayout(indent, 0, maxWidth).writeIndented(w, f.notes)
 	}
 }
 
 // PrintStaticDefaults renders all statically registered flags.
 func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth int) {
+	layout := newUsageLayout(indent, startCol, maxWidth)
 	var lastSection string
 	for _, fl := range f.staticFlags() {
 		if fl.Hidden {
@@ -75,7 +76,7 @@ func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth in
 			fmt.Fprintf(w, "\n%s:\n", fl.Section) // nolint:errcheck
 			lastSection = fl.Section
 		}
-		printFlagUsage(w, indent, startCol, maxWidth, f.hideEnvs, fl, f.envPrefix)
+		printFlagUsage(w, layout, f.hideEnvs, fl, f.envPrefix)
 	}
 
 	if f.StaticUsageNote() != "" {
@@ -85,6 +86,7 @@ func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth in
 
 // PrintDynamicDefaults renders all dynamic groups.
 func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth int) {
+	layout := newUsageLayout(indent, startCol, maxWidth)
 	for _, group := range f.dynamicGroups() {
 		if group.IsHidden() {
 			continue
@@ -95,20 +97,18 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 			fmt.Fprintf(w, "\n%s\n", title) // nolint:errcheck
 		}
 		if desc := group.DescriptionText(); desc != "" {
-			writeIndented(w, wrapText(desc, maxWidth-indent), 0, maxWidth)
+			newUsageLayout(0, 0, maxWidth).writeIndented(w, wrapText(desc, maxWidth-indent))
 		}
 		idPlaceholder := group.GetPlaceholder()
 		if idPlaceholder == "" {
 			idPlaceholder = "<ID>"
 		}
 
-		descWidth := max(maxWidth-indent-startCol-1, 100)
-
 		for _, fl := range group.DynamicFlags() {
 			flagLine := formatDynamicFlagLine(name, idPlaceholder, fl)
 			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
 
-			if len(desc) <= descWidth {
+			if len(desc) <= layout.descriptionWidth() {
 				_, _ = fmt.Fprintf(w,
 					"%s%-*s %s\n",
 					strings.Repeat(" ", indent),
@@ -119,25 +119,11 @@ func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth i
 				continue
 			}
 
-			wrapped := wrapText(desc, descWidth)
-			lines := strings.Split(wrapped, "\n")
-
-			_, _ = fmt.Fprintf(w,
-				"%s%-*s %s\n",
-				strings.Repeat(" ", indent),
-				startCol,
-				flagLine,
-				lines[0],
-			)
-
-			padding := strings.Repeat(" ", indent+startCol+1)
-			for _, l := range lines[1:] {
-				fmt.Fprintf(w, "%s%s\n", padding, l) // nolint:errcheck
-			}
+			layout.writeWrappedRow(w, flagLine, desc)
 		}
 
 		if note := group.NoteText(); note != "" {
-			writeIndented(w, wrapText(note, maxWidth-indent), indent, maxWidth)
+			newUsageLayout(indent, 0, maxWidth).writeIndented(w, wrapText(note, maxWidth-indent))
 		}
 	}
 
