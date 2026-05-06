@@ -21,19 +21,19 @@ Zero dependencies. Full generics support. Rich usage output.
 
 **Why yet another flag library?**
 
-- **Validate & Finalize on the fly**
-  I got tired of the two-step tango--parse first, then wade through a swamp of `if`-statements just to check and tweak values. Tinyflags lets you **validate** and **finalize** your flags as they're parsed, so you can slap on your business logic (and data massaging) in one go.
+- **Validate and finalize on the fly**
+  Tinyflags lets you **validate** and **finalize** values as they are parsed, so input shaping and business rules can live directly on the flag definition.
 
-- **Group therapy for flags**
-  Ever tried juggling "onf of" or "all-or-nothing" flags with plain `flag`? It's like herding cats. Tinyflags brings built-in **onf-of** and **all-or-none** groups so your flags behave like well-trained puppies.
+- **Group-aware constraints**
+  Tinyflags includes built-in **one-of** and **all-or-none** groups, plus per-flag dependency rules like `Requires(...)`.
 
-- **Self-service help & version**
-  Want to bail out with `--help` or `--version` at just the right moment, without writing extra `if`-blocks? Tinyflags handles the exit routine for you, so you can spend less time plumbing and more time coding.
+- **Built-in help and version handling**
+  `--help` and `--version` are supported out of the box, including library-friendly error sentinels for callers that want to intercept them.
 
-- **Dynamic flags--finally!**
-  I looked high and low for a Go library that lets you declare `--group.id.field=value` flags, where `id` is dynamic. No luck. So I built one, folded it into tinyflags, and voila: one library to rule both "regular" **and** "shape-shifting" dynamic flags.
+- **Dynamic flags**
+  Tinyflags supports `--group.id.field=value` flags where `id` is only known at parse time, so one parser can handle both regular and instance-scoped settings.
 
-In short, tinyflags slices away boilerplate, stitches in the goodies I actually needed, and keeps my codebase lean--no extra flag-parsing baggage required. 🚀
+In short, tinyflags aims to reduce flag boilerplate while keeping the parser predictable, typed, and easy to extend.
 
 ## Install
 
@@ -92,6 +92,23 @@ func main() {
 
 > Slice flags accept repeated use or custom-delimited strings.
 
+## Parse Model
+
+Tinyflags applies input in this order:
+
+1. Parse command-line arguments.
+2. Handle built-in `--help` / `--version` exits.
+3. Load unset static flags from environment variables.
+4. Apply default finalizers for unset values.
+5. Run required/group/dependency/positional validation.
+
+Additional behavior:
+
+- Explicit CLI arguments win over environment variables.
+- `OverriddenValues()` reports values provided by CLI or env, not untouched defaults.
+- Reusing a `FlagSet` across multiple `Parse(...)` calls is supported; parser state is reset before each parse.
+- Dynamic flags are CLI-only and are not populated from environment variables.
+
 ### Handling toggles with multiple flags
 
 You can model toggles with paired flags (e.g., `--debug` and `--no-debug`) and pick the first one the user set:
@@ -109,7 +126,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 
 - `FirstChanged[T](defaultValue, flags...)` — returns the value of the first changed flag (by order) plus whether any flag was set.
 - `IsHelpRequested(err)` / `IsVersionRequested(err)` — detect help/version parse exits.
-- `RequestHelp()` / `RequestVersion()` — trigger help/version errors manually.
+- `RequestHelp(msg)` / `RequestVersion(msg)` — trigger help/version errors manually.
 - `Flag[T]` — minimal interface implemented by flag handles (`Changed() bool`, `Value() *T`).
 
 ## FlagSet API
@@ -126,7 +143,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
 | `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.             |
 | `Env(key string)`           | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
-| `HideEnv()`                 | all flags   | Hide the environment-variable name from help.                                           |
+| `HideEnv()`                 | all flags   | Hide the environment-variable name from help output.                                     |
 | `DisableEnv()`              | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
 | `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
 | `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                        |
@@ -181,9 +198,9 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `VersionText(text string)`                         | Override the `--version` text. Default: `"Show version"`.            |
 | `HelpText(text string)`                            | Override the `--help` text. Default: `"Show help"`.                  |
 | `DisableHelp()` / `DisableVersion()`               | Remove `--help` or `--version`.                                      |
-| `Usage(fn func())`                                 | Install a custom usage function in place of the default.             |
+| `Usage func()`                                     | Optional custom usage function on `FlagSet` that replaces the default renderer. |
 | `Title(text string)`                               | Override the "Usage:" title heading.                                 |
-| `Authors(names ...string)`                         | Add an "Authors:" section to help.                                   |
+| `Authors(text string)`                             | Add an `Authors:` section to help output.                            |
 | `Description(text string)`                         | Add a free-form description block under the title.                   |
 | `Note(text string)`                                | Add a footer note under the flags listing.                           |
 | `SetOneOfGroupVerbose(bool)`                       | Toggle detailed OneOfGroup errors with conflicting flags.            |
@@ -196,12 +213,19 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `PrintStaticDefaults(w,indent,startCol,width)`     | Print static flags help.                                             |
 | `PrintDynamicDefaults(w,indent,startCol,width)`    | Print dynamic flags help.                                            |
 | `RequirePositional(n int)`                         | Enforce at least `n` positional arguments.                           |
-| `Args() []string` / `Arg(i int) string`            | Access leftover positional args.                                     |
+| `Args() []string` / `Arg(i int) (string, bool)`    | Access leftover positional args safely.                              |
 | `OverriddenValues() map[string]any`                | Return flags explicitly set via args/env (dynamic keys: `group.id.flag`). |
 | `MaskFirstLast(value any) any`                     | Helper mask that keeps first/last character (strings, `[]string`).   |
 | `MaskPostgresURL(value any) any`                   | Helper mask for `postgres://user:pass@host/db` credentials.          |
-| `AddOneOfGroup(name string, flags []string)`       | Manually define a mutual-exclusion group.                            |
-| `AddAllOrNoneGroup(name string, flags []string)`   | Manually define a require-together group.                            |
+| `AddOneOfGroup(name string, group *core.OneOfGroupGroup)` | Register a pre-built mutual-exclusion group.                 |
+| `AddAllOrNoneGroup(name string, group *core.AllOrNoneGroup)` | Register a pre-built require-together group.           |
+
+### Naming notes
+
+- `GlobalDelimiter(...)` is the preferred spelling.
+- `Globaldelimiter(...)` remains available as a compatibility alias.
+- `AllOrNoneGroups()` is the preferred plural accessor.
+- `AllOrNoneGroup()` remains available as a compatibility alias.
 
 ### How `Validate` and `Finalize` Work
 
