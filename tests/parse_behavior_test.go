@@ -221,6 +221,25 @@ func TestContinueOnErrorParsesAllFlags(t *testing.T) {
 	})
 }
 
+// TestEnvironmentErrorWording verifies invalid env values use the shared error format.
+func TestEnvironmentErrorWording(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.EnvPrefix("APP")
+	fs.SetGetEnvFn(func(key string) string {
+		if key == "APP_PORT" {
+			return "nope"
+		}
+		return ""
+	})
+	fs.Int("port", 80, "port")
+
+	err := fs.Parse(nil)
+	require.Error(t, err)
+	assert.EqualError(t, err, "invalid value for flag --port from environment: strconv.Atoi: parsing \"nope\": invalid syntax")
+}
+
 // TestParseResetsStateBetweenCalls verifies FlagSet state resets on repeated parses.
 func TestParseResetsStateBetweenCalls(t *testing.T) {
 	t.Parallel()

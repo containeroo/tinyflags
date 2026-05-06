@@ -110,7 +110,7 @@ func argParserStateStart(p *argParser) stateFn {
 // handleUnknown routes an unknown flag through the configured handler.
 func handleUnknown(p *argParser, name string) stateFn {
 	if p.fs.unknownFlag == nil {
-		p.err = fmt.Errorf("unknown flag: %s", name)
+		p.err = fmt.Errorf("unknown flag %s", name)
 		return nil
 	}
 	if err := p.fs.unknownFlag(name); err != nil {
@@ -173,7 +173,7 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 func handleDynamicValue(p *argParser, item core.DynamicValue, id, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
-		p.err = fmt.Errorf("missing value for flag: --%s", name)
+		p.err = fmt.Errorf("missing value for flag --%s", name)
 		return false
 	}
 
@@ -205,7 +205,7 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 			return argParserStateStart
 		}
 
-		p.err = fmt.Errorf("missing value for flag: --%s", name)
+		p.err = fmt.Errorf("missing value for flag --%s", name)
 		return nil
 	}
 }
@@ -310,7 +310,7 @@ func tryLongValue(p *argParser, flag *core.BaseFlag, name string) bool {
 func tryShortValue(p *argParser, flag *core.BaseFlag, short string) error {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
-		return fmt.Errorf("missing value for flag: -%s", flag.Short)
+		return fmt.Errorf("missing value for flag -%s", flag.Short)
 	}
 	p.next()
 	return trySet(flag.Value, next, "invalid value for flag -%s: %w", short)
@@ -327,7 +327,7 @@ func trySet(value core.Value, input string, format string, label string) error {
 // trySetDynamic attempts to set a dynamic flag value and wraps any error.
 func trySetDynamic(item core.DynamicValue, id, val, label string) error {
 	if err := item.Set(id, val); err != nil {
-		return fmt.Errorf("invalid value for dynamic flag --%s: %w", label, err)
+		return fmt.Errorf("invalid value for flag --%s: %w", label, err)
 	}
 	return nil
 }

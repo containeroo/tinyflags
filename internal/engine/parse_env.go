@@ -17,7 +17,7 @@ func (f *FlagSet) parseEnv() error {
 			if f.ignoreInvalidEnv {
 				continue
 			}
-			return fmt.Errorf("invalid environment value for flag --%s: %w", fl.Name, err)
+			return fmt.Errorf("invalid value for flag --%s from environment: %w", fl.Name, err)
 		}
 	}
 	return nil
