@@ -11,8 +11,8 @@ import (
 // Increment increments the counter value.
 func (c *CounterValue) Increment() error {
 	next := *c.ptr + 1
-	if c.validate != nil {
-		if err := c.validate(next); err != nil {
+	if c.hooks.Validate != nil {
+		if err := c.hooks.Validate(next); err != nil {
 			return err
 		}
 	}

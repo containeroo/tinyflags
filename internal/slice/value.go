@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
@@ -12,16 +13,8 @@ type SliceValue[T any] struct {
 	ptr        *[]T
 	def        []T
 	changed    bool
-	delimiter  string
-	strictDel  bool
-	allowEmpty bool
-	parse      func(string) (T, error)
-	format     func(T) string
-	validate   func(T) error
-	finalize   func(T) T
-
-	finalizeDefault  bool
-	defaultFinalized bool
+	input      core.SliceInputConfig
+	hooks      core.ValueHooks[T]
 }
 
 // NewSliceValue creates a new slice value.
@@ -34,11 +27,10 @@ func NewSliceValue[T any](
 ) *SliceValue[T] {
 	*ptr = append([]T{}, def...)
 	return &SliceValue[T]{
-		ptr:       ptr,
-		def:       def,
-		delimiter: delimiter,
-		parse:     parse,
-		format:    format,
+		ptr:   ptr,
+		def:   def,
+		input: core.SliceInputConfig{Delimiter: delimiter},
+		hooks: core.NewValueHooks(parse, format),
 	}
 }
 
@@ -47,22 +39,16 @@ func (v *SliceValue[T]) Set(s string) error {
 	if !v.changed {
 		*v.ptr = nil
 	}
-	parts := strings.Split(s, v.delimiter)
-	if v.strictDel {
-		if err := utils.CheckMixedDelimiters(s, v.delimiter); err != nil {
-			return err
-		}
+	parts, err := v.input.Split(s)
+	if err != nil {
+		return err
 	}
 	for _, raw := range parts {
 		raw = strings.TrimSpace(raw)
-		if raw == "" && !v.allowEmpty {
+		if raw == "" && !v.input.AllowEmpty {
 			return fmt.Errorf("invalid slice item %q: empty values are not allowed", raw)
 		}
-		val, err := v.parse(raw)
-		if err != nil {
-			return fmt.Errorf("invalid slice item %q: %w", raw, err)
-		}
-		val, err = utils.ApplyValueHooks(val, v.validate, v.finalize)
+		val, err := v.hooks.ParseValue(raw)
 		if err != nil {
 			return fmt.Errorf("invalid value %q: %w", raw, err)
 		}
@@ -81,9 +67,9 @@ func (v *SliceValue[T]) Get() any {
 func (f *SliceValue[T]) Default() string {
 	out := make([]string, 0, len(f.def))
 	for _, v := range f.def {
-		out = append(out, f.format(v))
+		out = append(out, f.hooks.Format(v))
 	}
-	return strings.Join(out, f.delimiter)
+	return strings.Join(out, f.input.Delimiter)
 }
 
 // Changed returns true if the value was changed.
@@ -92,26 +78,26 @@ func (v *SliceValue[T]) Changed() bool {
 }
 
 // setValidate sets a per-item validation function.
-func (v *SliceValue[T]) setValidate(fn func(T) error) { v.validate = fn }
+func (v *SliceValue[T]) setValidate(fn func(T) error) { v.hooks.SetValidate(fn) }
 
 // setFinalize sets a per-item finalizer function.
-func (v *SliceValue[T]) setFinalize(fn func(T) T) { v.finalize = fn }
+func (v *SliceValue[T]) setFinalize(fn func(T) T) { v.hooks.SetFinalize(fn) }
 
 // setFinalizeDefaultValue enables running the finalizer on defaults when unset.
-func (v *SliceValue[T]) setFinalizeDefaultValue() { v.finalizeDefault = true }
+func (v *SliceValue[T]) setFinalizeDefaultValue() { v.hooks.EnableFinalizeDefault() }
 
 // setStrictDelimiter toggles mixed-delimiter rejection.
-func (v *SliceValue[T]) setStrictDelimiter(strict bool) { v.strictDel = strict }
+func (v *SliceValue[T]) setStrictDelimiter(strict bool) { v.input.StrictDel = strict }
 
 // setAllowEmpty toggles acceptance of empty items.
-func (v *SliceValue[T]) setAllowEmpty(allow bool) { v.allowEmpty = allow }
+func (v *SliceValue[T]) setAllowEmpty(allow bool) { v.input.AllowEmpty = allow }
 
 // Base returns the underlying value.
 func (v *SliceValue[T]) Base() *SliceValue[T] { return v }
 
 // ApplyDefaultFinalize applies the default-only finalizer when unset.
 func (v *SliceValue[T]) ApplyDefaultFinalize() {
-	utils.ApplyDefaultSliceFinalize(*v.ptr, v.changed, &v.defaultFinalized, v.finalizeDefault, v.finalize)
+	v.hooks.ApplyDefaultSlice(*v.ptr, v.changed)
 }
 
 // isSlice is a no-op marker method to implement core.SliceMarker.
@@ -119,5 +105,5 @@ func (v *SliceValue[T]) IsSlice() {}
 
 // ResetParseState restores the default slice and clears changed/finalized state.
 func (v *SliceValue[T]) ResetParseState() {
-	utils.ResetSliceState(v.ptr, v.def, &v.changed, &v.defaultFinalized)
+	utils.ResetSliceState(v.ptr, v.def, &v.changed, &v.hooks.DefaultFinalized)
 }

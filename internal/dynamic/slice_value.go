@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
@@ -13,17 +14,10 @@ type DynamicSliceValue[T any] struct {
 	def              []T                     // Default slice value
 	baseDef          []T                     // Original default slice value
 	changed          bool                    // Whether the value was changed
-	parse            func(string) (T, error) // Function to parse a single element
-	format           func(T) string          // Function to format a single element
-	delimiter        string                  // Separator used to split input
-	validate         func(T) error           // Optional validation function
-	finalize         func(T) T               // Optional finalizer function
-	finalizeDefault  bool                    // Run finalizer on defaults when unset
+	input            core.SliceInputConfig   // Shared slice-input behavior
+	hooks            core.ValueHooks[T]      // Shared parse/format/validate/finalize behavior
 	finalizeID       func(string, T) T       // Optional finalizer function with ID
-	strictDel        bool                    // Reject mixed delimiters when true
-	allowEmpty       bool                    // Allow empty items when true
 	values           map[string][]T          // Parsed values per ID
-	defaultFinalized bool                    // Whether the default was finalized
 }
 
 // NewDynamicSliceValue creates a new dynamic slice value.
@@ -38,32 +32,26 @@ func NewDynamicSliceValue[T any](
 		field:     field,
 		def:       append([]T(nil), def...),
 		baseDef:   append([]T(nil), def...),
-		parse:     parse,
-		format:    format,
-		delimiter: delimiter,
+		input:     core.SliceInputConfig{Delimiter: delimiter},
+		hooks:     core.NewValueHooks(parse, format),
 		values:    make(map[string][]T),
 	}
 }
 
 // Set parses and stores one or more values for a given ID.
 func (d *DynamicSliceValue[T]) Set(id, raw string) error {
-	if d.strictDel {
-		if err := utils.CheckMixedDelimiters(raw, d.delimiter); err != nil {
-			return err
-		}
+	chunks, err := d.input.Split(raw)
+	if err != nil {
+		return err
 	}
 
-	for _, chunk := range strings.Split(raw, d.delimiter) {
+	for _, chunk := range chunks {
 		chunk = strings.TrimSpace(chunk)
-		if chunk == "" && !d.allowEmpty {
+		if chunk == "" && !d.input.AllowEmpty {
 			return fmt.Errorf("invalid value %q: empty values are not allowed", chunk)
 		}
 
-		val, err := d.parse(chunk)
-		if err != nil {
-			return fmt.Errorf("invalid %q: %w", chunk, err)
-		}
-		val, err = utils.ApplyValueHooks(val, d.validate, d.finalize)
+		val, err := d.hooks.ParseValue(chunk)
 		if err != nil {
 			return fmt.Errorf("invalid value %q: %w", chunk, err)
 		}
@@ -78,17 +66,17 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 
 // setValidate sets a validation function for individual elements.
 func (d *DynamicSliceValue[T]) setValidate(fn func(T) error) {
-	d.validate = fn
+	d.hooks.SetValidate(fn)
 }
 
 // setFinalize sets a per-item finalizer function.
 func (d *DynamicSliceValue[T]) setFinalize(fn func(T) T) {
-	d.finalize = fn
+	d.hooks.SetFinalize(fn)
 }
 
 // setFinalizeDefaultValue enables running the finalizer on defaults when unset.
 func (d *DynamicSliceValue[T]) setFinalizeDefaultValue() {
-	d.finalizeDefault = true
+	d.hooks.EnableFinalizeDefault()
 }
 
 // setFinalizeWithID sets a per-item finalizer with access to the ID.
@@ -98,17 +86,17 @@ func (d *DynamicSliceValue[T]) setFinalizeWithID(fn func(string, T) T) {
 
 // setDelimiter sets the delimiter used to split input values.
 func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
-	d.delimiter = sep
+	d.input.Delimiter = sep
 }
 
 // setStrictDelimiter toggles mixed-delimiter rejection.
 func (d *DynamicSliceValue[T]) setStrictDelimiter(strict bool) {
-	d.strictDel = strict
+	d.input.StrictDel = strict
 }
 
 // setAllowEmpty toggles acceptance of empty items.
 func (d *DynamicSliceValue[T]) setAllowEmpty(allow bool) {
-	d.allowEmpty = allow
+	d.input.AllowEmpty = allow
 }
 
 // FieldName returns the field name of the flag.
@@ -118,7 +106,7 @@ func (d *DynamicSliceValue[T]) FieldName() string {
 
 // ApplyDefaultFinalize applies the default-only finalizer for unset IDs.
 func (d *DynamicSliceValue[T]) ApplyDefaultFinalize() {
-	utils.ApplyDefaultSliceFinalize(d.def, false, &d.defaultFinalized, d.finalizeDefault, d.finalize)
+	d.hooks.ApplyDefaultSlice(d.def, false)
 }
 
 // GetAny returns the slice as any for a given ID, falling back to default.
@@ -142,5 +130,5 @@ func (d *DynamicSliceValue[T]) ValuesAny() map[string]any {
 // ResetParseState clears all parsed IDs and restores the original defaults.
 func (d *DynamicSliceValue[T]) ResetParseState() {
 	clear(d.values)
-	utils.ResetSliceState(&d.def, d.baseDef, &d.changed, &d.defaultFinalized)
+	utils.ResetSliceState(&d.def, d.baseDef, &d.changed, &d.hooks.DefaultFinalized)
 }

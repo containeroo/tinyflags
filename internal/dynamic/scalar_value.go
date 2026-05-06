@@ -11,15 +11,10 @@ type DynamicScalarValue[T any] struct {
 	def              T                       // Default value
 	baseDef          T                       // Original default value
 	changed          bool                    // Whether the value was changed
-	parse            func(string) (T, error) // Parser from raw input
-	format           func(T) string          // Formatter to string
-	validate         func(T) error           // Optional validation function
-	finalize         func(T) T               // Optional finalizer function
-	finalizeDefault  bool                    // Run finalizer on defaults when unset
+	hooks            core.ValueHooks[T]      // Shared parse/format/validate/finalize behavior
 	finalizeID       func(string, T) T       // Optional finalizer with ID
 	values           map[string]T            // Parsed values per ID
 	allowOverride    bool                    // NEW: enforce per-id single assignment when true
-	defaultFinalized bool                    // Whether the default was finalized
 }
 
 // NewDynamicScalarValue creates a new dynamic scalar value.
@@ -28,8 +23,7 @@ func NewDynamicScalarValue[T any](field string, def T, parse func(string) (T, er
 		field:   field,
 		def:     def,
 		baseDef: def,
-		parse:   parse,
-		format:  format,
+		hooks:   core.NewValueHooks(parse, format),
 		values:  make(map[string]T),
 	}
 }
@@ -42,11 +36,7 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 			return &core.DuplicatePerIDError{Field: d.field, ID: id}
 		}
 	}
-	val, err := d.parse(raw)
-	if err != nil {
-		return err
-	}
-	val, err = utils.ApplyValueHooks(val, d.validate, d.finalize)
+	val, err := d.hooks.ParseValue(raw)
 	if err != nil {
 		return err
 	}
@@ -60,17 +50,17 @@ func (d *DynamicScalarValue[T]) Set(id, raw string) error {
 
 // setValidate sets the optional validation function.
 func (d *DynamicScalarValue[T]) setValidate(fn func(T) error) {
-	d.validate = fn
+	d.hooks.SetValidate(fn)
 }
 
 // setFinalize sets the optional finalizer function.
 func (d *DynamicScalarValue[T]) setFinalize(fn func(T) T) {
-	d.finalize = fn
+	d.hooks.SetFinalize(fn)
 }
 
 // setFinalizeDefaultValue enables running the finalizer on defaults when unset.
 func (d *DynamicScalarValue[T]) setFinalizeDefaultValue() {
-	d.finalizeDefault = true
+	d.hooks.EnableFinalizeDefault()
 }
 
 // setFinalizeWithID sets the optional finalizer function with ID context.
@@ -85,7 +75,7 @@ func (d *DynamicScalarValue[T]) Base() *DynamicScalarValue[T] {
 
 // ApplyDefaultFinalize applies the default-only finalizer for unset IDs.
 func (d *DynamicScalarValue[T]) ApplyDefaultFinalize() {
-	utils.ApplyDefaultValueFinalize(&d.def, false, &d.defaultFinalized, d.finalizeDefault, d.finalize)
+	d.hooks.ApplyDefaultScalar(&d.def, false)
 }
 
 // FieldName returns the field name of the flag.
@@ -114,5 +104,5 @@ func (d *DynamicScalarValue[T]) ValuesAny() map[string]any {
 // ResetParseState clears all parsed IDs and restores default-finalizer state.
 func (d *DynamicScalarValue[T]) ResetParseState() {
 	clear(d.values)
-	utils.ResetScalarState(&d.def, d.baseDef, &d.changed, &d.defaultFinalized)
+	utils.ResetScalarState(&d.def, d.baseDef, &d.changed, &d.hooks.DefaultFinalized)
 }

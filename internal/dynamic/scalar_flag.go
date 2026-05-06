@@ -15,8 +15,8 @@ type ScalarFlag[T any] struct {
 
 // Choices restricts the allowed values to the provided list.
 func (f *ScalarFlag[T]) Choices(allowed ...T) *ScalarFlag[T] {
-	f.item.setValidate(utils.AllowOnly(f.item.format, allowed))
-	f.Allowed(utils.FormatList(f.item.format, allowed)...)
+	f.item.setValidate(utils.AllowOnly(f.item.hooks.Format, allowed))
+	f.Allowed(utils.FormatList(f.item.hooks.Format, allowed)...)
 	return f
 }
 

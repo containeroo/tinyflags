@@ -21,8 +21,8 @@ func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 
 // Choices restricts allowed slice values to the given list.
 func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
-	f.item.setValidate(utils.AllowOnly(f.item.format, allowed))
-	f.Allowed(utils.FormatList(f.item.format, allowed)...)
+	f.item.setValidate(utils.AllowOnly(f.item.hooks.Format, allowed))
+	f.Allowed(utils.FormatList(f.item.hooks.Format, allowed)...)
 	return f
 }
 

@@ -13,14 +13,14 @@ type SliceFlag[T any] struct {
 
 // Delimiter sets the delimiter used to split input values.
 func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
-	f.val.delimiter = sep
+	f.val.input.Delimiter = sep
 	return f
 }
 
 // Choices restricts allowed slice elements.
 func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
-	f.val.setValidate(utils.AllowOnly(f.val.format, allowed))
-	f.Allowed(utils.FormatList(f.val.format, allowed)...)
+	f.val.setValidate(utils.AllowOnly(f.val.hooks.Format, allowed))
+	f.Allowed(utils.FormatList(f.val.hooks.Format, allowed)...)
 
 	return f
 }

@@ -14,8 +14,8 @@ type scalarFlagBase[T any, Self any] struct {
 
 // Choices restricts allowed scalar values.
 func (f *scalarFlagBase[T, Self]) Choices(allowed ...T) Self {
-	f.val.setValidate(utils.AllowOnly(f.val.format, allowed))
-	f.Allowed(utils.FormatList(f.val.format, allowed)...)
+	f.val.setValidate(utils.AllowOnly(f.val.hooks.Format, allowed))
+	f.Allowed(utils.FormatList(f.val.hooks.Format, allowed)...)
 	return f.self
 }
 
