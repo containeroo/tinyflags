@@ -24,7 +24,9 @@ func (f *FlagSet) Parse(args []string) error {
 	// Check if help was requested
 	if f.enableHelp && f.showHelp != nil && *f.showHelp {
 		var buf strings.Builder
+		prevOutput := f.Output()
 		f.SetOutput(&buf)
+		defer f.SetOutput(prevOutput)
 		f.Usage()
 		return &HelpRequested{Message: buf.String()}
 	}

@@ -18,7 +18,6 @@ func CheckMixedDelimiters(raw, delimiter string) error {
 	return nil
 }
 
-// containsAlt returns true if the given string contains the given alternate.
 // containsAlt reports whether raw contains an alternate delimiter candidate.
 func containsAlt(raw, alt string) bool {
 	return len(alt) > 0 && len(raw) > 0 && strings.Contains(raw, alt)

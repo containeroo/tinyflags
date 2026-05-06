@@ -113,6 +113,23 @@ func TestNewFlagSet(t *testing.T) {
 		assert.Same(t, &b, fs.Output())
 	})
 
+	t.Run("Help restores output writer", func(t *testing.T) {
+		t.Parallel()
+		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
+		fs.Title("Restored")
+
+		var buf bytes.Buffer
+		fs.SetOutput(&buf)
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		require.True(t, tinyflags.IsHelpRequested(err))
+		assert.Same(t, &buf, fs.Output())
+
+		fs.PrintTitle(fs.Output())
+		assert.Contains(t, buf.String(), "Restored")
+	})
+
 	t.Run("Globaldelimiter", func(t *testing.T) {
 		t.Parallel()
 		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
