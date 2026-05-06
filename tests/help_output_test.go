@@ -47,6 +47,36 @@ func TestHideDefaultFromHelp(t *testing.T) {
 	})
 }
 
+// TestHideEnvFromHelp verifies per-flag env hints can be hidden.
+func TestHideEnvFromHelp(t *testing.T) {
+	t.Parallel()
+
+	t.Run("staticHideEnv", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.EnvPrefix("APP")
+		fs.String("name", "alice", "User name").HideEnv()
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "(env: APP_NAME)")
+	})
+
+	t.Run("dynamicHideEnv", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.EnvPrefix("APP")
+		g := fs.DynamicGroup("srv")
+		g.String("addr", "127.0.0.1", "address").HideEnv()
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "(env:")
+	})
+}
+
 // TestHelpSections verifies help section headings.
 func TestHelpSections(t *testing.T) {
 	t.Parallel()

@@ -63,6 +63,12 @@ func (d *DynamicFlag[T]) DisableEnv() *DynamicFlag[T] {
 	return d
 }
 
+// HideEnv hides the environment-variable hint in help.
+func (d *DynamicFlag[T]) HideEnv() *DynamicFlag[T] {
+	d.meta.hideEnv()
+	return d
+}
+
 // Placeholder customizes the value placeholder in usage.
 func (d *DynamicFlag[T]) Placeholder(s string) *DynamicFlag[T] {
 	d.meta.placeholder(s)

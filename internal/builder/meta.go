@@ -56,6 +56,9 @@ func (m *flagMeta) disableEnv() {
 	m.bf.DisableEnv = true
 }
 
+// hideEnv hides the environment variable hint in help output.
+func (m *flagMeta) hideEnv() { m.bf.HideEnv = true }
+
 // placeholder sets the usage placeholder for the flag.
 func (m *flagMeta) placeholder(s string) { m.bf.Placeholder = s }
 

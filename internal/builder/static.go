@@ -75,6 +75,12 @@ func (s *StaticFlag[T, Self]) DisableEnv() Self {
 	return s.self
 }
 
+// HideEnv hides the environment-variable hint in help.
+func (s *StaticFlag[T, Self]) HideEnv() Self {
+	s.meta.hideEnv()
+	return s.self
+}
+
 // Placeholder customizes the value placeholder in usage.
 func (b *StaticFlag[T, Self]) Placeholder(s string) Self {
 	b.meta.placeholder(s)
