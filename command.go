@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
@@ -71,13 +70,13 @@ func (c *Command) Globals() *FlagSet {
 
 // BuildCommand registers a zero-argument builder that returns the runnable for this command.
 func (c *Command) BuildCommand(builder any) *Command {
-	c.builder = wrapCommandBuilder(builder)
+	c.setBuilder(wrapCommandBuilder(builder))
 	return c
 }
 
 // Run registers one handler function plus deferred flag-backed arguments for this command.
 func (c *Command) Run(handler any, bindings ...any) *Command {
-	c.builder = wrapCommandRunner(handler, bindings...)
+	c.setBuilder(wrapCommandRunner(handler, bindings...))
 	return c
 }
 
@@ -215,197 +214,9 @@ type commandParseState struct {
 	versionRequested bool
 }
 
-var (
-	runnableType = reflect.TypeOf((*Runnable)(nil)).Elem()
-	contextType  = reflect.TypeOf((*context.Context)(nil)).Elem()
-	errorType    = reflect.TypeOf((*error)(nil)).Elem()
-)
-
-// wrapCommandBuilder validates one builder function and adapts it to the internal runner shape.
-func wrapCommandBuilder(builder any) commandBuilder {
-	if builder == nil {
-		panic("tinyflags: command builder cannot be nil")
-	}
-
-	value := reflect.ValueOf(builder)
-	typ := value.Type()
-	if typ.Kind() != reflect.Func {
-		panic(fmt.Sprintf("tinyflags: command builder must be a function, got %T", builder))
-	}
-	if typ.NumIn() != 0 {
-		panic("tinyflags: command builder must not accept arguments")
-	}
-	if typ.NumOut() < 1 || typ.NumOut() > 2 {
-		panic("tinyflags: command builder must return Runnable or (Runnable, error)")
-	}
-	if !typ.Out(0).Implements(runnableType) {
-		panic(fmt.Sprintf("tinyflags: command builder must return a Runnable, got %s", typ.Out(0)))
-	}
-	if typ.NumOut() == 2 && !typ.Out(1).Implements(errorType) {
-		panic(fmt.Sprintf("tinyflags: command builder second return must be an error, got %s", typ.Out(1)))
-	}
-
-	return func() (Runnable, error) {
-		results := value.Call(nil)
-		if len(results) == 2 && !results[1].IsZero() {
-			return nil, results[1].Interface().(error)
-		}
-		if isNilBuilderResult(results[0]) {
-			return nil, fmt.Errorf("tinyflags: command builder returned a nil Runnable")
-		}
-
-		runnable, ok := results[0].Interface().(Runnable)
-		if !ok {
-			return nil, fmt.Errorf("tinyflags: command builder returned %T, which does not implement Runnable", results[0].Interface())
-		}
-		return runnable, nil
-	}
-}
-
-// wrapCommandRunner validates one handler plus bound arguments and adapts them to a runnable builder.
-func wrapCommandRunner(handler any, bindings ...any) commandBuilder {
-	value := reflect.ValueOf(handler)
-	if !value.IsValid() {
-		panic("tinyflags: command handler cannot be nil")
-	}
-	spec := parseRunHandler(value.Type())
-
-	return func() (Runnable, error) {
-		args, err := resolveRunBindings(spec, bindings)
-		if err != nil {
-			return nil, err
-		}
-		return commandHandlerRunner{
-			handler:       value,
-			args:          args,
-			injectContext: spec.injectContext,
-			returnsError:  spec.returnsError,
-		}, nil
-	}
-}
-
-type runHandlerSpec struct {
-	paramTypes    []reflect.Type
-	injectContext bool
-	returnsError  bool
-}
-
-// parseRunHandler validates one registered command handler signature.
-func parseRunHandler(handlerType reflect.Type) runHandlerSpec {
-	if handlerType == nil || handlerType.Kind() != reflect.Func {
-		panic("tinyflags: command handler must be a function")
-	}
-
-	spec := runHandlerSpec{}
-	start := 0
-	if handlerType.NumIn() > 0 && handlerType.In(0).Implements(contextType) {
-		spec.injectContext = true
-		start = 1
-	}
-	for i := start; i < handlerType.NumIn(); i++ {
-		spec.paramTypes = append(spec.paramTypes, handlerType.In(i))
-	}
-
-	if handlerType.NumOut() > 1 {
-		panic("tinyflags: command handler must return no values or one error")
-	}
-	if handlerType.NumOut() == 1 {
-		if !handlerType.Out(0).Implements(errorType) {
-			panic(fmt.Sprintf("tinyflags: command handler return type must be error, got %s", handlerType.Out(0)))
-		}
-		spec.returnsError = true
-	}
-
-	return spec
-}
-
-type commandHandlerRunner struct {
-	handler       reflect.Value
-	args          []reflect.Value
-	injectContext bool
-	returnsError  bool
-}
-
-// Run executes one registered command handler with its parsed argument values.
-func (r commandHandlerRunner) Run(ctx context.Context) error {
-	callArgs := make([]reflect.Value, 0, len(r.args)+1)
-	if r.injectContext {
-		callArgs = append(callArgs, reflect.ValueOf(ctx))
-	}
-	callArgs = append(callArgs, r.args...)
-
-	results := r.handler.Call(callArgs)
-	if !r.returnsError || len(results) == 0 || results[0].IsZero() {
-		return nil
-	}
-	return results[0].Interface().(error)
-}
-
-// resolveRunBindings freezes one handler invocation's bound arguments after parsing.
-func resolveRunBindings(spec runHandlerSpec, bindings []any) ([]reflect.Value, error) {
-	if len(bindings) != len(spec.paramTypes) {
-		return nil, fmt.Errorf("tinyflags: command handler expects %d bound arguments, got %d", len(spec.paramTypes), len(bindings))
-	}
-
-	args := make([]reflect.Value, 0, len(bindings))
-	for i, binding := range bindings {
-		value, err := resolveRunBinding(binding, spec.paramTypes[i])
-		if err != nil {
-			return nil, fmt.Errorf("tinyflags: binding %d: %w", i+1, err)
-		}
-		args = append(args, value)
-	}
-	return args, nil
-}
-
-// resolveRunBinding converts one registered binding into the concrete parameter value a handler needs.
-func resolveRunBinding(binding any, paramType reflect.Type) (reflect.Value, error) {
-	if binding == nil {
-		return reflect.Value{}, fmt.Errorf("nil binding is not supported for %s", paramType)
-	}
-
-	value := reflect.ValueOf(binding)
-	if resolved, ok := assignRunBinding(value, paramType); ok {
-		return freezeRunBindingValue(resolved), nil
-	}
-	if value.Kind() == reflect.Pointer {
-		if value.IsNil() {
-			return reflect.Value{}, fmt.Errorf("nil pointer binding cannot satisfy %s", paramType)
-		}
-		if resolved, ok := assignRunBinding(value.Elem(), paramType); ok {
-			return freezeRunBindingValue(resolved), nil
-		}
-	}
-
-	return reflect.Value{}, fmt.Errorf("cannot use %s as %s", value.Type(), paramType)
-}
-
-// assignRunBinding normalizes one reflect value to the handler parameter type when compatible.
-func assignRunBinding(value reflect.Value, paramType reflect.Type) (reflect.Value, bool) {
-	if value.Type().AssignableTo(paramType) {
-		return value, true
-	}
-	if value.Type().ConvertibleTo(paramType) {
-		return value.Convert(paramType), true
-	}
-	return reflect.Value{}, false
-}
-
-// freezeRunBindingValue copies one resolved binding so later flag mutations do not leak into one parsed runner.
-func freezeRunBindingValue(value reflect.Value) reflect.Value {
-	frozen := reflect.New(value.Type()).Elem()
-	frozen.Set(value)
-	return frozen
-}
-
-// isNilBuilderResult reports whether a reflect value contains a nil value for nilable kinds.
-func isNilBuilderResult(value reflect.Value) bool {
-	switch value.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
-		return value.IsNil()
-	default:
-		return false
-	}
+// setBuilder stores the internal runner builder shared by all registration styles.
+func (c *Command) setBuilder(builder commandBuilder) {
+	c.builder = builder
 }
 
 // append records one routed argument for a specific flag set.
