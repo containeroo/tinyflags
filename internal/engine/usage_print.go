@@ -3,7 +3,8 @@ package engine
 import (
 	"fmt"
 	"io"
-	"strings"
+
+	"github.com/containeroo/tinyflags/internal/help"
 )
 
 // PrintUsage prints a usage line depending on mode.
@@ -53,81 +54,23 @@ func (f *FlagSet) PrintAuthors(w io.Writer) {
 // PrintDescription renders description block above flags.
 func (f *FlagSet) PrintDescription(w io.Writer, indent, maxWidth int) {
 	if f.desc != "" {
-		newUsageLayout(indent, 0, maxWidth).writeIndented(w, f.desc)
+		help.WriteIndented(w, f.desc, indent, maxWidth)
 	}
 }
 
 // PrintNotes renders notes block below flags.
 func (f *FlagSet) PrintNotes(w io.Writer, indent, maxWidth int) {
 	if f.notes != "" {
-		newUsageLayout(indent, 0, maxWidth).writeIndented(w, f.notes)
+		help.WriteIndented(w, f.notes, indent, maxWidth)
 	}
 }
 
 // PrintStaticDefaults renders all statically registered flags.
 func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth int) {
-	layout := newUsageLayout(indent, startCol, maxWidth)
-	var lastSection string
-	for _, fl := range f.staticFlags() {
-		if fl.Hidden {
-			continue
-		}
-		if fl.Section != "" && fl.Section != lastSection {
-			fmt.Fprintf(w, "\n%s:\n", fl.Section) // nolint:errcheck
-			lastSection = fl.Section
-		}
-		printFlagUsage(w, layout, f.hideEnvs, fl, f.envPrefix)
-	}
-
-	if f.StaticUsageNote() != "" {
-		fmt.Fprintln(w, f.StaticUsageNote()) // nolint:errcheck
-	}
+	help.PrintStaticDefaults(w, f.staticFlags(), indent, startCol, maxWidth, f.hideEnvs, f.envPrefix, f.StaticUsageNote())
 }
 
 // PrintDynamicDefaults renders all dynamic groups.
 func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth int) {
-	layout := newUsageLayout(indent, startCol, maxWidth)
-	for _, group := range f.dynamicGroups() {
-		if group.IsHidden() {
-			continue
-		}
-		name := group.Name()
-
-		if title := group.TitleText(); title != "" {
-			fmt.Fprintf(w, "\n%s\n", title) // nolint:errcheck
-		}
-		if desc := group.DescriptionText(); desc != "" {
-			newUsageLayout(0, 0, maxWidth).writeIndented(w, wrapText(desc, maxWidth-indent))
-		}
-		idPlaceholder := group.GetPlaceholder()
-		if idPlaceholder == "" {
-			idPlaceholder = "<ID>"
-		}
-
-		for _, fl := range group.DynamicFlags() {
-			flagLine := formatDynamicFlagLine(name, idPlaceholder, fl)
-			desc := buildFlagDescription(fl, f.hideEnvs, f.envPrefix)
-
-			if len(desc) <= layout.descriptionWidth() {
-				_, _ = fmt.Fprintf(w,
-					"%s%-*s %s\n",
-					strings.Repeat(" ", indent),
-					startCol,
-					flagLine,
-					desc,
-				)
-				continue
-			}
-
-			layout.writeWrappedRow(w, flagLine, desc)
-		}
-
-		if note := group.NoteText(); note != "" {
-			newUsageLayout(indent, 0, maxWidth).writeIndented(w, wrapText(note, maxWidth-indent))
-		}
-	}
-
-	if f.DynamicUsageNote() != "" {
-		fmt.Fprintln(w, f.DynamicUsageNote()) // nolint:errcheck
-	}
+	help.PrintDynamicDefaults(w, f.dynamicGroups(), indent, startCol, maxWidth, f.hideEnvs, f.envPrefix, f.DynamicUsageNote())
 }
