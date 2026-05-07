@@ -23,7 +23,7 @@ func main() {
 		Short("v").
 		Value()
 
-	if err := fs.Parse(os.Args); err != nil {
+	if err := fs.Parse(os.Args[1:]); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

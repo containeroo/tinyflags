@@ -10,31 +10,39 @@ import (
 // main demonstrates grouped flag constraints.
 func main() {
 	fs := tinyflags.NewFlagSet("groups", tinyflags.ExitOnError)
+	fs.Description("Choose exactly one authentication method.")
 
-	api := fs.GetAllOrNoneGroup("api")
-	apiFlag := fs.Bool("api", false, "Enable API").AllOrNone("api").Value()
+	email := fs.String("email", "", "Login email").
+		AllOrNone("password-auth")
+	password := fs.String("password", "", "Login password").
+		AllOrNone("password-auth")
+	bearer := fs.String("bearer-token", "", "Bearer token").
+		OneOfGroup("auth")
 
-	db := fs.GetAllOrNoneGroup("db")
-	dbFlag := fs.Bool("db", false, "Enable database").AllOrNone("db").Value()
-
-	cache := fs.GetAllOrNoneGroup("cache")
-	cacheFlag := fs.Bool("cache", false, "Enable cache").AllOrNone("cache").Value()
-
-	fs.GetOneOfGroup("stack").
+	fs.GetOneOfGroup("auth").
 		Required().
-		AddGroup(api).
-		AddGroup(db).
-		AddGroup(cache)
+		Title("Authentication Method")
+	fs.AttachGroupToOneOf("auth", "password-auth")
 
-	// ensure cache and db settings are treated as a block
-	fs.AttachGroupToAllOrNone("db", "cache")
+	args := os.Args[1:]
+	if len(args) == 0 {
+		args = []string{
+			"--email=alice@example.com",
+			"--password=super-secret",
+		}
+	}
 
-	if err := fs.Parse(nil); err != nil {
+	if err := fs.Parse(args); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Println("api enabled:", *apiFlag)
-	fmt.Println("db enabled:", *dbFlag)
-	fmt.Println("cache enabled:", *cacheFlag)
+	switch {
+	case email.Changed():
+		fmt.Printf("auth method: password\nemail: %s\npassword length: %d\n", *email.Value(), len(*password.Value()))
+	case bearer.Changed():
+		fmt.Printf("auth method: bearer\nbearer token prefix: %.6s...\n", *bearer.Value())
+	default:
+		fmt.Println("auth method: none")
+	}
 }
