@@ -105,6 +105,7 @@ func (c *Command) Parse(args []string) error {
 		}
 
 		if child, ok := current.children[arg]; ok && !strings.HasPrefix(arg, "-") {
+			// Bare child names advance the command cursor instead of becoming positionals.
 			current = child
 			continue
 		}
@@ -117,6 +118,7 @@ func (c *Command) Parse(args []string) error {
 			}
 
 			state.append(owner, arg)
+			// Route the following token with the same owner when the flag consumes a value.
 			if !strings.Contains(arg, "=") && flagConsumesValue(flag) && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 				i++
 				state.append(owner, args[i])
@@ -166,6 +168,7 @@ type commandParseState struct {
 	versionRequested bool
 }
 
+// append records one routed argument for a specific flag set.
 func (s *commandParseState) append(fs *FlagSet, arg string) {
 	if fs == nil {
 		return
@@ -173,6 +176,7 @@ func (s *commandParseState) append(fs *FlagSet, arg string) {
 	s.argsBySet[fs] = append(s.argsBySet[fs], arg)
 }
 
+// parseScopes returns the flag sets that must parse for this command node.
 func (c *Command) parseScopes() []*FlagSet {
 	if c.parent == nil || c.globals == c.FlagSet {
 		return []*FlagSet{c.FlagSet}
@@ -180,6 +184,7 @@ func (c *Command) parseScopes() []*FlagSet {
 	return []*FlagSet{c.globals, c.FlagSet}
 }
 
+// commandPathTo returns the command chain from the receiver to the target.
 func (c *Command) commandPathTo(target *Command) []*Command {
 	var path []*Command
 	for cur := target; cur != nil; cur = cur.parent {
@@ -194,6 +199,7 @@ func (c *Command) commandPathTo(target *Command) []*Command {
 	return path
 }
 
+// availableFlagSets returns local and inherited persistent flag sets in lookup order.
 func (c *Command) availableFlagSets() []*FlagSet {
 	scopes := []*FlagSet{c.FlagSet}
 	if c.parent != nil && c.globals != c.FlagSet {
@@ -207,6 +213,7 @@ func (c *Command) availableFlagSets() []*FlagSet {
 	return scopes
 }
 
+// resolveLongArg finds which flag set owns a long-form flag token.
 func (c *Command) resolveLongArg(arg string) (*FlagSet, *core.BaseFlag) {
 	name := strings.TrimPrefix(arg, "--")
 	if eq := strings.Index(name, "="); eq >= 0 {
@@ -227,6 +234,7 @@ func (c *Command) resolveLongArg(arg string) (*FlagSet, *core.BaseFlag) {
 	return nil, nil
 }
 
+// resolveShortFlag finds which flag set owns a short-form flag token.
 func (c *Command) resolveShortFlag(short string) (*FlagSet, *core.BaseFlag) {
 	for _, fs := range c.availableFlagSets() {
 		for _, fl := range fs.impl.OrderedStaticFlags() {
@@ -238,6 +246,7 @@ func (c *Command) resolveShortFlag(short string) (*FlagSet, *core.BaseFlag) {
 	return nil, nil
 }
 
+// routeShortArgs routes grouped short options to the owning flag sets.
 func (c *Command) routeShortArgs(arg string, args []string, i *int, state *commandParseState) bool {
 	shorts := strings.TrimPrefix(arg, "-")
 	if shorts == "" {
@@ -271,6 +280,7 @@ func (c *Command) routeShortArgs(arg string, args []string, i *int, state *comma
 	return true
 }
 
+// flagConsumesValue reports whether a flag expects a following value token.
 func flagConsumesValue(fl *core.BaseFlag) bool {
 	if fl == nil || fl.Value == nil {
 		return false
@@ -284,6 +294,7 @@ func flagConsumesValue(fl *core.BaseFlag) bool {
 	return true
 }
 
+// lookupDynamicFlag resolves a dynamic field inside one dynamic group.
 func lookupDynamicFlag(fs *FlagSet, groupName, field string) *core.BaseFlag {
 	for _, group := range fs.impl.DynamicGroups() {
 		if group.Name() != groupName {
@@ -294,6 +305,7 @@ func lookupDynamicFlag(fs *FlagSet, groupName, field string) *core.BaseFlag {
 	return nil
 }
 
+// ownerOrCurrent falls back to the current command's local flag set when unset.
 func ownerOrCurrent(owner *FlagSet, current *Command) *FlagSet {
 	if owner != nil {
 		return owner
@@ -301,6 +313,7 @@ func ownerOrCurrent(owner *FlagSet, current *Command) *FlagSet {
 	return current.FlagSet
 }
 
+// renderCommandHelp renders local help plus any child command listing.
 func renderCommandHelp(cmd *Command) string {
 	helpText := renderLocalHelp(cmd.FlagSet)
 	lines := strings.Split(strings.TrimRight(helpText, "\n"), "\n")
@@ -321,6 +334,7 @@ func renderCommandHelp(cmd *Command) string {
 	return b.String()
 }
 
+// renderLocalHelp renders help text for one command-local flag set.
 func renderLocalHelp(fs *FlagSet) string {
 	err := fs.Parse([]string{"--help"})
 	if err == nil {
@@ -329,6 +343,7 @@ func renderLocalHelp(fs *FlagSet) string {
 	return err.Error()
 }
 
+// renderUsageLine builds the usage line for a command help screen.
 func renderUsageLine(cmd *Command) string {
 	usage := "Usage: " + cmd.FullName()
 	if hasAnyVisibleFlags(cmd.FlagSet) {
@@ -340,6 +355,7 @@ func renderUsageLine(cmd *Command) string {
 	return usage
 }
 
+// hasAnyVisibleFlags reports whether a local command help screen has visible flags.
 func hasAnyVisibleFlags(fs *FlagSet) bool {
 	for _, fl := range fs.impl.OrderedStaticFlags() {
 		if !fl.Hidden {
@@ -359,6 +375,7 @@ func hasAnyVisibleFlags(fs *FlagSet) bool {
 	return false
 }
 
+// longestCommandName returns the widest child command name for aligned help output.
 func longestCommandName(commands []*Command) int {
 	width := 0
 	for _, cmd := range commands {
