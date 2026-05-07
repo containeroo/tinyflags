@@ -10,23 +10,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestSliceStrictDelimiter verifies strict delimiter handling for slice flags.
-func TestSliceStrictDelimiter(t *testing.T) {
+// TestSliceDelimiterHandling verifies only the configured delimiter is used for splitting.
+func TestSliceDelimiterHandling(t *testing.T) {
 	t.Parallel()
 
-	t.Run("mixedDelimiterErrors", func(t *testing.T) {
+	t.Run("otherDelimitersRemainInValues", func(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 		names := fs.StringSlice("name", nil, "names").
 			Delimiter("|").
-			StrictDelimiter().
 			Value()
 
 		err := fs.Parse([]string{"--name=a,b|c"})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "mixed delimiters")
-		assert.Nil(t, *names)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"a,b", "c"}, *names)
 	})
 }
 
@@ -170,21 +168,20 @@ func TestDynamicFinalizeWithID(t *testing.T) {
 		assert.Equal(t, "main:admin", val)
 	})
 
-	t.Run("sliceStrictDelimiterDynamic", func(t *testing.T) {
+	t.Run("dynamicDelimiterLeavesOtherSeparatorsInValues", func(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 		http := fs.DynamicGroup("http")
 		hosts := http.StringSlice("hosts", nil, "hosts").
-			Delimiter(",").
-			StrictDelimiter()
+			Delimiter(",")
 
 		err := fs.Parse([]string{"--http.a.hosts=a|b"})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "mixed delimiters")
+		require.NoError(t, err)
 
-		_, ok := hosts.Get("a")
-		assert.False(t, ok)
+		got, ok := hosts.Get("a")
+		require.True(t, ok)
+		assert.Equal(t, []string{"a|b"}, got)
 	})
 }
 

@@ -1,28 +1,5 @@
 package utils
 
-import (
-	"fmt"
-	"strings"
-)
-
-// CheckMixedDelimiters rejects common alternate delimiters when a specific delimiter is in use.
-func CheckMixedDelimiters(raw, delimiter string) error {
-	for _, alt := range []string{",", ";", "|"} {
-		if alt == delimiter {
-			continue
-		}
-		if containsAlt(raw, alt) {
-			return fmt.Errorf("mixed delimiters: found %q while using %q", alt, delimiter)
-		}
-	}
-	return nil
-}
-
-// containsAlt reports whether raw contains an alternate delimiter candidate.
-func containsAlt(raw, alt string) bool {
-	return len(alt) > 0 && len(raw) > 0 && strings.Contains(raw, alt)
-}
-
 // ApplyDefaultValueFinalize applies the default-only finalizer to a scalar value when eligible.
 func ApplyDefaultValueFinalize[T any](current *T, changed bool, defaultFinalized *bool, finalizeDefault bool, finalize func(T) T) {
 	if changed || *defaultFinalized || !finalizeDefault || finalize == nil {

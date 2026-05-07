@@ -21,7 +21,6 @@ func main() {
 		"- Finalize\n" +
 		"- FinalizeDefaultValue\n" +
 		"- Choices\n" +
-		"- StrictDelimiter\n" +
 		"- AllowEmpty\n" +
 		"- Default values\n" +
 		"- Environment variables\n" +
@@ -39,7 +38,6 @@ func main() {
 
 	tags := fs.StringSlice("tag", nil, "Tags to attach").
 		Delimiter(",").
-		StrictDelimiter().
 		AllowEmpty().
 		Section("Metadata")
 	tagsVal := tags.Value()

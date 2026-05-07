@@ -98,12 +98,6 @@ func (f *SliceFlag[T]) ValuesAny() map[string]any {
 	return out
 }
 
-// StrictDelimiter rejects inputs that mix different separators.
-func (f *SliceFlag[T]) StrictDelimiter() *SliceFlag[T] {
-	f.item.setStrictDelimiter(true)
-	return f
-}
-
 // AllowEmpty permits empty items in the slice (e.g., "a,,b").
 func (f *SliceFlag[T]) AllowEmpty() *SliceFlag[T] {
 	f.item.setAllowEmpty(true)

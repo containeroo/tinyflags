@@ -89,11 +89,6 @@ func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
 	d.input.Delimiter = sep
 }
 
-// setStrictDelimiter toggles mixed-delimiter rejection.
-func (d *DynamicSliceValue[T]) setStrictDelimiter(strict bool) {
-	d.input.StrictDel = strict
-}
-
 // setAllowEmpty toggles acceptance of empty items.
 func (d *DynamicSliceValue[T]) setAllowEmpty(allow bool) {
 	d.input.AllowEmpty = allow

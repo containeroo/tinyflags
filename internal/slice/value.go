@@ -86,9 +86,6 @@ func (v *SliceValue[T]) setFinalize(fn func(T) T) { v.hooks.SetFinalize(fn) }
 // setFinalizeDefaultValue enables running the finalizer on defaults when unset.
 func (v *SliceValue[T]) setFinalizeDefaultValue() { v.hooks.EnableFinalizeDefault() }
 
-// setStrictDelimiter toggles mixed-delimiter rejection.
-func (v *SliceValue[T]) setStrictDelimiter(strict bool) { v.input.StrictDel = strict }
-
 // setAllowEmpty toggles acceptance of empty items.
 func (v *SliceValue[T]) setAllowEmpty(allow bool) { v.input.AllowEmpty = allow }
 
