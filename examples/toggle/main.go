@@ -14,7 +14,7 @@ func main() {
 	debugFlag := fs.Bool("debug", false, "Enable debug logs").Short("d").OneOfGroup("debug")
 	noDebugFlag := fs.Bool("no-debug", false, "Disable debug logs").Short("n").OneOfGroup("debug")
 
-	if err := fs.Parse(os.Args); err != nil {
+	if err := fs.Parse(os.Args[1:]); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

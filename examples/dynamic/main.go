@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/containeroo/tinyflags"
@@ -29,15 +30,24 @@ func main() {
 			return v + len(id)
 		})
 
-	// Global unknown flag handler to ignore extra args
-	fs.OnUnknownFlag(func(name string) error { return nil })
+	args := os.Args[1:]
+	if len(args) == 0 {
+		args = []string{
+			"--svc.api.addr=10.0.0.10",
+			"--svc.api.port=8080,8443",
+			"--svc.worker.addr=10.0.0.20",
+			"--svc.worker.port=9000",
+		}
+	}
 
-	if err := fs.Parse(nil); err != nil {
+	if err := fs.Parse(args); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	for _, id := range svc.Instances() {
+	ids := svc.Instances()
+	sort.Strings(ids)
+	for _, id := range ids {
 		fmt.Printf("[%s] addr=%s ports=%v\n", id, addr.MustGet(id), ports.MustGet(id))
 	}
 }

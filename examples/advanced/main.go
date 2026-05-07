@@ -55,12 +55,13 @@ func main() {
 			}
 			return strings.TrimSuffix(u, "/") + "/"
 		}).
-		Section("Networking")
+		Section("Networking").
+		Value()
 
 	debug := fs.Bool("debug", false, "Enable debug logs").Short("d")
 	noDebug := fs.Bool("no-debug", false, "Disable debug logs").Short("n")
 
-	if err := fs.Parse(os.Args); err != nil {
+	if err := fs.Parse(os.Args[1:]); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
