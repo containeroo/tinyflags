@@ -26,8 +26,21 @@ func (m *flagMeta) oneOfGroup(name string) {
 		return
 	}
 	g := m.registry.GetOneOfGroup(name)
-	g.Flags = append(g.Flags, m.bf)
-	m.bf.OneOfGroup = g
+	g.Flags = appendBaseFlagUnique(g.Flags, m.bf)
+	m.bf.OneOfGroups = appendOneOfGroupUnique(m.bf.OneOfGroups, g)
+}
+
+// helpOneOfGroups overrides which one-of groups should appear in help.
+func (m *flagMeta) helpOneOfGroups(names ...string) {
+	m.bf.HelpOneOfSet = true
+	m.bf.HelpOneOf = m.bf.HelpOneOf[:0]
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		g := m.registry.GetOneOfGroup(name)
+		m.bf.HelpOneOf = appendOneOfGroupUnique(m.bf.HelpOneOf, g)
+	}
 }
 
 // allOrNoneGroup attaches the flag to an all-or-none group.
@@ -86,3 +99,21 @@ func (m *flagMeta) section(name string) { m.bf.Section = name }
 
 // maskFn sets the masking function for overridden values.
 func (m *flagMeta) maskFn(fn func(any) any) { m.bf.MaskFn = fn }
+
+func appendBaseFlagUnique(flags []*core.BaseFlag, target *core.BaseFlag) []*core.BaseFlag {
+	for _, flag := range flags {
+		if flag == target {
+			return flags
+		}
+	}
+	return append(flags, target)
+}
+
+func appendOneOfGroupUnique(groups []*core.OneOfGroupGroup, target *core.OneOfGroupGroup) []*core.OneOfGroupGroup {
+	for _, group := range groups {
+		if group == target {
+			return groups
+		}
+	}
+	return append(groups, target)
+}

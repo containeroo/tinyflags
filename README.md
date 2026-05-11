@@ -141,6 +141,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `Hidden()`                  | all flags   | Omit this flag from generated help output.                                              |
 | `Deprecated(reason string)` | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
 | `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
+| `HelpOneOfGroups(names...)` | all flags   | Override which one-of groups for this flag are shown in help output.                    |
 | `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.             |
 | `Env(key string)`           | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
 | `HideEnv()`                 | all flags   | Hide the environment-variable name from help output.                                     |
@@ -168,6 +169,26 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `Section(name string)`                      | Group flags under a section header in help output.                                           |                                                                                                                                   |
 
 ### Dynamic-Flag Extras
+
+### Multiple one-of groups
+
+You can attach a flag to more than one one-of group by chaining `OneOfGroup(...)`. By default, all visible memberships are rendered in help. If you want help to mention only a subset, add `HelpOneOfGroups(...)`.
+
+```go
+searchHistoryOnly := fs.Bool("history-only", false, "Search shell history commands only.").
+    OneOfGroup("search-mode").
+    Value()
+
+searchPinsOnly := fs.Bool("pins-only", false, "Search pinned commands only.").
+    OneOfGroup("search-mode").
+    OneOfGroup("pins-scope").
+    HelpOneOfGroups("search-mode").
+    Value()
+
+searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands from history results.").
+    OneOfGroup("pins-scope").
+    Value()
+```
 
 | Method                               | Description                                                                       | Example                                                      |
 | :----------------------------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------- |

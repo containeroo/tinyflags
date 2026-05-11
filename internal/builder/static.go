@@ -57,6 +57,12 @@ func (s *StaticFlag[T, Self]) OneOfGroup(name string) Self {
 	return s.self
 }
 
+// HelpOneOfGroups overrides which one-of groups are shown in help output.
+func (s *StaticFlag[T, Self]) HelpOneOfGroups(names ...string) Self {
+	s.meta.helpOneOfGroups(names...)
+	return s.self
+}
+
 // AllOrNone assigns this flag to a require-together group.
 func (s *StaticFlag[T, Self]) AllOrNone(name string) Self {
 	s.meta.allOrNoneGroup(name)

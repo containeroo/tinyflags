@@ -29,6 +29,7 @@ func main() {
 			// Example: offset port by length of ID
 			return v + len(id)
 		})
+	headers := fs.StringSlice("headers", []string{}, "HTTP headers").Value()
 
 	args := os.Args[1:]
 	if len(args) == 0 {
@@ -48,6 +49,6 @@ func main() {
 	ids := svc.Instances()
 	sort.Strings(ids)
 	for _, id := range ids {
-		fmt.Printf("[%s] addr=%s ports=%v\n", id, addr.MustGet(id), ports.MustGet(id))
+		fmt.Printf("[%s] addr=%s ports=%v headers=%v\n", id, addr.MustGet(id), ports.MustGet(id), *headers)
 	}
 }

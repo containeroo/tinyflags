@@ -45,6 +45,12 @@ func (d *DynamicFlag[T]) OneOfGroup(name string) *DynamicFlag[T] {
 	return d
 }
 
+// HelpOneOfGroups overrides which one-of groups are shown in help output.
+func (d *DynamicFlag[T]) HelpOneOfGroups(names ...string) *DynamicFlag[T] {
+	d.meta.helpOneOfGroups(names...)
+	return d
+}
+
 // AllOrNone assigns this flag to a require-together group.
 func (d *DynamicFlag[T]) AllOrNone(name string) *DynamicFlag[T] {
 	d.meta.allOrNoneGroup(name)

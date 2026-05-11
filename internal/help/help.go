@@ -76,8 +76,8 @@ func BuildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 		desc += " (required)"
 	}
 
-	if flag.OneOfGroup != nil && !flag.OneOfGroup.IsHidden() {
-		desc += buildGroupInfo(flag.OneOfGroup)
+	for _, group := range flag.VisibleOneOfGroups() {
+		desc += buildGroupInfo(group)
 	}
 
 	if flag.AllOrNone != nil && !flag.AllOrNone.IsHidden() {

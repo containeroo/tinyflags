@@ -299,3 +299,19 @@ func TestOneOfGroupVerboseToggle(t *testing.T) {
 		assert.NotContains(t, err.Error(), "vs")
 	})
 }
+
+func TestOneOfGroupMultipleMembership(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.Bool("history-only", false, "history only").
+		OneOfGroup("search-mode").
+		OneOfGroup("pins-scope")
+	fs.Bool("pins-only", false, "pins only").
+		OneOfGroup("search-mode").
+		OneOfGroup("pins-scope")
+
+	err := fs.Parse([]string{"--history-only", "--pins-only"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `only one of the flags in group "search-mode" may be used`)
+}

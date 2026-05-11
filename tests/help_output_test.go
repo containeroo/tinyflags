@@ -145,3 +145,40 @@ func TestCounterPlaceholderHidden(t *testing.T) {
 	assert.Contains(t, out, "-v, --verbose")
 	assert.NotContains(t, out, "VERBOSE")
 }
+
+func TestOneOfGroupHelpVisibility(t *testing.T) {
+	t.Parallel()
+
+	t.Run("multipleGroupsShownByDefault", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Bool("pins-only", false, "Search pinned commands only.").
+			OneOfGroup("search-mode").
+			OneOfGroup("pins-scope")
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+		assert.Contains(t, out, "[group: search-mode (one of)]")
+		assert.Contains(t, out, "[group: pins-scope (one of)]")
+	})
+
+	t.Run("helpGroupsCanBeOverridden", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.GetOneOfGroup("search-mode").Title("Search Mode")
+		fs.GetOneOfGroup("pins-scope").Title("Pins Scope")
+		fs.Bool("pins-only", false, "Search pinned commands only.").
+			OneOfGroup("search-mode").
+			OneOfGroup("pins-scope").
+			HelpOneOfGroups("search-mode")
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+		assert.Contains(t, out, "[group: Search Mode (one of)]")
+		assert.NotContains(t, out, "Pins Scope")
+	})
+}

@@ -73,3 +73,28 @@ func (f *BaseFlag) UsagePlaceholder() string {
 	}
 	return placeholder
 }
+
+// VisibleOneOfGroups returns the one-of groups that should appear in help.
+func (f *BaseFlag) VisibleOneOfGroups() []*OneOfGroupGroup {
+	if f == nil {
+		return nil
+	}
+	if f.HelpOneOfSet {
+		return filterVisibleOneOfGroups(f.HelpOneOf)
+	}
+	return filterVisibleOneOfGroups(f.OneOfGroups)
+}
+
+func filterVisibleOneOfGroups(groups []*OneOfGroupGroup) []*OneOfGroupGroup {
+	if len(groups) == 0 {
+		return nil
+	}
+	out := make([]*OneOfGroupGroup, 0, len(groups))
+	for _, group := range groups {
+		if group == nil || group.IsHidden() {
+			continue
+		}
+		out = append(out, group)
+	}
+	return out
+}

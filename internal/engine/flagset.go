@@ -454,7 +454,12 @@ func (f *FlagSet) GetOneOfGroup(name string) *core.OneOfGroupGroup {
 func (f *FlagSet) AttachToOneOfGroup(bf *core.BaseFlag, group string) {
 	g := f.GetOneOfGroup(group)
 	g.Flags = append(g.Flags, bf)
-	bf.OneOfGroup = g
+	for _, existing := range bf.OneOfGroups {
+		if existing == g {
+			return
+		}
+	}
+	bf.OneOfGroups = append(bf.OneOfGroups, g)
 }
 
 // AttachGroupToOneOf adds an AllOrNone group as a single OneOf choice.
