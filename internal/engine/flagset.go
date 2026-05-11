@@ -136,9 +136,6 @@ func (f *FlagSet) DefaultDelimiter() string { return f.defaultDelimiter }
 // GlobalDelimiter sets the default slice delimiter.
 func (f *FlagSet) GlobalDelimiter(s string) { f.defaultDelimiter = s }
 
-// Globaldelimiter sets the default slice delimiter.
-func (f *FlagSet) Globaldelimiter(s string) { f.defaultDelimiter = s }
-
 // BeforeParse sets a hook that can rewrite args before parsing.
 func (f *FlagSet) BeforeParse(fn func([]string) ([]string, error)) { f.beforeParse = fn }
 

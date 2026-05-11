@@ -9,34 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestExportedCompatibilityAliases verifies exported compatibility aliases.
-func TestExportedCompatibilityAliases(t *testing.T) {
-	t.Parallel()
-
-	t.Run("globalDelimiterAliasMatchesPreferredMethod", func(t *testing.T) {
-		t.Parallel()
-
-		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-		fs.Globaldelimiter("|")
-		val := fs.StringSlice("tag", nil, "tags").Value()
-
-		err := fs.Parse([]string{"--tag=a|b"})
-		require.NoError(t, err)
-		assert.Equal(t, []string{"a", "b"}, *val)
-	})
-
-	t.Run("allOrNonePluralAndSingularAccessorsMatch", func(t *testing.T) {
-		t.Parallel()
-
-		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-		fs.GetAllOrNoneGroup("auth")
-
-		assert.Len(t, fs.AllOrNoneGroup(), 1)
-		assert.Len(t, fs.AllOrNoneGroups(), 1)
-		assert.Same(t, fs.AllOrNoneGroup()[0], fs.AllOrNoneGroups()[0])
-	})
-}
-
 // TestExportedHelpVersionSentinels verifies exported help/version sentinels.
 func TestExportedHelpVersionSentinels(t *testing.T) {
 	t.Parallel()

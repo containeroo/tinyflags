@@ -66,10 +66,6 @@ func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.impl.SetGetEnvFn(fn) }
 // GlobalDelimiter sets the delimiter used for all slice flags.
 func (f *FlagSet) GlobalDelimiter(s string) { f.impl.GlobalDelimiter(s) }
 
-// Globaldelimiter sets the delimiter used for all slice flags.
-// Deprecated: use GlobalDelimiter.
-func (f *FlagSet) Globaldelimiter(s string) { f.impl.GlobalDelimiter(s) }
-
 // DefaultDelimiter returns the delimiter used for slice flags.
 func (f *FlagSet) DefaultDelimiter() string { return f.impl.DefaultDelimiter() }
 

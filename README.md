@@ -267,13 +267,6 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `Run(handler, bindings...)` / `BuildCommand(builder)` | Register execution for a command. |
 | `ParseRunner(args)` / `ParseRunnable(args)` | Parse and build the selected runnable. |
 
-### Naming notes
-
-- `GlobalDelimiter(...)` is the preferred spelling.
-- `Globaldelimiter(...)` remains available as a compatibility alias.
-- `AllOrNoneGroups()` is the preferred plural accessor.
-- `AllOrNoneGroup()` remains available as a compatibility alias.
-
 ### How `Validate` and `Finalize` Work
 
 1. **Validate**

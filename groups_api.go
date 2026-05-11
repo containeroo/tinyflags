@@ -33,11 +33,6 @@ func (f *FlagSet) AttachToOneOfGroup(flag *core.BaseFlag, group string) {
 	f.impl.AttachToOneOfGroup(flag, group)
 }
 
-// AllOrNoneGroup returns all registered all-or-none groups.
-func (f *FlagSet) AllOrNoneGroup() []*core.AllOrNoneGroup {
-	return f.impl.AllOrNoneGroups()
-}
-
 // AllOrNoneGroups returns all registered all-or-none groups.
 func (f *FlagSet) AllOrNoneGroups() []*core.AllOrNoneGroup {
 	return f.impl.AllOrNoneGroups()

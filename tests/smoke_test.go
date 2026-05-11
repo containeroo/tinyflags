@@ -472,7 +472,7 @@ Flags:
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-		fs.Globaldelimiter("|")
+		fs.GlobalDelimiter("|")
 
 		names := fs.StringSlice("name", nil, "names").Value()
 
