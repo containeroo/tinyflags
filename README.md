@@ -88,6 +88,21 @@ if err := app.Parse(os.Args[1:]); err != nil {
 }
 ```
 
+If parsing fails because a required subcommand is missing, you can detect that and render contextual command help:
+
+```go
+if err := app.Parse(os.Args[1:]); err != nil {
+    switch {
+    case tinyflags.IsHelpRequested(err), tinyflags.IsVersionRequested(err):
+        return err
+    case tinyflags.IsCommandRequired(err):
+        return fmt.Errorf("%s\n\n%s", err, app.HelpText())
+    default:
+        return err
+    }
+}
+```
+
 ## Supported Types
 
 | Type            | Methods                                  |
@@ -262,6 +277,8 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `Command(name, summary string)` | Register a child command. |
 | `Globals()` | Access persistent flags inherited by that subtree. |
 | `RequireCommand()` | Return an error if this command is selected without a child command. |
+| `HelpText()` | Return rendered help for the selected command when available, otherwise the receiver. |
+| `WriteHelp(w io.Writer)` | Write rendered help for the selected command when available, otherwise the receiver. |
 | `Parse(args)` | Parse flags and select the active command. |
 | `SelectedCommand()` | Return the selected leaf command from the last parse. |
 | `Run(handler, bindings...)` / `BuildCommand(builder)` | Register execution for a command. |

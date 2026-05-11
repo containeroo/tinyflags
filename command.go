@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
@@ -67,6 +68,27 @@ func (c *Command) Command(name string, summary string) *Command {
 // Globals returns the persistent flag set for this command subtree.
 func (c *Command) Globals() *FlagSet {
 	return c.globals
+}
+
+// HelpText renders help for the selected command when available, otherwise the receiver.
+func (c *Command) HelpText() string {
+	target := c
+	if c != nil && c.selected != nil {
+		target = c.selected
+	}
+	if target == nil {
+		return ""
+	}
+	return renderCommandHelp(target)
+}
+
+// WriteHelp writes the rendered help text to w.
+func (c *Command) WriteHelp(w io.Writer) error {
+	if w == nil {
+		return nil
+	}
+	_, err := io.WriteString(w, c.HelpText())
+	return err
 }
 
 // RequireCommand enforces that one direct or nested child command must be selected.
