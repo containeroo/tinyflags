@@ -3,6 +3,8 @@
 package tinyflags
 
 import (
+	"errors"
+
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/dynamic"
 	"github.com/containeroo/tinyflags/internal/engine"
@@ -23,12 +25,33 @@ type (
 	VersionRequested = engine.VersionRequested
 )
 
+// CommandRequired is returned when one command requires a subcommand selection.
+type CommandRequired struct {
+	Command string
+}
+
+// Error returns the human-readable message for a missing required subcommand.
+func (e *CommandRequired) Error() string {
+	return `command "` + e.Command + `" requires a subcommand`
+}
+
 var (
 	IsHelpRequested    = engine.IsHelpRequested
 	IsVersionRequested = engine.IsVersionRequested
 	RequestHelp        = engine.RequestHelp
 	RequestVersion     = engine.RequestVersion
 )
+
+// IsCommandRequired checks whether err indicates a missing required subcommand.
+func IsCommandRequired(err error) bool {
+	var target *CommandRequired
+	return errors.As(err, &target)
+}
+
+// RequestCommandRequired builds the typed missing-subcommand error.
+func RequestCommandRequired(command string) error {
+	return &CommandRequired{Command: command}
+}
 
 // FlagPrintMode controls how the usage line is rendered.
 type FlagPrintMode = engine.FlagPrintMode

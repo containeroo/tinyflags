@@ -2,6 +2,7 @@ package tinyflags_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/containeroo/tinyflags"
@@ -94,7 +95,13 @@ func TestRequireCommandRoot(t *testing.T) {
 
 	err := root.Parse([]string{"--verbose"})
 	require.Error(t, err)
+	assert.True(t, tinyflags.IsCommandRequired(err))
 	assert.EqualError(t, err, `command "app" requires a subcommand`)
+
+	var typed *tinyflags.CommandRequired
+	assert.True(t, errors.As(err, &typed))
+	require.NotNil(t, typed)
+	assert.Equal(t, "app", typed.Command)
 }
 
 func TestRequireCommandNested(t *testing.T) {
@@ -107,6 +114,7 @@ func TestRequireCommandNested(t *testing.T) {
 
 	err := root.Parse([]string{"admin", "--audit"})
 	require.Error(t, err)
+	assert.True(t, tinyflags.IsCommandRequired(err))
 	assert.EqualError(t, err, `command "app admin" requires a subcommand`)
 }
 

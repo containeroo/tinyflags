@@ -269,7 +269,7 @@ func (c *Command) missingRequiredCommand(selected *Command) error {
 			continue
 		}
 		if cmd == selected && len(cmd.order) > 0 {
-			return fmt.Errorf("command %q requires a subcommand", cmd.FullName())
+			return RequestCommandRequired(cmd.FullName())
 		}
 	}
 	return nil

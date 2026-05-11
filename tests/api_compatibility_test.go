@@ -54,3 +54,18 @@ func TestExportedHelpVersionSentinels(t *testing.T) {
 	assert.True(t, errors.As(helpErr, &helpTyped))
 	assert.True(t, errors.As(versionErr, &versionTyped))
 }
+
+func TestExportedCommandRequiredSentinel(t *testing.T) {
+	t.Parallel()
+
+	cmdErr := tinyflags.RequestCommandRequired("app")
+
+	require.True(t, tinyflags.IsCommandRequired(cmdErr))
+	require.False(t, tinyflags.IsHelpRequested(cmdErr))
+	require.False(t, tinyflags.IsVersionRequested(cmdErr))
+
+	var typed *tinyflags.CommandRequired
+	assert.True(t, errors.As(cmdErr, &typed))
+	require.NotNil(t, typed)
+	assert.Equal(t, "app", typed.Command)
+}
