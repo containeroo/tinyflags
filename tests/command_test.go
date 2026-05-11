@@ -116,13 +116,20 @@ func TestRequireCommandRoot(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, tinyflags.IsCommandRequired(err))
 	assert.EqualError(t, err, `command "app" requires a subcommand`)
+	help, ok := tinyflags.HelpText(err)
+	require.True(t, ok)
+	assert.Contains(t, help, `Usage: app [flags] <command>`)
+	assert.Contains(t, help, "Commands:")
 
 	var typed *tinyflags.CommandRequired
 	assert.True(t, errors.As(err, &typed))
 	require.NotNil(t, typed)
 	assert.Equal(t, "app", typed.Command)
-	assert.Contains(t, root.HelpText(), `Usage: app [flags] <command>`)
-	assert.Contains(t, root.HelpText(), "Commands:")
+
+	var usageErr *tinyflags.UsageError
+	assert.True(t, errors.As(err, &usageErr))
+	require.NotNil(t, usageErr)
+	assert.Equal(t, help, usageErr.Help)
 }
 
 func TestRequireCommandNested(t *testing.T) {
@@ -137,8 +144,10 @@ func TestRequireCommandNested(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, tinyflags.IsCommandRequired(err))
 	assert.EqualError(t, err, `command "app admin" requires a subcommand`)
-	assert.Contains(t, root.HelpText(), `Usage: app admin [flags] <command>`)
-	assert.Contains(t, root.HelpText(), "users")
+	help, ok := tinyflags.HelpText(err)
+	require.True(t, ok)
+	assert.Contains(t, help, `Usage: app admin [flags] <command>`)
+	assert.Contains(t, help, "users")
 }
 
 // TestParseRunnerInvokesSelectedHandler verifies handler registration receives parsed values.

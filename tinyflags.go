@@ -25,6 +25,28 @@ type (
 	VersionRequested = engine.VersionRequested
 )
 
+// UsageError wraps a semantic parse error with rendered help text.
+type UsageError struct {
+	Err  error
+	Help string
+}
+
+// Error returns the wrapped error message.
+func (e *UsageError) Error() string {
+	if e == nil || e.Err == nil {
+		return ""
+	}
+	return e.Err.Error()
+}
+
+// Unwrap exposes the semantic parse error.
+func (e *UsageError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Err
+}
+
 // CommandRequired is returned when one command requires a subcommand selection.
 type CommandRequired struct {
 	Command string
@@ -48,9 +70,13 @@ func IsCommandRequired(err error) bool {
 	return errors.As(err, &target)
 }
 
-// RequestCommandRequired builds the typed missing-subcommand error.
-func RequestCommandRequired(command string) error {
-	return &CommandRequired{Command: command}
+// HelpText extracts rendered help text from a usage-bearing error.
+func HelpText(err error) (string, bool) {
+	var usageErr *UsageError
+	if !errors.As(err, &usageErr) || usageErr == nil || usageErr.Help == "" {
+		return "", false
+	}
+	return usageErr.Help, true
 }
 
 // FlagPrintMode controls how the usage line is rendered.

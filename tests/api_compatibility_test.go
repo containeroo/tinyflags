@@ -27,17 +27,28 @@ func TestExportedHelpVersionSentinels(t *testing.T) {
 	assert.True(t, errors.As(versionErr, &versionTyped))
 }
 
-func TestExportedCommandRequiredSentinel(t *testing.T) {
+func TestExportedUsageErrorHelpers(t *testing.T) {
 	t.Parallel()
 
-	cmdErr := tinyflags.RequestCommandRequired("app")
+	cmdErr := &tinyflags.UsageError{
+		Err:  &tinyflags.CommandRequired{Command: "app"},
+		Help: "Usage: app <command>\n",
+	}
 
 	require.True(t, tinyflags.IsCommandRequired(cmdErr))
 	require.False(t, tinyflags.IsHelpRequested(cmdErr))
 	require.False(t, tinyflags.IsVersionRequested(cmdErr))
+	help, ok := tinyflags.HelpText(cmdErr)
+	require.True(t, ok)
+	assert.Equal(t, "Usage: app <command>\n", help)
 
 	var typed *tinyflags.CommandRequired
 	assert.True(t, errors.As(cmdErr, &typed))
 	require.NotNil(t, typed)
 	assert.Equal(t, "app", typed.Command)
+
+	var usage *tinyflags.UsageError
+	assert.True(t, errors.As(cmdErr, &usage))
+	require.NotNil(t, usage)
+	assert.Equal(t, "Usage: app <command>\n", usage.Help)
 }

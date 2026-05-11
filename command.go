@@ -291,7 +291,10 @@ func (c *Command) missingRequiredCommand(selected *Command) error {
 			continue
 		}
 		if cmd == selected && len(cmd.order) > 0 {
-			return RequestCommandRequired(cmd.FullName())
+			return &UsageError{
+				Err:  &CommandRequired{Command: cmd.FullName()},
+				Help: renderCommandHelp(cmd),
+			}
 		}
 	}
 	return nil

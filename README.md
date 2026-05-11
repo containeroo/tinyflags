@@ -96,7 +96,8 @@ if err := app.Parse(os.Args[1:]); err != nil {
     case tinyflags.IsHelpRequested(err), tinyflags.IsVersionRequested(err):
         return err
     case tinyflags.IsCommandRequired(err):
-        return fmt.Errorf("%s\n\n%s", err, app.HelpText())
+        help, _ := tinyflags.HelpText(err)
+        return fmt.Errorf("%s\n\n%s", err, help)
     default:
         return err
     }
@@ -155,6 +156,8 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 
 - `FirstChanged[T](defaultValue, flags...)` — returns the value of the first changed flag (by order) plus whether any flag was set.
 - `IsHelpRequested(err)` / `IsVersionRequested(err)` — detect help/version parse exits.
+- `IsCommandRequired(err)` — detect missing required subcommand errors, even when wrapped with usage help.
+- `HelpText(err)` — extract rendered help text from usage-bearing parse errors.
 - `RequestHelp(msg)` / `RequestVersion(msg)` — trigger help/version errors manually.
 - `Flag[T]` — minimal interface implemented by flag handles (`Changed() bool`, `Value() *T`).
 
