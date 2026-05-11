@@ -85,6 +85,31 @@ func TestCommandHelpListsChildren(t *testing.T) {
 	assert.Contains(t, err.Error(), "build")
 }
 
+func TestRequireCommandRoot(t *testing.T) {
+	t.Parallel()
+
+	root := tinyflags.NewCommand("app", tinyflags.ContinueOnError).RequireCommand()
+	root.Globals().Bool("verbose", false, "verbose")
+	root.Command("serve", "Run the server")
+
+	err := root.Parse([]string{"--verbose"})
+	require.Error(t, err)
+	assert.EqualError(t, err, `command "app" requires a subcommand`)
+}
+
+func TestRequireCommandNested(t *testing.T) {
+	t.Parallel()
+
+	root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+	admin := root.Command("admin", "Admin tools").RequireCommand()
+	admin.Globals().Bool("audit", false, "audit")
+	admin.Command("users", "Manage users")
+
+	err := root.Parse([]string{"admin", "--audit"})
+	require.Error(t, err)
+	assert.EqualError(t, err, `command "app admin" requires a subcommand`)
+}
+
 // TestParseRunnerInvokesSelectedHandler verifies handler registration receives parsed values.
 func TestParseRunnerInvokesSelectedHandler(t *testing.T) {
 	t.Parallel()

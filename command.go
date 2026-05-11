@@ -21,15 +21,16 @@ type Runner = Runnable
 type Command struct {
 	*FlagSet
 
-	name     string
-	summary  string
-	handling ErrorHandling
-	parent   *Command
-	globals  *FlagSet
-	children map[string]*Command
-	order    []*Command
-	selected *Command
-	builder  commandBuilder
+	name         string
+	summary      string
+	handling     ErrorHandling
+	requireChild bool
+	parent       *Command
+	globals      *FlagSet
+	children     map[string]*Command
+	order        []*Command
+	selected     *Command
+	builder      commandBuilder
 }
 
 type commandBuilder func() (Runnable, error)
@@ -66,6 +67,12 @@ func (c *Command) Command(name string, summary string) *Command {
 // Globals returns the persistent flag set for this command subtree.
 func (c *Command) Globals() *FlagSet {
 	return c.globals
+}
+
+// RequireCommand enforces that one direct or nested child command must be selected.
+func (c *Command) RequireCommand() *Command {
+	c.requireChild = true
+	return c
 }
 
 // BuildCommand registers a zero-argument builder that returns the runnable for this command.
@@ -179,6 +186,12 @@ func (c *Command) Parse(args []string) error {
 			}
 		}
 	}
+	if err := c.missingRequiredCommand(current); err != nil {
+		errs = append(errs, err)
+		if c.handling != ContinueOnError {
+			return err
+		}
+	}
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)
@@ -248,6 +261,18 @@ func (c *Command) commandPathTo(target *Command) []*Command {
 		path[i], path[j] = path[j], path[i]
 	}
 	return path
+}
+
+func (c *Command) missingRequiredCommand(selected *Command) error {
+	for _, cmd := range c.commandPathTo(selected) {
+		if cmd == nil || !cmd.requireChild {
+			continue
+		}
+		if cmd == selected && len(cmd.order) > 0 {
+			return fmt.Errorf("command %q requires a subcommand", cmd.FullName())
+		}
+	}
+	return nil
 }
 
 // availableFlagSets returns local and inherited persistent flag sets in lookup order.

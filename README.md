@@ -74,6 +74,20 @@ func main() {
 }
 ```
 
+## Commands
+
+`Command` lets you build subcommand trees with local flags and inherited globals. If you want parsing to fail unless a subcommand is chosen, call `RequireCommand()`.
+
+```go
+app := tinyflags.NewCommand("app", tinyflags.ExitOnError).RequireCommand()
+app.Command("serve", "Run the server")
+
+if err := app.Parse(os.Args[1:]); err != nil {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+}
+```
+
 ## Supported Types
 
 | Type            | Methods                                  |
@@ -239,6 +253,19 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `MaskPostgresURL(value any) any`                   | Helper mask for `postgres://user:pass@host/db` credentials.          |
 | `AddOneOfGroup(name string, group *core.OneOfGroupGroup)` | Register a pre-built mutual-exclusion group.                 |
 | `AddAllOrNoneGroup(name string, group *core.AllOrNoneGroup)` | Register a pre-built require-together group.           |
+
+### Command API
+
+| Method | Description |
+| :-- | :-- |
+| `NewCommand(name string, mode ErrorHandling)` | Create a root command tree. |
+| `Command(name, summary string)` | Register a child command. |
+| `Globals()` | Access persistent flags inherited by that subtree. |
+| `RequireCommand()` | Return an error if this command is selected without a child command. |
+| `Parse(args)` | Parse flags and select the active command. |
+| `SelectedCommand()` | Return the selected leaf command from the last parse. |
+| `Run(handler, bindings...)` / `BuildCommand(builder)` | Register execution for a command. |
+| `ParseRunner(args)` / `ParseRunnable(args)` | Parse and build the selected runnable. |
 
 ### Naming notes
 
