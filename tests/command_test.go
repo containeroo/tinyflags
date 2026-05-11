@@ -105,6 +105,21 @@ func TestCommandHelpTextAndWriteHelp(t *testing.T) {
 	assert.Equal(t, helpText, buf.String())
 }
 
+func TestCommandHelpTextDoesNotMutateParsedPositionals(t *testing.T) {
+	t.Parallel()
+
+	root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+	pin := root.Command("pin", "Pin a command.")
+
+	err := root.Parse([]string{"pin", "--", "kubectl", "get", "pods"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"kubectl", "get", "pods"}, pin.Args())
+
+	helpText := root.HelpText()
+	assert.Contains(t, helpText, "Usage: app pin")
+	assert.Equal(t, []string{"kubectl", "get", "pods"}, pin.Args())
+}
+
 func TestRequireCommandRoot(t *testing.T) {
 	t.Parallel()
 

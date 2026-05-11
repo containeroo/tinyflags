@@ -437,11 +437,10 @@ func renderCommandHelp(cmd *Command) string {
 
 // renderLocalHelp renders help text for one command-local flag set.
 func renderLocalHelp(fs *FlagSet) string {
-	err := fs.Parse([]string{"--help"})
-	if err == nil {
+	if fs == nil || fs.impl == nil {
 		return ""
 	}
-	return err.Error()
+	return fs.impl.RenderHelpText()
 }
 
 // renderUsageLine builds the usage line for a command help screen.
