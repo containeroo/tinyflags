@@ -16,10 +16,6 @@ import (
 // main demonstrates deferred command handlers with parsed flag values.
 func main() {
 	args := os.Args[1:]
-	if len(args) == 0 {
-		args = []string{"admin", "users", "--name=bob", "--verbose"}
-	}
-
 	if err := run(context.Background(), args); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -30,6 +26,15 @@ func main() {
 func run(ctx context.Context, args []string) error {
 	runner, err := parseFlags(args)
 	if err != nil {
+		if tinyflags.IsHelpRequested(err) || tinyflags.IsVersionRequested(err) {
+			fmt.Fprint(os.Stdout, err) // nolint:errcheck
+			return nil
+		}
+
+		if help, ok := tinyflags.HelpText(err); ok {
+			return fmt.Errorf("%s\n%s", err, help)
+		}
+
 		return err
 	}
 
@@ -43,6 +48,7 @@ func run(ctx context.Context, args []string) error {
 func parseFlags(args []string) (tinyflags.Runner, error) {
 	app := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
 	verbose := app.Globals().Bool("verbose", false, "Enable verbose logging").Value()
+	//app.RequireCommand()
 	app.Run(runRoot, verbose)
 
 	serve := app.Command("serve", "Run the HTTP server")
@@ -145,7 +151,8 @@ func runServer(
 
 	if verbose {
 		fmt.Printf("starting server at %s\n", listenAddr)
-		fmt.Printf("timeouts: read-header=%s write=%s idle=%s shutdown=%s\n",
+		fmt.Printf(
+			"timeouts: read-header=%s write=%s idle=%s shutdown=%s\n",
 			readHeaderTimeout,
 			writeTimeout,
 			idleTimeout,
