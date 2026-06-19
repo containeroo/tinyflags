@@ -128,7 +128,7 @@ Tinyflags applies input in this order:
 
 1. Parse command-line arguments.
 2. Handle built-in `--help` / `--version` exits.
-3. Load unset static flags from environment variables.
+3. Load unset static and dynamic flags from environment variables.
 4. Apply default finalizers for unset values.
 5. Run required/group/dependency/positional validation.
 
@@ -137,7 +137,8 @@ Additional behavior:
 - Explicit CLI arguments win over environment variables.
 - `OverriddenValues()` reports values provided by CLI or env, not untouched defaults.
 - Reusing a `FlagSet` across multiple `Parse(...)` calls is supported; parser state is reset before each parse.
-- Dynamic flags are CLI-only and are not populated from environment variables.
+- Automatic static env lookup requires `EnvPrefix(...)`; explicit static `.Env("KEY")` works without a prefix.
+- Dynamic env lookup requires `EnvPrefix(...)` and uses `PREFIX_GROUP_ID_FIELD` keys such as `MYAPP_HTTP_API_PORT`.
 
 ### Handling toggles with multiple flags
 
@@ -175,8 +176,8 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
 | `HelpOneOfGroups(names...)` | all flags   | Override which one-of groups for this flag are shown in help output.                    |
 | `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.             |
-| `Env(key string)`           | all flags   | Override the environment-variable name (panics if `DisableEnv` already called).         |
-| `HideEnv()`                 | all flags   | Hide the environment-variable name from help output.                                     |
+| `Env(key string)`           | static only | Override the environment-variable name (panics if `DisableEnv` already called).         |
+| `HideEnv()`                 | all flags   | Hide the environment-variable name from help output.                                    |
 | `DisableEnv()`              | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
 | `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
 | `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                        |
@@ -193,7 +194,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 | `Choices(v1, v2, ...)`                      | Only allow the provided literal values; automatically adds them to help output.              | `fs.String("env","dev","...").Choices("dev","staging","prod")`                                                                    |
 | `Validate(fn func(v T) error)`              | Run custom check on parsed value; if `fn` returns non-nil, `Parse` returns an error.         | `go<br>fs.Int("count",0,"...").Validate(func(n int) error {<br>  if n<0 {return fmt.Errorf("must ≥0")}<br>  return nil<br>})<br>` |
 | `Finalize(fn func(v T) T)`                  | Transform the parsed value before storing; e.g. trimming, normalization, applying defaults.  | `go<br>fs.String("name","","...").Finalize(func(s string) string {<br>  return strings.TrimSpace(s)<br>})<br>`                    |
-| `FinalizeDefaultValue()`                    | Run the existing finalizer on default values when the flag is unset.                          | `go<br>fs.String("name","","...").Finalize(strings.TrimSpace).FinalizeDefaultValue()<br>`                                        |
+| `FinalizeDefaultValue()`                    | Run the existing finalizer on default values when the flag is unset.                         | `go<br>fs.String("name","","...").Finalize(strings.TrimSpace).FinalizeDefaultValue()<br>`                                         |
 | `FinalizeWithID(fn func(id string, v T) T)` | _(dynamic only)_ Finalize with access to the instance ID.                                    | `http.String("addr","","").FinalizeWithID(func(id, v string) string { return id+":"+v })`                                         |
 | `Delimiter(sep string)`                     | _(slice flags only)_ Use a custom separator instead of the default comma when parsing lists. | `fs.StringSlice("tags",nil,"...").Delimiter(";")`                                                                                 |
 | `AllowEmpty()`                              | _(slice flags only)_ Allow empty items (e.g. `"a,,b"`).                                      |                                                                                                                                   |
@@ -235,57 +236,57 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 
 ### FlagSet Core & Help Configuration
 
-| Method                                             | Description                                                          |
-| :------------------------------------------------- | :------------------------------------------------------------------- |
-| `NewFlagSet(name string, mode ErrorHandling)`      | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`).       |
-| `EnvPrefix(prefix string)`                         | Prefix all environment-variable lookups (e.g. `MYAPP_`).             |
-| `SetEnvKeyFunc`                                    | Set a function to derive env keys from prefix+flag name.             |
-| `EnvKeyForFlag`                                    | Derive the env key for a flag.                                       |
-| `NewReplacerEnvKeyFunc`                            | Build an `EnvKeyFunc` that applies the given replacer.               |
-| `Version(version string)`                          | Enable the `--version` flag, printing this string.                   |
-| `Help()`                                           | Access grouped helpers for title/authors/description/note/help text. |
-| `Layout()`                                         | Access grouped helpers for usage/indent/width/note layout.           |
-| `BeforeParse(fn func([]string) ([]string, error))` | Mutate arguments before parsing (e.g., expand @files).               |
-| `OnUnknownFlag(fn func(name string) error)`        | Handle or ignore unknown flags instead of failing.                   |
-| `VersionText(text string)`                         | Override the `--version` text. Default: `"Show version"`.            |
-| `HelpText(text string)`                            | Override the `--help` text. Default: `"Show help"`.                  |
-| `DisableHelp()` / `DisableVersion()`               | Remove `--help` or `--version`.                                      |
-| `Usage func()`                                     | Optional custom usage function on `FlagSet` that replaces the default renderer. |
-| `Title(text string)`                               | Override the "Usage:" title heading.                                 |
-| `Authors(text string)`                             | Add an `Authors:` section to help output.                            |
-| `Description(text string)`                         | Add a free-form description block under the title.                   |
-| `Note(text string)`                                | Add a footer note under the flags listing.                           |
-| `SetOneOfGroupVerbose(bool)`                       | Toggle detailed OneOfGroup errors with conflicting flags.            |
-| `SetOutput(w io.Writer)` / `Output()`              | Redirect or retrieve where help/version is written.                  |
-| `PrintUsage(w, mode)`                              | Print the `Usage:` line.                                             |
-| `PrintTitle(w)`                                    | Print title and description.                                         |
-| `PrintAuthors(w)`                                  | Print authors section.                                               |
-| `PrintDescription(w,indent,width)`                 | Print the description block.                                         |
-| `PrintNotes(w,indent,width)`                       | Print footer notes.                                                  |
-| `PrintStaticDefaults(w,indent,startCol,width)`     | Print static flags help.                                             |
-| `PrintDynamicDefaults(w,indent,startCol,width)`    | Print dynamic flags help.                                            |
-| `RequirePositional(n int)`                         | Enforce at least `n` positional arguments.                           |
-| `Args() []string` / `Arg(i int) (string, bool)`    | Access leftover positional args safely.                              |
-| `OverriddenValues() map[string]any`                | Return flags explicitly set via args/env (dynamic keys: `group.id.flag`). |
-| `MaskFirstLast(value any) any`                     | Helper mask that keeps first/last character (strings, `[]string`).   |
-| `MaskPostgresURL(value any) any`                   | Helper mask for `postgres://user:pass@host/db` credentials.          |
-| `AddOneOfGroup(name string, group *core.OneOfGroupGroup)` | Register a pre-built mutual-exclusion group.                 |
-| `AddAllOrNoneGroup(name string, group *core.AllOrNoneGroup)` | Register a pre-built require-together group.           |
+| Method                                                       | Description                                                                     |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| `NewFlagSet(name string, mode ErrorHandling)`                | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`).                  |
+| `EnvPrefix(prefix string)`                                   | Prefix all environment-variable lookups (e.g. `MYAPP_`).                        |
+| `SetEnvKeyFunc`                                              | Set a function to derive env keys from prefix+flag name.                        |
+| `EnvKeyForFlag`                                              | Derive the env key for a flag.                                                  |
+| `NewReplacerEnvKeyFunc`                                      | Build an `EnvKeyFunc` that applies the given replacer.                          |
+| `Version(version string)`                                    | Enable the `--version` flag, printing this string.                              |
+| `Help()`                                                     | Access grouped helpers for title/authors/description/note/help text.            |
+| `Layout()`                                                   | Access grouped helpers for usage/indent/width/note layout.                      |
+| `BeforeParse(fn func([]string) ([]string, error))`           | Mutate arguments before parsing (e.g., expand @files).                          |
+| `OnUnknownFlag(fn func(name string) error)`                  | Handle or ignore unknown flags instead of failing.                              |
+| `VersionText(text string)`                                   | Override the `--version` text. Default: `"Show version"`.                       |
+| `HelpText(text string)`                                      | Override the `--help` text. Default: `"Show help"`.                             |
+| `DisableHelp()` / `DisableVersion()`                         | Remove `--help` or `--version`.                                                 |
+| `Usage func()`                                               | Optional custom usage function on `FlagSet` that replaces the default renderer. |
+| `Title(text string)`                                         | Override the "Usage:" title heading.                                            |
+| `Authors(text string)`                                       | Add an `Authors:` section to help output.                                       |
+| `Description(text string)`                                   | Add a free-form description block under the title.                              |
+| `Note(text string)`                                          | Add a footer note under the flags listing.                                      |
+| `SetOneOfGroupVerbose(bool)`                                 | Toggle detailed OneOfGroup errors with conflicting flags.                       |
+| `SetOutput(w io.Writer)` / `Output()`                        | Redirect or retrieve where help/version is written.                             |
+| `PrintUsage(w, mode)`                                        | Print the `Usage:` line.                                                        |
+| `PrintTitle(w)`                                              | Print title and description.                                                    |
+| `PrintAuthors(w)`                                            | Print authors section.                                                          |
+| `PrintDescription(w,indent,width)`                           | Print the description block.                                                    |
+| `PrintNotes(w,indent,width)`                                 | Print footer notes.                                                             |
+| `PrintStaticDefaults(w,indent,startCol,width)`               | Print static flags help.                                                        |
+| `PrintDynamicDefaults(w,indent,startCol,width)`              | Print dynamic flags help.                                                       |
+| `RequirePositional(n int)`                                   | Enforce at least `n` positional arguments.                                      |
+| `Args() []string` / `Arg(i int) (string, bool)`              | Access leftover positional args safely.                                         |
+| `OverriddenValues() map[string]any`                          | Return flags explicitly set via args/env (dynamic keys: `group.id.flag`).       |
+| `MaskFirstLast(value any) any`                               | Helper mask that keeps first/last character (strings, `[]string`).              |
+| `MaskPostgresURL(value any) any`                             | Helper mask for `postgres://user:pass@host/db` credentials.                     |
+| `AddOneOfGroup(name string, group *core.OneOfGroupGroup)`    | Register a pre-built mutual-exclusion group.                                    |
+| `AddAllOrNoneGroup(name string, group *core.AllOrNoneGroup)` | Register a pre-built require-together group.                                    |
 
 ### Command API
 
-| Method | Description |
-| :-- | :-- |
-| `NewCommand(name string, mode ErrorHandling)` | Create a root command tree. |
-| `Command(name, summary string)` | Register a child command. |
-| `Globals()` | Access persistent flags inherited by that subtree. |
-| `RequireCommand()` | Return an error if this command is selected without a child command. |
-| `HelpText()` | Return rendered help for the selected command when available, otherwise the receiver. |
-| `WriteHelp(w io.Writer)` | Write rendered help for the selected command when available, otherwise the receiver. |
-| `Parse(args)` | Parse flags and select the active command. |
-| `SelectedCommand()` | Return the selected leaf command from the last parse. |
-| `Run(handler, bindings...)` / `BuildCommand(builder)` | Register execution for a command. |
-| `ParseRunner(args)` / `ParseRunnable(args)` | Parse and build the selected runnable. |
+| Method                                                | Description                                                                           |
+| :---------------------------------------------------- | :------------------------------------------------------------------------------------ |
+| `NewCommand(name string, mode ErrorHandling)`         | Create a root command tree.                                                           |
+| `Command(name, summary string)`                       | Register a child command.                                                             |
+| `Globals()`                                           | Access persistent flags inherited by that subtree.                                    |
+| `RequireCommand()`                                    | Return an error if this command is selected without a child command.                  |
+| `HelpText()`                                          | Return rendered help for the selected command when available, otherwise the receiver. |
+| `WriteHelp(w io.Writer)`                              | Write rendered help for the selected command when available, otherwise the receiver.  |
+| `Parse(args)`                                         | Parse flags and select the active command.                                            |
+| `SelectedCommand()`                                   | Return the selected leaf command from the last parse.                                 |
+| `Run(handler, bindings...)` / `BuildCommand(builder)` | Register execution for a command.                                                     |
+| `ParseRunner(args)` / `ParseRunnable(args)`           | Parse and build the selected runnable.                                                |
 
 ### How `Validate` and `Finalize` Work
 
@@ -349,7 +350,7 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
    _Output:_
 
 3. **FinalizeDefaultValue**
-   - Runs only when a flag is *unset* (after env parsing), and does not mark it as changed.
+   - Runs only when a flag is _unset_ (after env parsing), and does not mark it as changed.
    - Uses the flag’s `Finalize(...)` function; no separate function is provided.
 
    ```text
@@ -362,11 +363,12 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 ## Environment Variables
 
 Flags can be set from environment variables in addition to CLI arguments.
-By default, environment keys are derived from:
+Automatic environment lookup is enabled by setting a global prefix:
 
-- the global prefix set via `fs.EnvPrefix("MYAPP")`
-- `-`, `_`, `.`, `_`, `/` are replaced with `_` in the flag name
-- the whole key upper-cased
+- static flags use `PREFIX_FLAG_NAME`
+- dynamic flags use `PREFIX_GROUP_ID_FIELD`
+- `-`, `.`, and `/` are replaced with `_`
+- the derived key is upper-cased
 
 For example:
 
@@ -374,7 +376,17 @@ For example:
 MYAPP_HOST=example.com MYAPP_PORT=9090 ./app --debug
 ```
 
-A flag `--db.user` will look up `MYAPP_DB_USER`.
+A static flag `--db.user` will look up `MYAPP_DB_USER`.
+A dynamic flag `--http.api.port` will look up `MYAPP_HTTP_API_PORT` and create the `api` instance if needed.
+
+Static flags can also bind to an exact key without a global prefix:
+
+```go
+fs.String("token", "", "API token").Env("TOKEN")
+```
+
+Dynamic flags do not use bare keys; dynamic env lookup requires `EnvPrefix(...)` so instance discovery stays bounded.
+CLI arguments always win over env values.
 
 You can disable env binding per-flag:
 
@@ -384,7 +396,7 @@ fs.Bool("internal", false, "internal use only").DisableEnv()
 
 ### Custom key mapping
 
-You can override how keys are derived with `SetEnvKeyFunc`:
+You can override how static keys are derived with `SetEnvKeyFunc`:
 
 ```go
 fs.EnvPrefix("MYAPP")
@@ -394,11 +406,13 @@ fs.SetEnvKeyFunc(engine.NewReplacerEnvKeyFunc(
 ))
 ```
 
-This would map:
+This would map static flags as follows:
 
 - `--log.level` → `MYAPP_LOG_LEVEL`
 - `--db-user` → `MYAPP_DB_USER`
 - `--api/v1` → `MYAPP_API_V1`
+
+Dynamic env keys keep the canonical `PREFIX_GROUP_ID_FIELD` mapping.
 
 ## Dynamic Flags
 

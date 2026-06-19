@@ -28,6 +28,7 @@ type FlagSet struct {
 	envPrefix          string                           // Optional ENV prefix (e.g. "APP_")
 	envKeyFunc         EnvKeyFunc                       // Function to derive env keys from prefix+flag name
 	getEnv             func(string) string              // Function used to read ENV vars (default: os.Getenv)
+	getEnvVars         func() []string                  // Function used to enumerate ENV vars (default: os.Environ)
 	hideEnvs           bool                             // Globally hide environment key hints
 	ignoreInvalidEnv   bool                             // Whether to ignore unknown ENV overrides
 	defaultDelimiter   string                           // Global slice delimiter (default: ",")
@@ -79,6 +80,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		errorHandling:      errorHandling,
 		staticFlagsMap:     make(map[string]*core.BaseFlag),
 		getEnv:             os.Getenv,
+		getEnvVars:         os.Environ,
 		envKeyFunc:         NewReplacerEnvKeyFunc(strings.NewReplacer("-", "_", ".", "_", "/", "_"), true),
 		enableHelp:         true,
 		enableVer:          true,

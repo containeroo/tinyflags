@@ -43,8 +43,30 @@ func WrapText(s string, width int) string {
 	return strings.Join(out, "\n")
 }
 
-// BuildFlagDescription builds the help text for a flag, including metadata suffixes.
+// BuildFlagDescription builds the help text for a static flag, including metadata suffixes.
 func BuildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix string) string {
+	desc := buildFlagDescriptionPrefix(flag)
+
+	flag.ResolveUsageEnvKey(prefix, globalHideEnvs)
+	if flag.ShouldShowUsageEnv(globalHideEnvs) {
+		desc += " (env: " + flag.EnvKey + ")"
+	}
+
+	return finishFlagDescription(desc, flag)
+}
+
+// BuildDynamicFlagDescription builds help text for a dynamic flag.
+func BuildDynamicFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix, groupName, idPlaceholder string) string {
+	desc := buildFlagDescriptionPrefix(flag)
+
+	if envKey := dynamicUsageEnvKey(flag, globalHideEnvs, prefix, groupName, idPlaceholder); envKey != "" {
+		desc += " (env: " + envKey + ")"
+	}
+
+	return finishFlagDescription(desc, flag)
+}
+
+func buildFlagDescriptionPrefix(flag *core.BaseFlag) string {
 	desc := flag.Usage
 
 	allowed := flag.AllowedValues()
@@ -66,12 +88,10 @@ func BuildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 		desc += " (requires: " + strings.Join(flag.Requires, ", ") + ")"
 	}
 
-	flag.ResolveUsageEnvKey(prefix, globalHideEnvs)
+	return desc
+}
 
-	if flag.ShouldShowUsageEnv(globalHideEnvs) {
-		desc += " (env: " + flag.EnvKey + ")"
-	}
-
+func finishFlagDescription(desc string, flag *core.BaseFlag) string {
 	if !flag.HideRequired && flag.Required {
 		desc += " (required)"
 	}
@@ -85,6 +105,13 @@ func BuildFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefix strin
 	}
 
 	return desc
+}
+
+func dynamicUsageEnvKey(flag *core.BaseFlag, globalHideEnvs bool, prefix, groupName, idPlaceholder string) string {
+	if flag == nil || globalHideEnvs || flag.DisableEnv || flag.HideEnv || prefix == "" {
+		return ""
+	}
+	return core.DynamicEnvKey(prefix, groupName, idPlaceholder, flag.Name)
 }
 
 // CalcStaticUsageColumn calculates the maximum static flag label width.
@@ -169,7 +196,7 @@ func PrintDynamicDefaults(w io.Writer, groups []*dynamic.Group, indent, startCol
 
 		for _, fl := range group.DynamicFlags() {
 			flagLine := formatDynamicFlagLine(name, idPlaceholder, fl)
-			desc := BuildFlagDescription(fl, hideEnvs, envPrefix)
+			desc := BuildDynamicFlagDescription(fl, hideEnvs, envPrefix, name, idPlaceholder)
 
 			if len(desc) <= layout.descriptionWidth() {
 				fmt.Fprintf(w, "%s%-*s %s\n", strings.Repeat(" ", indent), startCol, flagLine, desc) // nolint:errcheck
