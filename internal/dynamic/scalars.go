@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/containeroo/tinyflags/internal/utils"
@@ -50,6 +51,20 @@ type enumValue interface {
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
+// EnumChoice maps one user-facing enum name to its typed value.
+type EnumChoice[T enumValue] struct {
+	Name  string
+	Value T
+}
+
+// EnumMap registers a typed dynamic enum flag with user-facing names.
+func EnumMap[T enumValue](g *Group, field string, def T, usage string, choices ...EnumChoice[T]) *ScalarFlag[T] {
+	parse, format, allowed := enumChoiceHooks(choices)
+	flag := registerDynamicScalar(g, field, def, usage, parse, format)
+	flag.Allowed(allowed...)
+	return flag
+}
+
 func parseEnumValue[T enumValue](raw string) (T, error) {
 	var zero T
 	typ := reflect.TypeOf(zero)
@@ -90,6 +105,39 @@ func formatEnumValue[T enumValue](v T) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
+}
+
+func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, error), func(T) string, []string) {
+	names := make([]string, 0, len(choices))
+	byName := make(map[string]T, len(choices))
+	byValue := make(map[T]string, len(choices))
+
+	for _, choice := range choices {
+		names = append(names, choice.Name)
+		byName[choice.Name] = choice.Value
+		if _, exists := byValue[choice.Value]; !exists {
+			byValue[choice.Value] = choice.Name
+		}
+	}
+
+	parse := func(raw string) (T, error) {
+		val, ok := byName[raw]
+		if ok {
+			return val, nil
+		}
+		var zero T
+		return zero, fmt.Errorf("must be one of: %s", strings.Join(names, ", "))
+	}
+
+	format := func(v T) string {
+		name, ok := byValue[v]
+		if ok {
+			return name
+		}
+		return formatEnumValue(v)
+	}
+
+	return parse, format, names
 }
 
 // Int

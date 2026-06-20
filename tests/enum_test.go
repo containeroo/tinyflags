@@ -95,6 +95,64 @@ func TestEnumFlag(t *testing.T) {
 		assert.Equal(t, info, *level)
 	})
 
+	t.Run("static named iota enum uses names", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		level := tinyflags.EnumMap(
+			fs,
+			"level",
+			info,
+			"log level",
+			tinyflags.Choice("debug", debug),
+			tinyflags.Choice("info", info),
+			tinyflags.Choice("warn", warn),
+		).Value()
+
+		err := fs.Parse([]string{"--level=warn"})
+		require.NoError(t, err)
+		assert.Equal(t, warn, *level)
+	})
+
+	t.Run("static named iota enum shows names in help", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		tinyflags.EnumMap(
+			fs,
+			"level",
+			info,
+			"log level",
+			tinyflags.Choice("debug", debug),
+			tinyflags.Choice("info", info),
+			tinyflags.Choice("warn", warn),
+		)
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "--level <debug|info|warn>")
+		assert.Contains(t, err.Error(), "log level (allowed: debug, info, warn) (default: info)")
+	})
+
+	t.Run("static named iota enum rejects unknown name", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		level := tinyflags.EnumMap(
+			fs,
+			"level",
+			info,
+			"log level",
+			tinyflags.Choice("debug", debug),
+			tinyflags.Choice("info", info),
+			tinyflags.Choice("warn", warn),
+		).Value()
+
+		err := fs.Parse([]string{"--level=trace"})
+		require.EqualError(t, err, "invalid value for flag --level: must be one of: debug, info, warn")
+		assert.Equal(t, info, *level)
+	})
+
 	t.Run("dynamic typed enum stores values by id", func(t *testing.T) {
 		t.Parallel()
 
@@ -108,6 +166,27 @@ func TestEnumFlag(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, map[string]Mode{"api": prod, "worker": staging}, mode.Values())
+	})
+
+	t.Run("dynamic named iota enum shows names in help", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		svc := fs.DynamicGroup("svc")
+		tinyflags.DynamicEnumMap(
+			svc,
+			"level",
+			info,
+			"log level",
+			tinyflags.Choice("debug", debug),
+			tinyflags.Choice("info", info),
+			tinyflags.Choice("warn", warn),
+		)
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "--svc.<ID>.level <debug|info|warn>")
+		assert.Contains(t, err.Error(), "log level (allowed: debug, info, warn) (default: info)")
 	})
 
 	t.Run("dynamic enum rejects unknown value", func(t *testing.T) {
