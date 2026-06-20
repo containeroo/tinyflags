@@ -1,9 +1,11 @@
 package dynamic
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -23,6 +25,71 @@ func (g *Group) Bool(field string, def bool, usage string) *BoolFlag {
 // String
 func (g *Group) String(field string, def string, usage string) *ScalarFlag[string] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseString, utils.FormatString)
+}
+
+// Enum registers a dynamic string enum flag.
+func (g *Group) Enum(field string, def string, usage string, allowed ...string) *ScalarFlag[string] {
+	return g.String(field, def, usage).Choices(allowed...)
+}
+
+// Enum registers a typed dynamic string enum flag.
+func Enum[T enumValue](g *Group, field string, def T, usage string, allowed ...T) *ScalarFlag[T] {
+	return registerDynamicScalar(
+		g,
+		field,
+		def,
+		usage,
+		parseEnumValue[T],
+		formatEnumValue[T],
+	).Choices(allowed...)
+}
+
+type enumValue interface {
+	~string |
+		~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+func parseEnumValue[T enumValue](raw string) (T, error) {
+	var zero T
+	typ := reflect.TypeOf(zero)
+	out := reflect.New(typ).Elem()
+
+	switch typ.Kind() {
+	case reflect.String:
+		out.SetString(raw)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		v, err := strconv.ParseInt(raw, 10, typ.Bits())
+		if err != nil {
+			return zero, err
+		}
+		out.SetInt(v)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		v, err := strconv.ParseUint(raw, 10, typ.Bits())
+		if err != nil {
+			return zero, err
+		}
+		out.SetUint(v)
+	default:
+		return zero, fmt.Errorf("unsupported enum kind %s", typ.Kind())
+	}
+
+	return out.Interface().(T), nil
+}
+
+func formatEnumValue[T enumValue](v T) string {
+	value := reflect.ValueOf(v)
+
+	switch value.Kind() {
+	case reflect.String:
+		return value.String()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(value.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(value.Uint(), 10)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // Int

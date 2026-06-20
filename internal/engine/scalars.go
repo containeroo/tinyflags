@@ -31,6 +31,11 @@ func (f *FlagSet) StringVar(ptr *string, name string, def string, usage string) 
 	return RegisterStaticScalar(f, ptr, name, usage, def, utils.ParseString, utils.FormatString)
 }
 
+// EnumVar defines a string enum flag.
+func (f *FlagSet) EnumVar(ptr *string, name string, def string, usage string, allowed ...string) *scalar.ScalarFlag[string] {
+	return f.StringVar(ptr, name, def, usage).Choices(allowed...)
+}
+
 // IntVar defines an int flag.
 func (f *FlagSet) IntVar(ptr *int, name string, def int, usage string) *scalar.ScalarFlag[int] {
 	return RegisterStaticScalar(f, ptr, name, usage, def, strconv.Atoi, strconv.Itoa)

@@ -19,6 +19,18 @@ func (f *FlagSet) String(name string, def string, usage string) *scalar.ScalarFl
 	return f.StringVar(new(string), name, def, usage)
 }
 
+// EnumVar defines a string enum flag and binds it to the given pointer.
+// Only values listed in allowed are accepted.
+func (f *FlagSet) EnumVar(ptr *string, name string, def string, usage string, allowed ...string) *scalar.ScalarFlag[string] {
+	return f.StringVar(ptr, name, def, usage).Choices(allowed...)
+}
+
+// Enum defines a string enum flag and returns its handle.
+// Only values listed in allowed are accepted.
+func (f *FlagSet) Enum(name string, def string, usage string, allowed ...string) *scalar.ScalarFlag[string] {
+	return f.EnumVar(new(string), name, def, usage, allowed...)
+}
+
 // IntVar defines an int flag and binds it to the given pointer.
 func (f *FlagSet) IntVar(ptr *int, name string, def int, usage string) *scalar.ScalarFlag[int] {
 	return f.impl.IntVar(ptr, name, def, usage)
