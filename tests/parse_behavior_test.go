@@ -28,6 +28,81 @@ func TestSliceDelimiterHandling(t *testing.T) {
 	})
 }
 
+// TestSliceWhitespacePolicy verifies default and explicit item whitespace handling.
+func TestSliceWhitespacePolicy(t *testing.T) {
+	t.Parallel()
+
+	t.Run("stringSlicePreservesSpaceByDefault", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		names := fs.StringSlice("name", nil, "names").Value()
+
+		err := fs.Parse([]string{"--name= alice , bob "})
+		require.NoError(t, err)
+		assert.Equal(t, []string{" alice ", " bob "}, *names)
+	})
+
+	t.Run("stringSliceCanTrimSpace", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		names := fs.StringSlice("name", nil, "names").
+			TrimSpace().
+			Value()
+
+		err := fs.Parse([]string{"--name= alice , bob "})
+		require.NoError(t, err)
+		assert.Equal(t, []string{"alice", "bob"}, *names)
+	})
+
+	t.Run("intSliceTrimsSpaceByDefault", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		ports := fs.IntSlice("port", nil, "ports").Value()
+
+		err := fs.Parse([]string{"--port=80, 443, 8080"})
+		require.NoError(t, err)
+		assert.Equal(t, []int{80, 443, 8080}, *ports)
+	})
+
+	t.Run("intSliceCanPreserveSpace", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.IntSlice("port", nil, "ports").PreserveSpace()
+
+		err := fs.Parse([]string{"--port=80, 443"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `invalid value " 443"`)
+	})
+
+	t.Run("dynamicStringSlicePreservesSpaceByDefault", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		g := fs.DynamicGroup("g")
+		names := g.StringSlice("name", nil, "names")
+
+		err := fs.Parse([]string{"--g.one.name= alice , bob "})
+		require.NoError(t, err)
+		assert.Equal(t, []string{" alice ", " bob "}, names.MustGet("one"))
+	})
+
+	t.Run("dynamicIntSliceTrimsSpaceByDefault", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		g := fs.DynamicGroup("g")
+		ports := g.IntSlice("port", nil, "ports")
+
+		err := fs.Parse([]string{"--g.one.port=80, 443"})
+		require.NoError(t, err)
+		assert.Equal(t, []int{80, 443}, ports.MustGet("one"))
+	})
+}
+
 // TestSliceAllowEmpty verifies empty-item handling for slice flags.
 func TestSliceAllowEmpty(t *testing.T) {
 	t.Parallel()

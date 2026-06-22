@@ -2,7 +2,6 @@ package dynamic
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
 	"github.com/containeroo/tinyflags/internal/utils"
@@ -27,12 +26,13 @@ func NewDynamicSliceValue[T any](
 	parse func(string) (T, error),
 	format func(T) string,
 	delimiter string,
+	trimSpace bool,
 ) *DynamicSliceValue[T] {
 	return &DynamicSliceValue[T]{
 		field:   field,
 		def:     append([]T(nil), def...),
 		baseDef: append([]T(nil), def...),
-		input:   core.SliceInputConfig{Delimiter: delimiter},
+		input:   core.SliceInputConfig{Delimiter: delimiter, TrimSpace: trimSpace},
 		hooks:   core.NewValueHooks(parse, format),
 		values:  make(map[string][]T),
 	}
@@ -46,7 +46,7 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 	}
 
 	for _, chunk := range chunks {
-		chunk = strings.TrimSpace(chunk)
+		chunk = d.input.Normalize(chunk)
 		if chunk == "" && !d.input.AllowEmpty {
 			return fmt.Errorf("invalid value %q: empty values are not allowed", chunk)
 		}
@@ -87,6 +87,11 @@ func (d *DynamicSliceValue[T]) setFinalizeWithID(fn func(string, T) T) {
 // setDelimiter sets the delimiter used to split input values.
 func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
 	d.input.Delimiter = sep
+}
+
+// setTrimSpace toggles trimming leading and trailing space from each item.
+func (d *DynamicSliceValue[T]) setTrimSpace(trim bool) {
+	d.input.TrimSpace = trim
 }
 
 // setAllowEmpty toggles acceptance of empty items.

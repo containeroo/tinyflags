@@ -24,12 +24,13 @@ func NewSliceValue[T any](
 	parse func(string) (T, error),
 	format func(T) string,
 	delimiter string,
+	trimSpace bool,
 ) *SliceValue[T] {
 	*ptr = append([]T{}, def...)
 	return &SliceValue[T]{
 		ptr:   ptr,
 		def:   def,
-		input: core.SliceInputConfig{Delimiter: delimiter},
+		input: core.SliceInputConfig{Delimiter: delimiter, TrimSpace: trimSpace},
 		hooks: core.NewValueHooks(parse, format),
 	}
 }
@@ -44,7 +45,7 @@ func (v *SliceValue[T]) Set(s string) error {
 		return err
 	}
 	for _, raw := range parts {
-		raw = strings.TrimSpace(raw)
+		raw = v.input.Normalize(raw)
 		if raw == "" && !v.input.AllowEmpty {
 			return fmt.Errorf("invalid slice item %q: empty values are not allowed", raw)
 		}
@@ -88,6 +89,9 @@ func (v *SliceValue[T]) setFinalizeDefaultValue() { v.hooks.EnableFinalizeDefaul
 
 // setAllowEmpty toggles acceptance of empty items.
 func (v *SliceValue[T]) setAllowEmpty(allow bool) { v.input.AllowEmpty = allow }
+
+// setTrimSpace toggles trimming leading and trailing space from each item.
+func (v *SliceValue[T]) setTrimSpace(trim bool) { v.input.TrimSpace = trim }
 
 // Base returns the underlying value.
 func (v *SliceValue[T]) Base() *SliceValue[T] { return v }

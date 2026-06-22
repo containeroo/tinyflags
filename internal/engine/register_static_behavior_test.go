@@ -47,7 +47,7 @@ func TestRegisterStaticSliceString(t *testing.T) {
 		fs := NewFlagSet("app", ContinueOnError)
 
 		var names []string
-		RegisterStaticSlice(fs, &names, "names", "usage", []string{"a", "b"}, utils.ParseString, utils.FormatString, ";")
+		RegisterStaticSlice(fs, &names, "names", "usage", []string{"a", "b"}, utils.ParseString, utils.FormatString, ";", false)
 
 		assert.Equal(t, []string{"a", "b"}, names)
 	})
@@ -58,7 +58,7 @@ func TestRegisterStaticSliceString(t *testing.T) {
 		fs := NewFlagSet("app", ContinueOnError)
 
 		names := new([]string)
-		RegisterStaticSlice(fs, names, "names", "usage", nil, utils.ParseString, utils.FormatString, ";")
+		RegisterStaticSlice(fs, names, "names", "usage", nil, utils.ParseString, utils.FormatString, ";", true)
 
 		require.NoError(t, fs.Parse([]string{"--names=a; b"}))
 

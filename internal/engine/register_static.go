@@ -28,7 +28,8 @@ func RegisterStaticSlice[T any](
 	parse func(string) (T, error),
 	format func(T) string,
 	delimiter string,
+	trimSpace bool,
 ) *slice.SliceFlag[T] {
-	val := slice.NewSliceValue(ptr, def, parse, format, delimiter)
+	val := slice.NewSliceValue(ptr, def, parse, format, delimiter, trimSpace)
 	return slice.RegisterSlice(reg, name, usage, val, ptr)
 }

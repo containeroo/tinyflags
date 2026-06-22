@@ -17,6 +17,18 @@ func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 	return f
 }
 
+// TrimSpace trims leading and trailing whitespace from each parsed item.
+func (f *SliceFlag[T]) TrimSpace() *SliceFlag[T] {
+	f.val.setTrimSpace(true)
+	return f
+}
+
+// PreserveSpace preserves leading and trailing whitespace in each parsed item.
+func (f *SliceFlag[T]) PreserveSpace() *SliceFlag[T] {
+	f.val.setTrimSpace(false)
+	return f
+}
+
 // Choices restricts allowed slice elements.
 func (f *SliceFlag[T]) Choices(allowed ...T) *SliceFlag[T] {
 	f.val.setValidate(utils.AllowOnly(f.val.hooks.Format, allowed))
