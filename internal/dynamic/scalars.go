@@ -13,7 +13,7 @@ import (
 	"github.com/containeroo/tinyflags/internal/utils"
 )
 
-// Bool
+// StrictBool registers a dynamic strict bool flag.
 func (g *Group) StrictBool(field string, def bool, usage string) *BoolFlag {
 	return registerDynamicBool(g, field, def, usage, strconv.ParseBool, strconv.FormatBool)
 }
@@ -23,7 +23,7 @@ func (g *Group) Bool(field string, def bool, usage string) *BoolFlag {
 	return registerDynamicBool(g, field, def, usage, strconv.ParseBool, strconv.FormatBool)
 }
 
-// String
+// String registers a dynamic string flag.
 func (g *Group) String(field string, def string, usage string) *ScalarFlag[string] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseString, utils.FormatString)
 }
@@ -33,7 +33,7 @@ func (g *Group) Enum(field string, def string, usage string, allowed ...string) 
 	return g.String(field, def, usage).Choices(allowed...)
 }
 
-// Enum registers a typed dynamic string enum flag.
+// Enum registers a typed dynamic enum flag.
 func Enum[T enumValue](g *Group, field string, def T, usage string, allowed ...T) *ScalarFlag[T] {
 	return registerDynamicScalar(
 		g,
@@ -126,7 +126,7 @@ func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, err
 			return val, nil
 		}
 		var zero T
-		return zero, fmt.Errorf("must be one of: %s", strings.Join(names, ", "))
+		return zero, fmt.Errorf("%q must be one of: %s", raw, strings.Join(names, ", "))
 	}
 
 	format := func(v T) string {
@@ -140,12 +140,12 @@ func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, err
 	return parse, format, names
 }
 
-// Int
+// Int registers a dynamic int flag.
 func (g *Group) Int(field string, def int, usage string) *ScalarFlag[int] {
 	return registerDynamicScalar(g, field, def, usage, strconv.Atoi, strconv.Itoa)
 }
 
-// Int32
+// Int32 registers a dynamic int32 flag.
 func (g *Group) Int32(field string, def int32, usage string) *ScalarFlag[int32] {
 	return registerDynamicScalar(g, field, def, usage,
 		func(s string) (int32, error) {
@@ -158,7 +158,7 @@ func (g *Group) Int32(field string, def int32, usage string) *ScalarFlag[int32] 
 	)
 }
 
-// Int64
+// Int64 registers a dynamic int64 flag.
 func (g *Group) Int64(field string, def int64, usage string) *ScalarFlag[int64] {
 	return registerDynamicScalar(g, field, def, usage,
 		func(s string) (int64, error) {
@@ -170,42 +170,42 @@ func (g *Group) Int64(field string, def int64, usage string) *ScalarFlag[int64] 
 	)
 }
 
-// Duration
+// Duration registers a dynamic duration flag.
 func (g *Group) Duration(field string, def time.Duration, usage string) *ScalarFlag[time.Duration] {
 	return registerDynamicScalar(g, field, def, usage, time.ParseDuration, time.Duration.String)
 }
 
-// Float64
+// Float64 registers a dynamic float64 flag.
 func (g *Group) Float64(field string, def float64, usage string) *ScalarFlag[float64] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseFloat64, utils.FormatFloat64)
 }
 
-// Float32
+// Float32 registers a dynamic float32 flag.
 func (g *Group) Float32(field string, def float32, usage string) *ScalarFlag[float32] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseFloat32, utils.FormatFloat32)
 }
 
-// TCPAddr
+// TCPAddr registers a dynamic TCP address flag.
 func (g *Group) TCPAddr(field string, def *net.TCPAddr, usage string) *ScalarFlag[*net.TCPAddr] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseTCPAddr, utils.FormatTCPAddr)
 }
 
-// URL
+// URL registers a dynamic URL flag.
 func (g *Group) URL(field string, def *url.URL, usage string) *ScalarFlag[*url.URL] {
 	return registerDynamicScalar(g, field, def, usage, url.Parse, func(u *url.URL) string { return u.String() })
 }
 
-// File
+// File registers a dynamic file flag.
 func (g *Group) File(field string, def *os.File, usage string) *ScalarFlag[*os.File] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseFile, utils.FormatFile)
 }
 
-// Time
+// Time registers a dynamic time flag.
 func (g *Group) Time(field string, def time.Time, usage string) *ScalarFlag[time.Time] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseTime, utils.FormatTime)
 }
 
-// Bytes
+// Bytes registers a dynamic byte count flag.
 func (g *Group) Bytes(field string, def uint64, usage string) *ScalarFlag[uint64] {
 	return registerDynamicScalar(g, field, def, usage, utils.ParseBytes, utils.FormatBytes)
 }

@@ -51,7 +51,7 @@ func TestEnumFlag(t *testing.T) {
 		mode := fs.Enum("mode", "dev", "deployment mode", "dev", "staging", "prod").Value()
 
 		err := fs.Parse([]string{"--mode=test"})
-		require.EqualError(t, err, "invalid value for flag --mode: must be one of: dev, staging, prod")
+		require.EqualError(t, err, "invalid value for flag --mode: \"test\" must be one of: dev, staging, prod")
 		assert.Equal(t, "dev", *mode)
 	})
 
@@ -91,7 +91,7 @@ func TestEnumFlag(t *testing.T) {
 		level := tinyflags.Enum(fs, "level", info, "log level", debug, info, warn).Value()
 
 		err := fs.Parse([]string{"--level=99"})
-		require.EqualError(t, err, "invalid value for flag --level: must be one of: 0, 1, 2")
+		require.EqualError(t, err, "invalid value for flag --level: \"99\" must be one of: 0, 1, 2")
 		assert.Equal(t, info, *level)
 	})
 
@@ -149,7 +149,7 @@ func TestEnumFlag(t *testing.T) {
 		).Value()
 
 		err := fs.Parse([]string{"--level=trace"})
-		require.EqualError(t, err, "invalid value for flag --level: must be one of: debug, info, warn")
+		require.EqualError(t, err, "invalid value for flag --level: \"trace\" must be one of: debug, info, warn")
 		assert.Equal(t, info, *level)
 	})
 
@@ -189,6 +189,26 @@ func TestEnumFlag(t *testing.T) {
 		assert.Contains(t, err.Error(), "log level (allowed: debug, info, warn) (default: info)")
 	})
 
+	t.Run("dynamic named iota enum rejects unknown name", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		svc := fs.DynamicGroup("svc")
+		level := tinyflags.DynamicEnumMap(
+			svc,
+			"level",
+			info,
+			"log level",
+			tinyflags.Choice("debug", debug),
+			tinyflags.Choice("info", info),
+			tinyflags.Choice("warn", warn),
+		)
+
+		err := fs.Parse([]string{"--svc.api.level=trace"})
+		require.EqualError(t, err, "invalid value for flag --svc.api.level: \"trace\" must be one of: debug, info, warn")
+		assert.Empty(t, level.Values())
+	})
+
 	t.Run("dynamic enum rejects unknown value", func(t *testing.T) {
 		t.Parallel()
 
@@ -197,6 +217,6 @@ func TestEnumFlag(t *testing.T) {
 		svc.Enum("mode", "dev", "deployment mode", "dev", "staging", "prod")
 
 		err := fs.Parse([]string{"--svc.api.mode=test"})
-		require.EqualError(t, err, "invalid value for flag --svc.api.mode: must be one of: dev, staging, prod")
+		require.EqualError(t, err, "invalid value for flag --svc.api.mode: \"test\" must be one of: dev, staging, prod")
 	})
 }

@@ -15,12 +15,13 @@ import (
 // which is useful for case-insensitive or structured types.
 func AllowOnly[T any](format func(T) string, allowed []T) func(T) error {
 	return func(v T) error {
+		got := format(v)
 		for _, a := range allowed {
-			if format(a) == format(v) {
+			if format(a) == got {
 				return nil
 			}
 		}
-		return fmt.Errorf("must be one of: %s", JoinFormatted(allowed, format))
+		return fmt.Errorf("%q must be one of: %s", got, JoinFormatted(allowed, format))
 	}
 }
 
@@ -57,13 +58,13 @@ func PluralSuffix(i int) string {
 	return ""
 }
 
-// ParseString string → string
+// ParseString parses a string value.
 func ParseString(s string) (string, error) { return s, nil }
 
-// FormatString string → string
+// FormatString formats a string value.
 func FormatString(s string) string { return s }
 
-// ParseTCPAddr string → *net.TCPAddr
+// ParseTCPAddr parses a TCP address.
 func ParseTCPAddr(s string) (*net.TCPAddr, error) {
 	addr, err := net.ResolveTCPAddr("tcp", s)
 	if err != nil {
@@ -72,7 +73,7 @@ func ParseTCPAddr(s string) (*net.TCPAddr, error) {
 	return addr, nil
 }
 
-// FormatTCPAddr *net.TCPAddr → string
+// FormatTCPAddr formats a TCP address.
 func FormatTCPAddr(addr *net.TCPAddr) string {
 	if addr == nil {
 		return ""
@@ -80,28 +81,28 @@ func FormatTCPAddr(addr *net.TCPAddr) string {
 	return addr.String()
 }
 
-// ParseDuration string → time.Duration
+// ParseFloat64 parses a float64 value.
 func ParseFloat64(s string) (float64, error) { return strconv.ParseFloat(s, 64) }
 
-// FormatFloat64 time.Duration → string
+// FormatFloat64 formats a float64 value.
 func FormatFloat64(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }
 
-// ParseFloat32 string → float32
+// ParseFloat32 parses a float32 value.
 func ParseFloat32(s string) (float32, error) {
 	v, err := strconv.ParseFloat(s, 32)
 	return float32(v), err
 }
 
-// FormatFloat32 float32 → string
+// FormatFloat32 formats a float32 value.
 func FormatFloat32(f float32) string { return strconv.FormatFloat(float64(f), 'f', -1, 32) }
 
-// ParseIP net.IP → string
+// ParseIP parses an IP address.
 func ParseIP(s string) (net.IP, error) { return net.ParseIP(s), nil }
 
-// FormatIP net.IP → string
+// FormatIP formats an IP address.
 func FormatIP(ip net.IP) string { return ip.String() }
 
-// ParseIPv4Mask string → net.IPMask
+// ParseIPv4Mask parses an IPv4 mask.
 func ParseIPv4Mask(s string) (net.IPMask, error) {
 	parts := strings.Split(s, ".")
 	if len(parts) != 4 {
@@ -114,23 +115,23 @@ func ParseIPv4Mask(s string) (net.IPMask, error) {
 	return net.IPMask(ip.To4()), nil
 }
 
-// FormatIPv4Mask net.IPMask → string
+// FormatIPv4Mask formats an IPv4 mask.
 func FormatIPv4Mask(ip net.IPMask) string { return ip.String() }
 
-// ParseBytes string → uint64
+// ParseBytes parses a byte count.
 func ParseBytes(s string) (uint64, error) { return strconv.ParseUint(s, 10, 64) }
 
-// FormatBytes uint64 → string
+// FormatBytes formats a byte count.
 func FormatBytes(b uint64) string { return strconv.FormatUint(b, 10) }
 
-// ParseFile string → *os.File
+// ParseFile opens a file for reading.
 func ParseFile(s string) (*os.File, error) { return os.Open(s) }
 
-// FormatFile *os.File → string
+// FormatFile formats a file name.
 func FormatFile(f *os.File) string { return f.Name() }
 
-// ParseTime string → time.Time
+// ParseTime parses a time value.
 func ParseTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
-// FormatTime time.Time → string
+// FormatTime formats a time value.
 func FormatTime(t time.Time) string { return t.Format(time.RFC3339) }

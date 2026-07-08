@@ -134,7 +134,7 @@ func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, err
 			return val, nil
 		}
 		var zero T
-		return zero, fmt.Errorf("must be one of: %s", strings.Join(names, ", "))
+		return zero, fmt.Errorf("%q must be one of: %s", raw, strings.Join(names, ", "))
 	}
 
 	format := func(v T) string {

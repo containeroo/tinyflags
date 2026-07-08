@@ -305,7 +305,7 @@ Flags:
 		err := fs.Parse([]string{
 			"--list=a|b|c", "--list", "d",
 		})
-		require.EqualError(t, err, "invalid value for flag --list: invalid value \"d\": must be one of: a, b, c")
+		require.EqualError(t, err, "invalid value for flag --list: invalid value \"d\": \"d\" must be one of: a, b, c")
 		assert.Equal(t, []string{"a", "b", "c"}, *list) // defaults
 	})
 
@@ -356,7 +356,7 @@ Flags:
 		})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid value for flag --http.beta.address: cannot use localhost")
-		assert.Contains(t, err.Error(), "invalid value for flag --http.beta.list: invalid value \"a|b|c\": must be one of: a, b, c")
+		assert.Contains(t, err.Error(), "invalid value for flag --http.beta.list: invalid value \"a|b|c\": \"a|b|c\" must be one of: a, b, c")
 	})
 
 	t.Run("smoke dyn choices", func(t *testing.T) {
