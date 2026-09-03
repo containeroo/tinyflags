@@ -59,5 +59,10 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkPositionals(); err != nil {
 		return f.handleError(err)
 	}
+	for _, validate := range f.validators {
+		if err := validate(); err != nil {
+			return f.handleError(err)
+		}
+	}
 	return nil
 }

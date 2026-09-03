@@ -164,6 +164,24 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 
 ## FlagSet API
 
+Flag sets can register multiple cross-flag validators with
+`Validate(func() error)`. They run in registration order after command-line
+and environment values, defaults, and built-in relationships have been
+processed. Parsing stops at the first validation error. Help and version
+requests do not run validators.
+
+```go
+mode := fs.String("mode", "development", "Runtime mode").Value()
+token := fs.String("token", "", "Production token").Value()
+
+fs.Validate(func() error {
+    if *mode == "production" && *token == "" {
+        return fmt.Errorf("production mode requires --token")
+    }
+    return nil
+})
+```
+
 ### Common Flag-Builder Methods
 
 | Method                      | Applies to  | Description                                                                             |

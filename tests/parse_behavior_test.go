@@ -203,6 +203,62 @@ func TestBeforeParseHook(t *testing.T) {
 	})
 }
 
+// TestFlagSetValidate verifies post-parse validation across final flag values.
+func TestFlagSetValidate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("seesFinalValues", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		mode := fs.String("mode", "development", "mode").Value()
+		token := fs.String("token", "", "token").Value()
+		fs.Validate(func() error {
+			if *mode == "production" && *token == "" {
+				return errors.New("production mode requires a token")
+			}
+			return nil
+		})
+
+		err := fs.Parse([]string{"--mode=production"})
+		require.EqualError(t, err, "production mode requires a token")
+	})
+
+	t.Run("runsInRegistrationOrder", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		var calls []string
+		fs.Validate(func() error {
+			calls = append(calls, "first")
+			return nil
+		})
+		fs.Validate(nil)
+		fs.Validate(func() error {
+			calls = append(calls, "second")
+			return errors.New("stop")
+		})
+		fs.Validate(func() error {
+			calls = append(calls, "third")
+			return nil
+		})
+
+		err := fs.Parse(nil)
+		require.EqualError(t, err, "stop")
+		assert.Equal(t, []string{"first", "second"}, calls)
+	})
+
+	t.Run("skipsValidationForHelp", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Validate(func() error { return errors.New("should not run") })
+
+		err := fs.Parse([]string{"--help"})
+		require.True(t, tinyflags.IsHelpRequested(err))
+	})
+}
+
 // TestDynamicFinalizeWithID verifies dynamic finalizers that receive IDs.
 func TestDynamicFinalizeWithID(t *testing.T) {
 	t.Parallel()

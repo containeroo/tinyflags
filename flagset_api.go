@@ -19,6 +19,12 @@ func (f *FlagSet) BeforeParse(fn func([]string) ([]string, error)) {
 	f.impl.BeforeParse(fn)
 }
 
+// Validate registers a cross-flag validator. Validators run in registration
+// order after parsing, environment loading, defaults, and built-in checks.
+func (f *FlagSet) Validate(fn func() error) {
+	f.impl.Validate(fn)
+}
+
 // OnUnknownFlag installs a handler for unknown flags. Return nil to ignore.
 func (f *FlagSet) OnUnknownFlag(fn func(string) error) {
 	f.impl.OnUnknownFlag(fn)

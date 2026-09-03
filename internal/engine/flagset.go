@@ -50,6 +50,7 @@ type FlagSet struct {
 	oneOfVerbose       bool                             // Include conflicting flags in OneOf errors
 	authors            string                           // Optional authors block
 	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
+	validators         []func() error                   // Cross-flag validators run after parsing
 	unknownFlag        func(string) error               // Handler for unknown flags
 
 	// Indentation and width config for description
@@ -140,6 +141,14 @@ func (f *FlagSet) GlobalDelimiter(s string) { f.defaultDelimiter = s }
 
 // BeforeParse sets a hook that can rewrite args before parsing.
 func (f *FlagSet) BeforeParse(fn func([]string) ([]string, error)) { f.beforeParse = fn }
+
+// Validate registers a cross-flag validator that runs after all values and
+// built-in relationships have been validated.
+func (f *FlagSet) Validate(fn func() error) {
+	if fn != nil {
+		f.validators = append(f.validators, fn)
+	}
+}
 
 // OnUnknownFlag sets the callback for unknown flags.
 func (f *FlagSet) OnUnknownFlag(fn func(string) error) { f.unknownFlag = fn }
