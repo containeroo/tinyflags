@@ -478,6 +478,33 @@ a: port=8080, timeout=30s
 b: port=9090, timeout=1m
 ```
 
+### Custom dynamic slices
+
+Use `tinyflags.DynamicSlice` for a parser with signature `func(string) ([]T, error)`
+that expands one input into multiple elements, such as HTTP status ranges:
+
+```go
+httpGroup := fs.DynamicGroup("http")
+tinyflags.DynamicSlice(
+    httpGroup,
+    "expected-status-codes",
+    []int{200},
+    "Expected HTTP status codes",
+    httputils.ParseStatusCodes,
+    strconv.Itoa,
+)
+
+// After parsing --http.web.expected-status-codes=200-299,304:
+codes := tinyflags.GetOrDefaultDynamic[[]int](httpGroup, "web", "expected-status-codes")
+```
+
+Here, `httputils.ParseStatusCodes` is your parser and `strconv.Itoa` formats each
+integer. Each comma-separated chunk is trimmed and passed to the parser; its
+results are appended in order. Repeated flags append more elements. The returned
+handle supports `Delimiter`, `PreserveSpace`, `Validate`, `Choices`, and finalizers,
+with validation and finalization applied to each expanded element. Unset IDs use
+the default; a successful empty expansion stores an empty slice.
+
 ## Grouped Flags: Mutual-Exclusion & Require-Together
 
 When certain flags must be used **together**, or must be **exclusive**, tinyflags makes that easy.

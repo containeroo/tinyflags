@@ -9,14 +9,15 @@ import (
 
 // DynamicSliceValue holds parsed slice values per ID with parsing, formatting, and validation.
 type DynamicSliceValue[T any] struct {
-	field      string                // Flag field name
-	def        []T                   // Default slice value
-	baseDef    []T                   // Original default slice value
-	changed    bool                  // Whether the value was changed
-	input      core.SliceInputConfig // Shared slice-input behavior
-	hooks      core.ValueHooks[T]    // Shared parse/format/validate/finalize behavior
-	finalizeID func(string, T) T     // Optional finalizer function with ID
-	values     map[string][]T        // Parsed values per ID
+	parse      func(string) ([]T, error) // Expands one input chunk into elements
+	field      string                    // Flag field name
+	def        []T                       // Default slice value
+	baseDef    []T                       // Original default slice value
+	changed    bool                      // Whether the value was changed
+	input      core.SliceInputConfig     // Shared slice-input behavior
+	hooks      core.ValueHooks[T]        // Shared parse/format/validate/finalize behavior
+	finalizeID func(string, T) T         // Optional finalizer function with ID
+	values     map[string][]T            // Parsed values per ID
 }
 
 // NewDynamicSliceValue creates a new dynamic slice value.
@@ -29,6 +30,13 @@ func NewDynamicSliceValue[T any](
 	trimSpace bool,
 ) *DynamicSliceValue[T] {
 	return &DynamicSliceValue[T]{
+		parse: func(raw string) ([]T, error) {
+			val, err := parse(raw)
+			if err != nil {
+				return nil, err
+			}
+			return []T{val}, nil
+		},
 		field:   field,
 		def:     append([]T(nil), def...),
 		baseDef: append([]T(nil), def...),
@@ -51,14 +59,24 @@ func (d *DynamicSliceValue[T]) Set(id, raw string) error {
 			return fmt.Errorf("invalid value %q: empty values are not allowed", chunk)
 		}
 
-		val, err := d.hooks.ParseValue(chunk)
+		vals, err := d.parse(chunk)
 		if err != nil {
 			return fmt.Errorf("invalid value %q: %w", chunk, err)
 		}
-		if d.finalizeID != nil {
-			val = d.finalizeID(id, val)
+		for _, val := range vals {
+			val, err = utils.ApplyValueHooks(val, d.hooks.Validate, d.hooks.Finalize)
+			if err != nil {
+				return fmt.Errorf("invalid value %q: %w", chunk, err)
+			}
+			if d.finalizeID != nil {
+				val = d.finalizeID(id, val)
+			}
+			d.values[id] = append(d.values[id], val)
 		}
-		d.values[id] = append(d.values[id], val)
+		// An empty expansion is an explicit value, so it must not use defaults.
+		if _, ok := d.values[id]; !ok {
+			d.values[id] = []T{}
+		}
 	}
 	d.changed = true
 	return nil

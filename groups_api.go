@@ -82,3 +82,14 @@ func MustGetDynamic[T any](group *dynamic.Group, id, flag string) T {
 func GetOrDefaultDynamic[T any](group *dynamic.Group, id, flag string) T {
 	return dynamic.GetOrDefault[T](group, id, flag)
 }
+
+// DynamicSlice registers a dynamic slice field with a custom parser.
+// The parser expands each delimiter-separated input chunk into zero or more
+// elements. Whitespace is trimmed by default; use PreserveSpace to disable it.
+// Repeated flags append elements. Validation and finalization run per element.
+// The formatter formats individual elements, including defaults in help output.
+func DynamicSlice[T any](group *dynamic.Group, field string, def []T, usage string,
+	parse func(string) ([]T, error), format func(T) string,
+) *dynamic.SliceFlag[T] {
+	return dynamic.RegisterSlice(group, field, def, usage, parse, format)
+}

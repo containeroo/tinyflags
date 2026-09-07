@@ -16,8 +16,22 @@ func registerDynamicSlice[T any](
 	format func(T) string,
 	trimSpace bool,
 ) *SliceFlag[T] {
-	// Create a slice value with default delimiter from the flagset
-	val := NewDynamicSliceValue(field, def, parse, format, g.fs.DefaultDelimiter(), trimSpace)
+	return registerSliceValue(g, field, def, usage, format,
+		NewDynamicSliceValue(field, def, parse, format, g.fs.DefaultDelimiter(), trimSpace))
+}
+
+// RegisterSlice registers a custom parser that expands each input chunk into elements.
+func RegisterSlice[T any](g *Group, field string, def []T, usage string,
+	parse func(string) ([]T, error), format func(T) string,
+) *SliceFlag[T] {
+	val := NewDynamicSliceValue(field, def, nil, format, g.fs.DefaultDelimiter(), true)
+	val.parse = parse
+	return registerSliceValue(g, field, def, usage, format, val)
+}
+
+func registerSliceValue[T any](g *Group, field string, def []T, usage string,
+	format func(T) string, val *DynamicSliceValue[T],
+) *SliceFlag[T] {
 
 	// Construct CLI-facing flag placeholder with default value
 	bf := &core.BaseFlag{
