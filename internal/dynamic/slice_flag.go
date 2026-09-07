@@ -13,9 +13,17 @@ type SliceFlag[T any] struct {
 	item                    *DynamicSliceValue[T] // Underlying slice value store
 }
 
-// Delimiter sets the string delimiter for parsing slice values.
+// Delimiter sets the string delimiter for parsing slice values and enables splitting.
 func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 	f.item.setDelimiter(sep)
+	return f
+}
+
+// NoSplit passes each flag input to the parser without delimiter splitting.
+// Whitespace and empty-value options still apply. Repeated flags append values.
+// Calling Delimiter afterwards enables splitting again.
+func (f *SliceFlag[T]) NoSplit() *SliceFlag[T] {
+	f.item.input.NoSplit = true
 	return f
 }
 

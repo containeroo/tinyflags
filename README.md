@@ -478,6 +478,22 @@ a: port=8080, timeout=30s
 b: port=9090, timeout=1m
 ```
 
+### Disable slice splitting
+
+Call `.NoSplit()` on any static or dynamic slice to pass each flag input to its
+parser as one string. For example, `fs.StringSlice("value", nil, "Values").NoSplit()`
+parses `--value=a,b --value=c,d` as `[]string{"a,b", "c,d"}`.
+Whitespace handling and `AllowEmpty()` still apply. Calling `.Delimiter(sep)`
+after `.NoSplit()` enables splitting again.
+
+Custom dynamic slice parsers can use `.NoSplit()` to handle their own separators:
+
+```go
+tinyflags.DynamicSlice(httpGroup, "expected-status-codes", []int{200},
+    "Expected HTTP status codes", httputils.ParseStatusCodes, strconv.Itoa).
+    NoSplit()
+```
+
 ### Custom dynamic slices
 
 Use `tinyflags.DynamicSlice` for a parser with signature `func(string) ([]T, error)`

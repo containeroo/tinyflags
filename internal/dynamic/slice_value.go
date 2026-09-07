@@ -105,6 +105,7 @@ func (d *DynamicSliceValue[T]) setFinalizeWithID(fn func(string, T) T) {
 // setDelimiter sets the delimiter used to split input values.
 func (d *DynamicSliceValue[T]) setDelimiter(sep string) {
 	d.input.Delimiter = sep
+	d.input.NoSplit = false
 }
 
 // setTrimSpace toggles trimming leading and trailing space from each item.

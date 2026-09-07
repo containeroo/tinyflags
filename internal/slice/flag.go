@@ -11,9 +11,18 @@ type SliceFlag[T any] struct {
 	val *SliceValue[T]
 }
 
-// Delimiter sets the delimiter used to split input values.
+// Delimiter sets the delimiter used to split input values and enables splitting.
 func (f *SliceFlag[T]) Delimiter(sep string) *SliceFlag[T] {
 	f.val.input.Delimiter = sep
+	f.val.input.NoSplit = false
+	return f
+}
+
+// NoSplit passes each flag input to the parser without delimiter splitting.
+// Whitespace and empty-value options still apply. Repeated flags append values.
+// Calling Delimiter afterwards enables splitting again.
+func (f *SliceFlag[T]) NoSplit() *SliceFlag[T] {
+	f.val.input.NoSplit = true
 	return f
 }
 
