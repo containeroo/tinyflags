@@ -31,7 +31,7 @@ func (f *FlagSet) parseStaticEnv() error {
 			if f.ignoreInvalidEnv {
 				continue
 			}
-			return fmt.Errorf("invalid value for flag --%s from environment: %w", fl.Name, err)
+			return fmt.Errorf("invalid env var %s: %w", envKey, err)
 		}
 	}
 	return nil
@@ -80,7 +80,7 @@ func (f *FlagSet) tryParseDynamicEnv(key, val string) error {
 				return nil
 			}
 			if err := item.Value.Set(id, val); err != nil {
-				return fmt.Errorf("invalid value for flag --%s.%s.%s from environment %s: %w", group.Name(), id, fl.Name, key, err)
+				return fmt.Errorf("invalid env var %s: %w", key, err)
 			}
 			return nil
 		}

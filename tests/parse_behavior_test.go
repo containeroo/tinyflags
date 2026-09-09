@@ -349,7 +349,7 @@ func TestContinueOnErrorParsesAllFlags(t *testing.T) {
 	})
 }
 
-// TestEnvironmentErrorWording verifies invalid env values use the shared error format.
+// TestEnvironmentErrorWording verifies invalid env values identify their source variable.
 func TestEnvironmentErrorWording(t *testing.T) {
 	t.Parallel()
 
@@ -365,7 +365,44 @@ func TestEnvironmentErrorWording(t *testing.T) {
 
 	err := fs.Parse(nil)
 	require.Error(t, err)
-	assert.EqualError(t, err, "invalid value for flag --port from environment: strconv.Atoi: parsing \"nope\": invalid syntax")
+	assert.EqualError(t, err, "invalid env var APP_PORT: strconv.Atoi: parsing \"nope\": invalid syntax")
+}
+
+func TestValidationErrorSource(t *testing.T) {
+	t.Parallel()
+
+	for _, source := range []string{"explicit env", "derived env", "cli"} {
+		t.Run(source, func(t *testing.T) {
+			t.Parallel()
+
+			fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+			fs.EnvPrefix("LORE_")
+			fs.SetGetEnvFn(func(key string) string {
+				if key == "LORE__ENCRYPTION_KEY" {
+					return "invalid"
+				}
+				return ""
+			})
+			validationErr := errors.New("encryption key must be a base64-encoded 32-byte value")
+			key := fs.String("encryption-key", "", "encryption key").Validate(func(string) error {
+				return validationErr
+			})
+			if source == "explicit env" {
+				fs.EnvPrefix("OTHER")
+				key.Env("LORE__ENCRYPTION_KEY")
+			}
+
+			var args []string
+			prefix := "invalid env var LORE__ENCRYPTION_KEY: "
+			if source == "cli" {
+				args = []string{"--encryption-key=invalid"}
+				prefix = "invalid value for flag --encryption-key: "
+			}
+			err := fs.Parse(args)
+			require.EqualError(t, err, prefix+validationErr.Error())
+			require.ErrorIs(t, err, validationErr)
+		})
+	}
 }
 
 // TestParseResetsStateBetweenCalls verifies FlagSet state resets on repeated parses.

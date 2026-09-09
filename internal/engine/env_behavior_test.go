@@ -99,6 +99,17 @@ func TestParseEnvBehavior(t *testing.T) {
 		assert.Equal(t, "cli", addr.MustGet("api"))
 	})
 
+	t.Run("dynamic invalid env identifies source variable", func(t *testing.T) {
+		fs := NewFlagSet("app", ContinueOnError)
+		fs.EnvPrefix("APP")
+		fs.getEnvVars = func() []string {
+			return []string{"APP_SVC_API_PORT=not-an-int"}
+		}
+		fs.DynamicGroup("svc").Int("port", 80, "desc")
+
+		require.EqualError(t, fs.Parse(nil), "invalid env var APP_SVC_API_PORT: strconv.Atoi: parsing \"not-an-int\": invalid syntax")
+	})
+
 	t.Run("dynamic invalid env can be ignored", func(t *testing.T) {
 		fs := NewFlagSet("app", ContinueOnError)
 		fs.EnvPrefix("APP")
