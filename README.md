@@ -78,6 +78,17 @@ func main() {
 
 `Command` lets you build subcommand trees with local flags and inherited globals. If you want parsing to fail unless a subcommand is chosen, call `RequireCommand()`.
 
+Commands inherit the nearest explicitly configured `EnvPrefix`, including when it
+is set after creating subcommands. `child.EnvPrefix("SERVER")` replaces the prefix
+for that subtree; `child.EnvPrefix("")` stops inheritance and disables automatic
+env lookup for that subtree. Explicit per-flag `.Env("KEY")` still works.
+A command's own `Globals()` inherits its prefix, while ancestor globals keep their
+owning command's prefix. You can override the prefix on `Globals()` separately.
+
+This changes earlier behavior: subcommands without an explicit prefix now read
+environment variables using their ancestor's prefix.
+
+
 ```go
 app := tinyflags.NewCommand("app", tinyflags.ExitOnError).RequireCommand()
 app.Command("serve", "Run the server")

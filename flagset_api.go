@@ -39,7 +39,10 @@ func (f *FlagSet) Version(s string) { f.impl.Version(s) }
 // VersionText sets the --version text.
 func (f *FlagSet) VersionText(s string) { f.impl.VersionText(s) }
 
-// EnvPrefix sets a prefix for all environment variables.
+// EnvPrefix sets the prefix for automatic environment variable lookups.
+// Commands inherit the nearest ancestor prefix unless explicitly configured.
+// An empty prefix stops inheritance and disables automatic lookups; explicit
+// per-flag Env keys still work. Descendants inherit this setting.
 func (f *FlagSet) EnvPrefix(s string) { f.impl.EnvPrefix(s) }
 
 // SetEnvKeyFunc sets a function to derive env keys from prefix+flag name.

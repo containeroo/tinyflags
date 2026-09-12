@@ -19,7 +19,7 @@ func (f *FlagSet) parseEnv() error {
 // parseStaticEnv loads unset static flags from exact or derived environment keys.
 func (f *FlagSet) parseStaticEnv() error {
 	for _, fl := range f.staticFlagsMap {
-		envKey, ok := fl.LookupEnvKey(f.envPrefix, f.envKeyFunc)
+		envKey, ok := fl.LookupEnvKey(f.effectiveEnvPrefix(), f.envKeyFunc)
 		if !ok {
 			continue
 		}
@@ -39,7 +39,7 @@ func (f *FlagSet) parseStaticEnv() error {
 
 // parseDynamicEnv loads dynamic flags from APP_GROUP_ID_FIELD style keys.
 func (f *FlagSet) parseDynamicEnv() error {
-	if f.envPrefix == "" || len(f.dynamicGroupsMap) == 0 || f.getEnvVars == nil {
+	if f.effectiveEnvPrefix() == "" || len(f.dynamicGroupsMap) == 0 || f.getEnvVars == nil {
 		return nil
 	}
 
@@ -66,7 +66,7 @@ func (f *FlagSet) tryParseDynamicEnv(key, val string) error {
 				continue
 			}
 
-			template := core.DynamicEnvKey(f.envPrefix, group.Name(), "{ID}", fl.Name)
+			template := core.DynamicEnvKey(f.effectiveEnvPrefix(), group.Name(), "{ID}", fl.Name)
 			id, ok := matchDynamicEnvKey(key, template)
 			if !ok {
 				continue

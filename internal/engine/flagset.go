@@ -25,6 +25,8 @@ type FlagSet struct {
 	requiredPositional int                              // Required positional argument count
 	validatePositional func(string) error               // Function to validate positional arguments
 	finalizePositional func(string) string              // Function to finalize positional arguments
+	envPrefixSet       bool                             // Whether a prefix was explicitly configured, including empty.
+	envPrefixParent    *FlagSet                         // Fallback scope for command prefix inheritance.
 	envPrefix          string                           // Optional ENV prefix (e.g. "APP_")
 	envKeyFunc         EnvKeyFunc                       // Function to derive env keys from prefix+flag name
 	getEnv             func(string) string              // Function used to read ENV vars (default: os.Getenv)
@@ -125,13 +127,29 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 func (f *FlagSet) Name() string { return f.name }
 
 // EnvPrefix sets the environment variable prefix.
-func (f *FlagSet) EnvPrefix(prefix string) { f.envPrefix = prefix }
+func (f *FlagSet) EnvPrefix(prefix string) {
+	f.envPrefix = prefix
+	f.envPrefixSet = true
+}
+
+// InheritEnvPrefix uses parent as the fallback for an unset prefix.
+func (f *FlagSet) InheritEnvPrefix(parent *FlagSet) { f.envPrefixParent = parent }
+
+// effectiveEnvPrefix resolves the nearest explicitly configured prefix.
+func (f *FlagSet) effectiveEnvPrefix() string {
+	if !f.envPrefixSet && f.envPrefixParent != nil {
+		return f.envPrefixParent.effectiveEnvPrefix()
+	}
+	return f.envPrefix
+}
 
 // SetEnvKeyFunc sets the environment variable naming function.
 func (f *FlagSet) SetEnvKeyFunc(fn EnvKeyFunc) { f.envKeyFunc = fn }
 
 // EnvKeyForFlag derives the environment key for a flag name.
-func (f *FlagSet) EnvKeyForFlag(name string) string { return f.envKeyFunc(f.envPrefix, name) }
+func (f *FlagSet) EnvKeyForFlag(name string) string {
+	return f.envKeyFunc(f.effectiveEnvPrefix(), name)
+}
 
 // DefaultDelimiter returns the default slice delimiter.
 func (f *FlagSet) DefaultDelimiter() string { return f.defaultDelimiter }

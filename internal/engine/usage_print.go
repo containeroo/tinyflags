@@ -67,10 +67,10 @@ func (f *FlagSet) PrintNotes(w io.Writer, indent, maxWidth int) {
 
 // PrintStaticDefaults renders all statically registered flags.
 func (f *FlagSet) PrintStaticDefaults(w io.Writer, indent, startCol, maxWidth int) {
-	help.PrintStaticDefaults(w, f.staticFlags(), indent, startCol, maxWidth, f.hideEnvs, f.envPrefix, f.StaticUsageNote())
+	help.PrintStaticDefaults(w, f.staticFlags(), indent, startCol, maxWidth, f.hideEnvs, f.effectiveEnvPrefix(), f.StaticUsageNote())
 }
 
 // PrintDynamicDefaults renders all dynamic groups.
 func (f *FlagSet) PrintDynamicDefaults(w io.Writer, indent, startCol, maxWidth int) {
-	help.PrintDynamicDefaults(w, f.dynamicGroups(), indent, startCol, maxWidth, f.hideEnvs, f.envPrefix, f.DynamicUsageNote())
+	help.PrintDynamicDefaults(w, f.dynamicGroups(), indent, startCol, maxWidth, f.hideEnvs, f.effectiveEnvPrefix(), f.DynamicUsageNote())
 }

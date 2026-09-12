@@ -242,3 +242,82 @@ func TestParseRunnerRequiresHandler(t *testing.T) {
 	assert.Nil(t, runner)
 	assert.Contains(t, err.Error(), `no command runner registered for command "app serve"`)
 }
+
+func TestCommandEnvPrefixInheritance(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		override bool
+		prefix   string
+	}{
+		{name: "inherited", prefix: "TFROOT"},
+		{name: "replaced", override: true, prefix: "TFCHILD"},
+		{name: "disabled", override: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("TFROOT_ROOT", "root-env")
+			t.Setenv("TFROOT_LOCAL", "root-local")
+			t.Setenv("TFROOT_SVC_API_ADDR", "root-dynamic")
+			t.Setenv("TFEXPLICIT", "explicit-env")
+			if tc.prefix != "" {
+				t.Setenv(tc.prefix+"_LOCAL", "local-env")
+				t.Setenv(tc.prefix+"_GLOBAL", "global-env")
+				t.Setenv(tc.prefix+"_LEAF", "leaf-env")
+				t.Setenv(tc.prefix+"_SVC_API_ADDR", "dynamic-env")
+			}
+			root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+			rootValue := root.Globals().String("root", "default", "root").Value()
+			child := root.Command("child", "child")
+			leaf := child.Command("leaf", "leaf")
+			local := child.String("local", "default", "local").Value()
+			global := child.Globals().String("global", "default", "global").Value()
+			leafValue := leaf.String("leaf", "default", "leaf").Value()
+			explicit := leaf.String("explicit", "default", "explicit").Env("TFEXPLICIT").Value()
+			dynamic := leaf.DynamicGroup("svc").String("addr", "default", "address")
+			if tc.override {
+				child.EnvPrefix(tc.prefix)
+			}
+			root.EnvPrefix("TFROOT") // Setting the parent last must not overwrite child choices.
+			expectedKey := ""
+			if tc.prefix != "" {
+				expectedKey = tc.prefix + "_LOCAL"
+			}
+			assert.Equal(t, expectedKey, child.EnvKeyForFlag("local"))
+			if tc.prefix != "" {
+				assert.Contains(t, child.HelpText(), expectedKey)
+			} else {
+				assert.NotContains(t, child.HelpText(), "TFROOT_LOCAL")
+			}
+			require.NoError(t, root.Parse([]string{"child", "leaf"}))
+			assert.Equal(t, "root-env", *rootValue)
+			assert.Equal(t, "explicit-env", *explicit)
+			if tc.prefix == "" {
+				assert.Equal(t, "default", *local)
+				assert.Equal(t, "default", *global)
+				assert.Equal(t, "default", *leafValue)
+				assert.False(t, dynamic.Has("api"))
+			} else {
+				assert.Equal(t, "local-env", *local)
+				assert.Equal(t, "global-env", *global)
+				assert.Equal(t, "leaf-env", *leafValue)
+				assert.Equal(t, "dynamic-env", dynamic.MustGet("api"))
+			}
+		})
+	}
+}
+
+func TestCommandEnvPrefixLiveUpdatesAndGlobalsOverride(t *testing.T) {
+	root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+	root.EnvPrefix("FIRST")
+	child := root.Command("child", "child")
+	leaf := child.Command("leaf", "leaf")
+	assert.Equal(t, "FIRST_PORT", leaf.EnvKeyForFlag("port"))
+	root.EnvPrefix("SECOND")
+	assert.Equal(t, "SECOND_PORT", leaf.EnvKeyForFlag("port"))
+	child.Globals().EnvPrefix("GLOBALS")
+	assert.Equal(t, "GLOBALS_PORT", child.Globals().EnvKeyForFlag("port"))
+	assert.Equal(t, "SECOND_PORT", leaf.EnvKeyForFlag("port"))
+	child.EnvPrefix("")
+	assert.Empty(t, leaf.EnvKeyForFlag("port"))
+	leaf.EnvPrefix("LEAF")
+	assert.Equal(t, "LEAF_PORT", leaf.EnvKeyForFlag("port"))
+}
