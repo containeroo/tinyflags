@@ -12,6 +12,7 @@ type BaseFlag struct {
 	HideEnv      bool               // If true, hide ENV key from help.
 	Deprecated   string             // If non‐empty, show deprecation notice.
 	Required     bool               // Mark flag as required.
+	NotEmpty     bool               // Reject explicitly set empty/zero values.
 	HideRequired bool               // Hide “(Required)” in help.
 	Placeholder  string             // Placeholder for the value (e.g. "FILE").
 	Allowed      []string           // Allowed string values (help only).

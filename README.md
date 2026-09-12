@@ -184,26 +184,29 @@ fs.Validate(func() error {
 
 ### Common Flag-Builder Methods
 
-| Method                      | Applies to  | Description                                                                             |
-| :-------------------------- | :---------- | :-------------------------------------------------------------------------------------- |
-| `Short(s string)`           | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                   |
-| `Required()`                | all flags   | Mark the flag as required; parser errors if unset.                                      |
-| `HideRequired()`            | all flags   | Hide the "(Required)" suffix from help.                                                 |
-| `Hidden()`                  | all flags   | Omit this flag from generated help output.                                              |
-| `Deprecated(reason string)` | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                               |
-| `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set. |
-| `HelpOneOfGroups(names...)` | all flags   | Override which one-of groups for this flag are shown in help output.                    |
-| `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.             |
-| `Env(key string)`           | static only | Override the environment-variable name (panics if `DisableEnv` already called).         |
-| `HideEnv()`                 | all flags   | Hide the environment-variable name from help output.                                    |
-| `DisableEnv()`              | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).         |
-| `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                            |
-| `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                        |
-| `HideAllowed()`             | all flags   | Hide the allowed values from help.                                                      |
-| `Requires(names ...string)` | all flags   | Mark flag as required by the given flag.                                                |
-| `HideRequires()`            | all flags   | Hide the “(Requires)” suffix from help.                                                 |
-| `OverriddenValueMaskFn(fn)` | all flags   | Provide a mask function used by `OverriddenValues()`.                                   |
-| `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                 |
+| Method                      | Applies to  | Description                                                                                                |
+| :-------------------------- | :---------- | :--------------------------------------------------------------------------------------------------------- |
+| `Short(s string)`           | static only | One-letter alias (`-p`). Must be exactly one rune (panics otherwise).                                      |
+| `Required()`                | all flags   | Mark the flag as required; parser errors if unset.                                                         |
+| `NotEmpty()`                | all flags   | Reject an explicitly set empty/zero value; combine with `Required()` to require both presence and content. |
+| `HideRequired()`            | all flags   | Hide the "(Required)" suffix from help.                                                                    |
+| `Hidden()`                  | all flags   | Omit this flag from generated help output.                                                                 |
+| `Deprecated(reason string)` | all flags   | Mark flag deprecated; includes `DEPRECATED` note in help.                                                  |
+| `OneOfGroup(group string)`  | all flags   | Assign to a named mutual-exclusion group. Parsing errors if more than one in group set.                    |
+| `HelpOneOfGroups(names...)` | all flags   | Override which one-of groups for this flag are shown in help output.                                       |
+| `AllOrNone(group string)`   | all flags   | Assign to a named require-together group. All or none in group must be set.                                |
+| `Env(key string)`           | static only | Override the environment-variable name (panics if `DisableEnv` already called).                            |
+| `HideEnv()`                 | all flags   | Hide the environment-variable name from help output.                                                       |
+| `DisableEnv()`              | all flags   | Disable environment lookup for this flag (panics if `Env(...)` already called).                            |
+| `Placeholder(text string)`  | all flags   | Customize the `<VALUE>` placeholder in help.                                                               |
+| `Allowed(vals ...string)`   | all flags   | Restrict help to show only these allowed values.                                                           |
+| `HideAllowed()`             | all flags   | Hide the allowed values from help.                                                                         |
+| `Requires(names ...string)` | all flags   | Mark flag as required by the given flag.                                                                   |
+| `HideRequires()`            | all flags   | Hide the “(Requires)” suffix from help.                                                                    |
+| `OverriddenValueMaskFn(fn)` | all flags   | Provide a mask function used by `OverriddenValues()`.                                                      |
+| `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                                    |
+
+`Required()` and `NotEmpty()` are intentionally different: `Required()` checks whether a flag was supplied, while `NotEmpty()` checks the resulting value. For example, `--token=` satisfies `Required()` but fails `NotEmpty()`. Chaining both enforces a present, non-empty value.
 
 ### Static-Flag Extras
 

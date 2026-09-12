@@ -11,6 +11,9 @@ type flagMeta struct {
 // required marks the flag as required.
 func (m *flagMeta) required() { m.bf.Required = true }
 
+// notEmpty rejects explicitly set empty or zero values after parsing.
+func (m *flagMeta) notEmpty() { m.bf.NotEmpty = true }
+
 // hideRequired hides the required marker in help output.
 func (m *flagMeta) hideRequired() { m.bf.HideRequired = true }
 

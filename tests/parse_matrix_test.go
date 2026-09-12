@@ -1,6 +1,7 @@
 package tinyflags_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/containeroo/tinyflags"
@@ -58,6 +59,91 @@ func TestParseValuePrecedenceMatrix(t *testing.T) {
 			assert.Equal(t, tt.wantSource, fs.OverriddenValues())
 		})
 	}
+}
+
+// TestNotEmpty verifies presence and non-empty value checks remain independent.
+func TestNotEmpty(t *testing.T) {
+	t.Parallel()
+
+	t.Run("optionalUnset", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("token", "", "token").NotEmpty()
+
+		require.NoError(t, fs.Parse(nil))
+	})
+
+	t.Run("requiredStillAllowsExplicitEmpty", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("token", "", "token").Required()
+
+		require.NoError(t, fs.Parse([]string{"--token="}))
+	})
+
+	t.Run("staticRejectsEmpty", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("token", "", "token").NotEmpty()
+
+		err := fs.Parse([]string{"--token="})
+		require.ErrorContains(t, err, "flag --token must not be empty")
+	})
+
+	t.Run("staticChecksFinalizedValue", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("token", "", "token").Finalize(strings.TrimSpace).NotEmpty()
+
+		err := fs.Parse([]string{"--token=   "})
+		require.ErrorContains(t, err, "flag --token must not be empty")
+	})
+
+	t.Run("staticAcceptsValue", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		token := fs.String("token", "", "token").Required().NotEmpty().Value()
+
+		require.NoError(t, fs.Parse([]string{"--token=abc"}))
+		assert.Equal(t, "abc", *token)
+	})
+
+	t.Run("zeroNumberIsEmpty", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Int("count", 1, "count").NotEmpty()
+
+		err := fs.Parse([]string{"--count=0"})
+		require.ErrorContains(t, err, "flag --count must not be empty")
+	})
+
+	t.Run("dynamicRejectsEmpty", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		service := fs.DynamicGroup("service")
+		service.String("addr", "", "address").NotEmpty()
+
+		err := fs.Parse([]string{"--service.api.addr="})
+		require.ErrorContains(t, err, "flag --service.api.addr must not be empty")
+	})
+
+	t.Run("dynamicUnsetFieldIsOptional", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		service := fs.DynamicGroup("service")
+		service.String("addr", "", "address").NotEmpty()
+		service.Int("port", 0, "port")
+
+		require.NoError(t, fs.Parse([]string{"--service.api.port=8080"}))
+	})
 }
 
 // TestParseConstraintMatrix verifies grouped parse constraint behavior.

@@ -7,6 +7,16 @@ func (f *FlagSet) checkRequirements() error {
 	return validate.CheckRequirements(f.staticFlagsMap)
 }
 
+// checkNotEmpty ensures explicitly set static flags contain a non-empty value.
+func (f *FlagSet) checkNotEmpty() error {
+	return validate.CheckNotEmpty(f.staticFlagsMap)
+}
+
+// checkNotEmptyDynamic ensures explicitly set dynamic flags contain a non-empty value.
+func (f *FlagSet) checkNotEmptyDynamic() error {
+	return validate.CheckNotEmptyDynamic(f.dynamicGroups())
+}
+
 // checkPositionals ensures all positional arguments are valid.
 func (f *FlagSet) checkPositionals() error {
 	if err := f.validatePositionals(); err != nil {

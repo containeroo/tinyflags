@@ -33,6 +33,12 @@ func (s *StaticFlag[T, Self]) Required() Self {
 	return s.self
 }
 
+// NotEmpty rejects an explicitly set empty or zero value.
+func (s *StaticFlag[T, Self]) NotEmpty() Self {
+	s.meta.notEmpty()
+	return s.self
+}
+
 // HideRequired hides the "(Required)" suffix from help.
 func (s *StaticFlag[T, Self]) HideRequired() Self {
 	s.meta.hideRequired()

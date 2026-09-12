@@ -2,6 +2,7 @@ package validate
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/containeroo/tinyflags/internal/core"
@@ -29,6 +30,19 @@ func CheckRequired(flags map[string]*core.BaseFlag) error {
 	return nil
 }
 
+// CheckNotEmpty ensures explicitly set static flags do not contain an empty value.
+func CheckNotEmpty(flags map[string]*core.BaseFlag) error {
+	for _, fl := range flags {
+		if fl == nil || !fl.NotEmpty || !fl.IsChanged() {
+			continue
+		}
+		if isEmpty(fl.Value.Get()) {
+			return fmt.Errorf("flag --%s must not be empty", fl.Name)
+		}
+	}
+	return nil
+}
+
 // CheckRequiredDynamic ensures all required dynamic flags are set for seen IDs.
 func CheckRequiredDynamic(groups []*dynamic.Group) error {
 	for _, g := range groups {
@@ -50,6 +64,24 @@ func CheckRequiredDynamic(groups []*dynamic.Group) error {
 				}
 				if _, ok := item.Value.GetAny(id); !ok {
 					return fmt.Errorf("flag --%s.%s.%s is required", g.Name(), id, field)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// CheckNotEmptyDynamic ensures explicitly set dynamic flags do not contain an empty value.
+func CheckNotEmptyDynamic(groups []*dynamic.Group) error {
+	for _, g := range groups {
+		for _, id := range g.Instances() {
+			for field, item := range g.Items() {
+				if item.Flag == nil || !item.Flag.NotEmpty {
+					continue
+				}
+				value, set := item.Value.GetAny(id)
+				if set && isEmpty(value) {
+					return fmt.Errorf("flag --%s.%s.%s must not be empty", g.Name(), id, field)
 				}
 			}
 		}
@@ -142,6 +174,29 @@ func FinalizePositionals(positional []string, finalize func(string) string) erro
 		positional[i] = finalize(arg)
 	}
 	return nil
+}
+
+func isEmpty(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(value)
+	for v.Kind() == reflect.Interface {
+		if v.IsNil() {
+			return true
+		}
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Func, reflect.Pointer:
+		return v.IsNil()
+	default:
+		return v.IsZero()
+	}
 }
 
 func joinFlagNames(flags []*core.BaseFlag) string {

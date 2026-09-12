@@ -21,6 +21,12 @@ func (d *DynamicFlag[T]) Required() *DynamicFlag[T] {
 	return d
 }
 
+// NotEmpty rejects explicitly set empty or zero values.
+func (d *DynamicFlag[T]) NotEmpty() *DynamicFlag[T] {
+	d.meta.notEmpty()
+	return d
+}
+
 // HideRequired hides the “(Required)” suffix from help.
 func (d *DynamicFlag[T]) HideRequired() *DynamicFlag[T] {
 	d.meta.hideRequired()

@@ -44,7 +44,13 @@ func (f *FlagSet) Parse(args []string) error {
 	if err := f.checkRequired(); err != nil { // static
 		return f.handleError(err)
 	}
-	if err := f.checkRequiredDynamic(); err != nil { // NEW
+	if err := f.checkRequiredDynamic(); err != nil {
+		return f.handleError(err)
+	}
+	if err := f.checkNotEmpty(); err != nil {
+		return f.handleError(err)
+	}
+	if err := f.checkNotEmptyDynamic(); err != nil {
 		return f.handleError(err)
 	}
 	if err := f.checkOneOfGroups(); err != nil {
