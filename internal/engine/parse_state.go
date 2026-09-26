@@ -5,6 +5,7 @@ import "github.com/containeroo/tinyflags/internal/core"
 // resetParseState clears positional args and resets parse lifecycles.
 func (f *FlagSet) resetParseState() {
 	f.positional = nil
+	clear(f.valueSources)
 	f.visitParseLifecycles(func(lifecycle core.ParseLifecycle) {
 		lifecycle.ResetParseState()
 	})

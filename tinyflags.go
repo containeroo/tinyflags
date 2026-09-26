@@ -13,6 +13,18 @@ import (
 // ErrorHandling defines how parsing errors are handled.
 type ErrorHandling = engine.ErrorHandling
 
+// ValueSource identifies where an effective flag value came from.
+type ValueSource = engine.ValueSource
+
+const (
+	// ValueSourceDefault means a flag kept its default value.
+	ValueSourceDefault = engine.ValueSourceDefault
+	// ValueSourceFlag means a command-line flag supplied the value.
+	ValueSourceFlag = engine.ValueSourceFlag
+	// ValueSourceEnvironment means an environment variable supplied the value.
+	ValueSourceEnvironment = engine.ValueSourceEnvironment
+)
+
 const (
 	ContinueOnError = engine.ContinueOnError // Continue and return error
 	ExitOnError     = engine.ExitOnError     // Exit with error message

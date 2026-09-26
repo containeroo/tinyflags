@@ -10,6 +10,7 @@ Zero dependencies. Full generics support. Rich usage output.
 - **Short & long flags** (`-d`, `--debug`)
 - **Boolean strict mode** (`--flag=true/false`, `--no-flag`)
 - **Environment variable overrides** (`EnvPrefix`, per-flag opt-out)
+- **Value provenance** (`Default`, command-line flag, or environment variable)
 - **Required, deprecated, and grouped flags**
 - **Slice flags** (`[]T`) with custom delimiters
 - **Allowed choices, validation and finalizers**
@@ -88,7 +89,6 @@ owning command's prefix. You can override the prefix on `Globals()` separately.
 This changes earlier behavior: subcommands without an explicit prefix now read
 environment variables using their ancestor's prefix.
 
-
 ```go
 app := tinyflags.NewCommand("app", tinyflags.ExitOnError).RequireCommand()
 app.Command("serve", "Run the server")
@@ -147,6 +147,25 @@ Additional behavior:
 
 - Explicit CLI arguments win over environment variables.
 - `OverriddenValues()` reports values provided by CLI or env, not untouched defaults.
+- `Source(name)` reports whether the effective value came from the default, a command-line flag, or the environment; `OverriddenSources()` returns provenance for every explicit override.
+
+For example:
+
+```go
+fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+fs.EnvPrefix("APP")
+fs.String("host", "localhost", "Server host")
+fs.Int("port", 8080, "Server port")
+fs.String("mode", "development", "Runtime mode")
+
+// APP_HOST=db.internal app --port=9090
+_ = fs.Parse(os.Args[1:])
+
+fmt.Println(fs.Source("host")) // Environment
+fmt.Println(fs.Source("port")) // Flag
+fmt.Println(fs.Source("mode")) // Default
+```
+
 - Reusing a `FlagSet` across multiple `Parse(...)` calls is supported; parser state is reset before each parse.
 - Automatic static env lookup requires `EnvPrefix(...)`; explicit static `.Env("KEY")` works without a prefix.
 - Dynamic env lookup requires `EnvPrefix(...)` and uses `PREFIX_GROUP_ID_FIELD` keys such as `MYAPP_HTTP_API_PORT`.
@@ -172,6 +191,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 - `HelpText(err)` — extract rendered help text from usage-bearing parse errors.
 - `RequestHelp(msg)` / `RequestVersion(msg)` — trigger help/version errors manually.
 - `Flag[T]` — minimal interface implemented by flag handles (`Changed() bool`, `Value() *T`).
+- `ValueSourceDefault` / `ValueSourceFlag` / `ValueSourceEnvironment` — provenance values returned by `Source` and `OverriddenSources`.
 
 ## FlagSet API
 
@@ -305,6 +325,8 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `RequirePositional(n int)`                                   | Enforce at least `n` positional arguments.                                      |
 | `Args() []string` / `Arg(i int) (string, bool)`              | Access leftover positional args safely.                                         |
 | `OverriddenValues() map[string]any`                          | Return flags explicitly set via args/env (dynamic keys: `group.id.flag`).       |
+| `Source(name) ValueSource`                                   | Return `Default`, `Flag`, or `Environment` for the effective value.             |
+| `OverriddenSources() map[string]ValueSource`                 | Return provenance for explicitly set values using the same keys as overrides.   |
 | `MaskFirstLast(value any) any`                               | Helper mask that keeps first/last character (strings, `[]string`).              |
 | `MaskPostgresURL(value any) any`                             | Helper mask for `postgres://user:pass@host/db` credentials.                     |
 | `AddOneOfGroup(name string, group *core.OneOfGroupGroup)`    | Register a pre-built mutual-exclusion group.                                    |

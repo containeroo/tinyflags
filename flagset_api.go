@@ -96,3 +96,11 @@ func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.impl.SetPosi
 // OverriddenValues returns all flags that were explicitly set (args or env).
 // Dynamic flags use the key format "group.id.flag".
 func (f *FlagSet) OverriddenValues() map[string]any { return f.impl.OverriddenValues() }
+
+// Source returns where name came from in the most recent parse.
+// Unoverridden values report ValueSourceDefault.
+func (f *FlagSet) Source(name string) ValueSource { return f.impl.Source(name) }
+
+// OverriddenSources returns the source of each value explicitly set by a flag or environment variable.
+// Dynamic flags use the key format "group.id.flag".
+func (f *FlagSet) OverriddenSources() map[string]ValueSource { return f.impl.OverriddenSources() }
