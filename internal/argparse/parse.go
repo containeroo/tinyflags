@@ -15,6 +15,7 @@ type Config struct {
 	LookupShortFlag   func(string) *core.BaseFlag
 	LookupDynamicFlag func(string, string) (core.DynamicValue, string, error)
 	HandleUnknownFlag func(string) error
+	RecordOrigin      func(name, key string)
 }
 
 type stateFn func(*parser) stateFn
@@ -135,6 +136,7 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 		}
 
 		if handled := tryDynamicBool(item, id); handled {
+			recordOrigin(p, name, "--"+name)
 			return stateStart
 		}
 
@@ -142,11 +144,17 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 
 		if hasVal {
 			p.err = trySetDynamic(item, id, val, name)
+			if p.err == nil {
+				recordOrigin(p, name, "--"+name)
+			}
 			return stateStart
 		}
 
 		if handled := handleDynamicValue(p, item, id, name); !handled {
 			return nil
+		}
+		if p.err == nil {
+			recordOrigin(p, name, "--"+name)
 		}
 
 		return stateStart
@@ -170,16 +178,26 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 		flag := p.config.LookupStaticFlag(name)
 
 		if handled := tryBool(flag); handled {
+			recordOrigin(p, flag.Name, "--"+name)
 			return stateStart
 		}
 		if handled := tryCounter(p, flag); handled {
+			if p.err == nil {
+				recordOrigin(p, flag.Name, "--"+name)
+			}
 			return stateStart
 		}
 		if hasVal {
 			p.err = trySet(flag.Value, val, "invalid value for flag --%s: %w", name)
+			if p.err == nil {
+				recordOrigin(p, flag.Name, "--"+name)
+			}
 			return stateStart
 		}
 		if handled := tryLongValue(p, flag, name); handled {
+			if p.err == nil {
+				recordOrigin(p, flag.Name, "--"+name)
+			}
 			return stateStart
 		}
 
@@ -203,16 +221,26 @@ func stateShort(arg string) stateFn {
 			}
 
 			if handled := tryBool(flag); handled {
+				recordOrigin(p, flag.Name, "-"+char)
 				continue
 			}
 			if handled := tryCounter(p, flag); handled {
+				if p.err == nil {
+					recordOrigin(p, flag.Name, "-"+char)
+				}
 				continue
 			}
 			if handled := tryShortCombined(p, flag, i, shorts, char); handled {
+				if p.err == nil {
+					recordOrigin(p, flag.Name, "-"+char)
+				}
 				break
 			}
 
 			p.err = tryShortValue(p, flag, char)
+			if p.err == nil {
+				recordOrigin(p, flag.Name, "-"+char)
+			}
 			break
 		}
 
@@ -288,6 +316,12 @@ func trySetDynamic(item core.DynamicValue, id, val, label string) error {
 		return fmt.Errorf("invalid value for flag --%s: %w", label, err)
 	}
 	return nil
+}
+
+func recordOrigin(p *parser, name, key string) {
+	if p.config.RecordOrigin != nil {
+		p.config.RecordOrigin(name, key)
+	}
 }
 
 func splitFlagArg(s string) (name, val string, hasVal bool) {

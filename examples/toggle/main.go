@@ -19,14 +19,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	debug, set := tinyflags.FirstChanged(false, debugFlag, noDebugFlag)
-	source := "default"
-	if set {
-		if debugFlag.Changed() {
-			source = "--debug/-d"
-		} else if noDebugFlag.Changed() {
-			source = "--no-debug/-n"
-		}
+	debug, _ := tinyflags.FirstChanged(false, debugFlag, noDebugFlag)
+	origin := fs.Origin("debug")
+	if noDebugFlag.Changed() {
+		origin = fs.Origin("no-debug")
 	}
-	fmt.Printf("debug enabled: %t (source: %s)\n", debug, source)
+	fmt.Printf("debug enabled: %t (source: %s)\n", debug, origin)
 }

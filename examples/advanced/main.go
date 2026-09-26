@@ -71,15 +71,10 @@ func main() {
 	fmt.Println("tags:", *tagsVal)
 	fmt.Println("config-dir:", *configDirVal)
 	fmt.Println("webhook:", *webhook)
-	debugVal, set := tinyflags.FirstChanged(false, debug, noDebug)
-	source := "default"
-	if set {
-		switch {
-		case debug.Changed():
-			source = "--debug/--d"
-		case noDebug.Changed():
-			source = "--no-debug/--n"
-		}
+	debugVal, _ := tinyflags.FirstChanged(false, debug, noDebug)
+	origin := fs.Origin("debug")
+	if noDebug.Changed() {
+		origin = fs.Origin("no-debug")
 	}
-	fmt.Printf("debug: %t (source: %s)\n", debugVal, source)
+	fmt.Printf("debug: %t (source: %s)\n", debugVal, origin)
 }

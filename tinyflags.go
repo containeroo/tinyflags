@@ -16,6 +16,9 @@ type ErrorHandling = engine.ErrorHandling
 // ValueSource identifies where an effective flag value came from.
 type ValueSource = engine.ValueSource
 
+// ValueOrigin identifies the exact input that supplied an effective flag value.
+type ValueOrigin = engine.ValueOrigin
+
 const (
 	// ValueSourceDefault means a flag kept its default value.
 	ValueSourceDefault = engine.ValueSourceDefault

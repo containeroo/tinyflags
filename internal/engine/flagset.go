@@ -54,7 +54,7 @@ type FlagSet struct {
 	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
 	validators         []func() error                   // Cross-flag validators run after parsing
 	unknownFlag        func(string) error               // Handler for unknown flags
-	valueSources       map[string]ValueSource           // Source of each value overridden during the most recent parse
+	valueOrigins       map[string]ValueOrigin           // Exact origin of each value overridden during the most recent parse
 
 	// Indentation and width config for description
 	descIndent int
@@ -83,7 +83,7 @@ func NewFlagSet(name string, errorHandling ErrorHandling) *FlagSet {
 		name:               name,
 		errorHandling:      errorHandling,
 		staticFlagsMap:     make(map[string]*core.BaseFlag),
-		valueSources:       make(map[string]ValueSource),
+		valueOrigins:       make(map[string]ValueOrigin),
 		getEnv:             os.Getenv,
 		getEnvVars:         os.Environ,
 		envKeyFunc:         NewReplacerEnvKeyFunc(strings.NewReplacer("-", "_", ".", "_", "/", "_"), true),

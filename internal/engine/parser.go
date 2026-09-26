@@ -36,13 +36,10 @@ func (f *FlagSet) Parse(args []string) error {
 		return &VersionRequested{Version: f.versionString}
 	}
 
-	f.captureChangedSources(ValueSourceFlag)
-
 	// Load values from env and validate
 	if err := f.parseEnv(); err != nil {
 		return f.handleError(err)
 	}
-	f.captureChangedSources(ValueSourceEnvironment)
 	f.applyDefaultFinalizers()
 	if err := f.checkRequired(); err != nil { // static
 		return f.handleError(err)

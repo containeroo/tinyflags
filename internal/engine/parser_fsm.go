@@ -17,6 +17,9 @@ func runArgParserFSM(fs *FlagSet, args []string) ([]string, error) {
 		LookupShortFlag:   fs.lookupShortFlag,
 		LookupDynamicFlag: fs.lookupDynamicFlag,
 		HandleUnknownFlag: fs.unknownFlag,
+		RecordOrigin: func(name, key string) {
+			fs.recordOrigin(name, ValueSourceFlag, key)
+		},
 	}, args)
 }
 

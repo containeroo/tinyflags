@@ -79,31 +79,58 @@ func TestMaskPostgresURL(t *testing.T) {
 	assert.Equal(t, "postgres://****:****@localhost:5432/app", got["dsn"])
 }
 
-// TestOverriddenSourcesStatic reports whether static values came from flags or environment variables.
-func TestOverriddenSourcesStatic(t *testing.T) {
+// TestOverriddenOriginsStatic reports the exact CLI or environment input that supplied static values.
+func TestOverriddenOriginsStatic(t *testing.T) {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.EnvPrefix("APP")
 	fs.String("name", "default", "name").Short("n")
-	fs.String("region", "local", "region")
+	fs.String("region", "local", "region").Env("DEPLOY_REGION")
 	fs.String("mode", "development", "mode")
 
 	t.Setenv("APP_NAME", "environment")
-	t.Setenv("APP_REGION", "production")
+	t.Setenv("DEPLOY_REGION", "production")
 
 	err := fs.Parse([]string{"-n", "flag"})
 	require.NoError(t, err)
 
-	assert.Equal(t, tinyflags.ValueSourceFlag, fs.Source("name"))
-	assert.Equal(t, tinyflags.ValueSourceEnvironment, fs.Source("region"))
-	assert.Equal(t, tinyflags.ValueSourceDefault, fs.Source("mode"))
-	assert.Equal(t, map[string]tinyflags.ValueSource{
-		"name":   tinyflags.ValueSourceFlag,
-		"region": tinyflags.ValueSourceEnvironment,
-	}, fs.OverriddenSources())
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "-n"}, fs.Origin("name"))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceEnvironment, Key: "DEPLOY_REGION"}, fs.Origin("region"))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceDefault}, fs.Origin("mode"))
+	assert.Equal(t, "Flag · -n", fs.Origin("name").String())
+	assert.Equal(t, "Environment · DEPLOY_REGION", fs.Origin("region").String())
+	assert.Equal(t, "Default", fs.Origin("mode").String())
+	assert.Equal(t, map[string]tinyflags.ValueOrigin{
+		"name":   {Source: tinyflags.ValueSourceFlag, Key: "-n"},
+		"region": {Source: tinyflags.ValueSourceEnvironment, Key: "DEPLOY_REGION"},
+	}, fs.OverriddenOrigins())
 }
 
-// TestOverriddenSourcesDynamic reports sources for individual dynamic flag IDs.
-func TestOverriddenSourcesDynamic(t *testing.T) {
+// TestOriginReportsExactLongFlagWithoutValue verifies provenance never includes a potentially sensitive flag value.
+func TestOriginReportsExactLongFlagWithoutValue(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.String("token", "", "token")
+
+	require.NoError(t, fs.Parse([]string{"--token=secret"}))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "--token"}, fs.Origin("token"))
+	assert.NotContains(t, fs.Origin("token").String(), "secret")
+}
+
+// TestOriginTracksLastSuccessfulFlagSpelling verifies repeated scalar flags report the spelling that supplied the final value.
+func TestOriginTracksLastSuccessfulFlagSpelling(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	name := fs.String("name", "default", "name").Short("n").Value()
+
+	require.NoError(t, fs.Parse([]string{"-n", "first", "--name=second"}))
+	assert.Equal(t, "second", *name)
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "--name"}, fs.Origin("name"))
+}
+
+// TestOverriddenOriginsDynamic reports exact origins for individual dynamic flag IDs.
+func TestOverriddenOriginsDynamic(t *testing.T) {
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.EnvPrefix("APP")
 	http := fs.DynamicGroup("http")
@@ -114,40 +141,53 @@ func TestOverriddenSourcesDynamic(t *testing.T) {
 	err := fs.Parse([]string{"--http.web.port=8080"})
 	require.NoError(t, err)
 
-	assert.Equal(t, tinyflags.ValueSourceFlag, fs.Source("http.web.port"))
-	assert.Equal(t, tinyflags.ValueSourceEnvironment, fs.Source("http.api.port"))
-	assert.Equal(t, tinyflags.ValueSourceDefault, fs.Source("http.worker.port"))
-	assert.Equal(t, map[string]tinyflags.ValueSource{
-		"http.api.port": tinyflags.ValueSourceEnvironment,
-		"http.web.port": tinyflags.ValueSourceFlag,
-	}, fs.OverriddenSources())
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "--http.web.port"}, fs.Origin("http.web.port"))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceEnvironment, Key: "APP_HTTP_API_PORT"}, fs.Origin("http.api.port"))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceDefault}, fs.Origin("http.worker.port"))
+	assert.Equal(t, map[string]tinyflags.ValueOrigin{
+		"http.api.port": {Source: tinyflags.ValueSourceEnvironment, Key: "APP_HTTP_API_PORT"},
+		"http.web.port": {Source: tinyflags.ValueSourceFlag, Key: "--http.web.port"},
+	}, fs.OverriddenOrigins())
 }
 
-// TestOverriddenSourcesResetBetweenParses verifies provenance belongs only to the most recent parse.
-func TestOverriddenSourcesResetBetweenParses(t *testing.T) {
+// TestOriginCLIWinsOverEnvironment verifies the origin follows the same precedence as the effective value.
+func TestOriginCLIWinsOverEnvironment(t *testing.T) {
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.EnvPrefix("APP")
+	name := fs.String("name", "default", "name").Short("n").Value()
+
+	t.Setenv("APP_NAME", "environment")
+	require.NoError(t, fs.Parse([]string{"-n", "flag"}))
+
+	assert.Equal(t, "flag", *name)
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "-n"}, fs.Origin("name"))
+}
+
+// TestOverriddenOriginsResetBetweenParses verifies provenance belongs only to the most recent parse.
+func TestOverriddenOriginsResetBetweenParses(t *testing.T) {
 	t.Parallel()
 
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.String("name", "default", "name")
 
 	require.NoError(t, fs.Parse([]string{"--name=alice"}))
-	assert.Equal(t, tinyflags.ValueSourceFlag, fs.Source("name"))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "--name"}, fs.Origin("name"))
 
 	require.NoError(t, fs.Parse(nil))
-	assert.Equal(t, tinyflags.ValueSourceDefault, fs.Source("name"))
-	assert.Empty(t, fs.OverriddenSources())
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceDefault}, fs.Origin("name"))
+	assert.Empty(t, fs.OverriddenOrigins())
 }
 
-// TestOverriddenSourcesReturnsCopy verifies callers cannot mutate parser provenance state.
-func TestOverriddenSourcesReturnsCopy(t *testing.T) {
+// TestOverriddenOriginsReturnsCopy verifies callers cannot mutate parser provenance state.
+func TestOverriddenOriginsReturnsCopy(t *testing.T) {
 	t.Parallel()
 
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
 	fs.String("name", "default", "name")
 
 	require.NoError(t, fs.Parse([]string{"--name=alice"}))
-	sources := fs.OverriddenSources()
-	sources["name"] = tinyflags.ValueSourceEnvironment
+	origins := fs.OverriddenOrigins()
+	origins["name"] = tinyflags.ValueOrigin{Source: tinyflags.ValueSourceEnvironment, Key: "APP_NAME"}
 
-	assert.Equal(t, tinyflags.ValueSourceFlag, fs.Source("name"))
+	assert.Equal(t, tinyflags.ValueOrigin{Source: tinyflags.ValueSourceFlag, Key: "--name"}, fs.Origin("name"))
 }

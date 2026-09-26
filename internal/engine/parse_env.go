@@ -33,6 +33,7 @@ func (f *FlagSet) parseStaticEnv() error {
 			}
 			return fmt.Errorf("invalid env var %s: %w", envKey, err)
 		}
+		f.recordOrigin(fl.Name, ValueSourceEnvironment, envKey)
 	}
 	return nil
 }
@@ -82,6 +83,7 @@ func (f *FlagSet) tryParseDynamicEnv(key, val string) error {
 			if err := item.Value.Set(id, val); err != nil {
 				return fmt.Errorf("invalid env var %s: %w", key, err)
 			}
+			f.recordOrigin(group.Name()+"."+id+"."+fl.Name, ValueSourceEnvironment, key)
 			return nil
 		}
 	}
