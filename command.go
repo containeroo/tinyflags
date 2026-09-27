@@ -60,8 +60,8 @@ func (c *Command) Command(name string, summary string) *Command {
 		globals:  NewFlagSet(fullName, c.handling),
 		children: make(map[string]*Command),
 	}
-	child.FlagSet.impl.InheritEnvPrefix(c.FlagSet.impl)
-	child.globals.impl.InheritEnvPrefix(child.FlagSet.impl)
+	child.impl.InheritEnvPrefix(c.impl)
+	child.globals.impl.InheritEnvPrefix(child.impl)
 	c.children[name] = child
 	c.order = append(c.order, child)
 	return child

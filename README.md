@@ -194,6 +194,9 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 - `HelpText(err)` — extract rendered help text from usage-bearing parse errors.
 - `RequestHelp(msg)` / `RequestVersion(msg)` — trigger help/version errors manually.
 - `Flag[T]` — minimal interface implemented by flag handles (`Changed() bool`, `Value() *T`).
+- `Positive[T]()` / `NonNegative[T]()` — reusable numeric validators for positive and non-negative values.
+- `AtLeast(min)` / `AtMost(max)` / `Between(min, max)` — reusable inclusive validators for ordered values.
+- `NotBlank()` — rejects empty or whitespace-only strings.
 - `ValueOrigin` — exact provenance (`Source` plus the winning flag or environment key); its `String()` method returns labels such as `Flag · -p` and `Environment · APP_HOST`.
 - `ValueSourceDefault` / `ValueSourceFlag` / `ValueSourceEnvironment` — source kinds stored in `ValueOrigin.Source`.
 
@@ -379,6 +382,30 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
      ```
 
    - On error, parsing aborts and your message is shown to the user.
+
+   Tinyflags also includes reusable validators for common constraints:
+
+   ```go
+   timeout := fs.Duration("timeout", 5*time.Second, "Request timeout").
+       Validate(tinyflags.Positive[time.Duration]()).
+       Value()
+
+   retries := fs.Int("retries", 3, "Retry count").
+       Validate(tinyflags.NonNegative[int]()).
+       Value()
+
+   port := fs.Int("port", 8080, "Listen port").
+       Validate(tinyflags.Between(1, 65535)).
+       Value()
+
+   name := fs.String("name", "app", "Application name").
+       Validate(tinyflags.NotBlank()).
+       Value()
+   ```
+
+   `AtLeast` and `AtMost` provide one-sided inclusive bounds. `Between` is inclusive
+   and panics when its minimum is greater than its maximum. Numeric validators also
+   support named numeric types such as `time.Duration`.
 
 2. **Finalize**
    - Only after validation succeeds, Tinyflags passes the parsed value through your finalizer:

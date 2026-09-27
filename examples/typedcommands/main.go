@@ -130,8 +130,8 @@ func runServer(
 ) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprintf(w, "tinyflags server listening on %s\n", listenAddr)
-		fmt.Fprintf(w, "args: %v\n", args)
+		fmt.Fprintf(w, "tinyflags server listening on %s\n", listenAddr) // nolint:errcheck
+		fmt.Fprintf(w, "args: %v\n", args)                               // nolint:errcheck
 	})
 
 	server := &http.Server{
