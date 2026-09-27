@@ -197,6 +197,8 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 - `Positive[T]()` / `NonNegative[T]()` — reusable numeric validators for positive and non-negative values.
 - `AtLeast(min)` / `AtMost(max)` / `Between(min, max)` — reusable inclusive validators for ordered values.
 - `NotBlank()` — rejects empty or whitespace-only strings.
+- `MinLength(min)` / `MaxLength(max)` / `LengthBetween(min, max)` — reusable string-length validators.
+- `Optional(validator)` — skips a wrapped validator when the value is the zero value for its type.
 - `ValueOrigin` — exact provenance (`Source` plus the winning flag or environment key); its `String()` method returns labels such as `Flag · -p` and `Environment · APP_HOST`.
 - `ValueSourceDefault` / `ValueSourceFlag` / `ValueSourceEnvironment` — source kinds stored in `ValueOrigin.Source`.
 
@@ -401,11 +403,18 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
    name := fs.String("name", "app", "Application name").
        Validate(tinyflags.NotBlank()).
        Value()
+
+   sessionSecret := fs.String("oidc-session-secret", "", "OIDC session secret").
+       Validate(tinyflags.Optional(tinyflags.MinLength(32))).
+       Value()
    ```
 
    `AtLeast` and `AtMost` provide one-sided inclusive bounds. `Between` is inclusive
    and panics when its minimum is greater than its maximum. Numeric validators also
-   support named numeric types such as `time.Duration`.
+   support named numeric types such as `time.Duration`. `MinLength`, `MaxLength`, and
+   `LengthBetween` use Go's `len` for string length. `Optional` skips the wrapped
+   validator only when the value equals the type's zero value, such as `""`, `0`, or
+   `false`.
 
 2. **Finalize**
    - Only after validation succeeds, Tinyflags passes the parsed value through your finalizer:

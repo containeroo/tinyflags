@@ -137,3 +137,82 @@ func TestBuiltInValidatorIntegration(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid value for flag --port: must be between 1 and 65535 (inclusive)")
 	assert.ErrorContains(t, err, "invalid value for flag --name: must not be blank")
 }
+
+// TestMinLength verifies inclusive minimum string length validation.
+func TestMinLength(t *testing.T) {
+	t.Parallel()
+
+	validate := tinyflags.MinLength(3)
+	assert.NoError(t, validate("abc"))
+	assert.NoError(t, validate("abcd"))
+	assert.EqualError(t, validate("ab"), "must be at least 3 characters")
+}
+
+// TestMaxLength verifies inclusive maximum string length validation.
+func TestMaxLength(t *testing.T) {
+	t.Parallel()
+
+	validate := tinyflags.MaxLength(3)
+	assert.NoError(t, validate("abc"))
+	assert.NoError(t, validate("ab"))
+	assert.EqualError(t, validate("abcd"), "must be at most 3 characters")
+}
+
+// TestLengthBetween verifies inclusive string length range validation.
+func TestLengthBetween(t *testing.T) {
+	t.Parallel()
+
+	validate := tinyflags.LengthBetween(2, 4)
+	assert.NoError(t, validate("ab"))
+	assert.NoError(t, validate("abc"))
+	assert.NoError(t, validate("abcd"))
+	assert.EqualError(t, validate("a"), "must be between 2 and 4 characters (inclusive)")
+	assert.EqualError(t, validate("abcde"), "must be between 2 and 4 characters (inclusive)")
+}
+
+// TestOptional verifies that zero values skip the wrapped validator.
+func TestOptional(t *testing.T) {
+	t.Parallel()
+
+	t.Run("string", func(t *testing.T) {
+		t.Parallel()
+
+		validate := tinyflags.Optional(tinyflags.MinLength(3))
+		assert.NoError(t, validate(""))
+		assert.NoError(t, validate("abc"))
+		assert.EqualError(t, validate("ab"), "must be at least 3 characters")
+	})
+
+	t.Run("integer", func(t *testing.T) {
+		t.Parallel()
+
+		validate := tinyflags.Optional(tinyflags.AtLeast(3))
+		assert.NoError(t, validate(0))
+		assert.NoError(t, validate(3))
+		assert.EqualError(t, validate(2), "must be at least 3")
+	})
+
+	t.Run("duration", func(t *testing.T) {
+		t.Parallel()
+
+		validate := tinyflags.Optional(tinyflags.Positive[time.Duration]())
+		assert.NoError(t, validate(0))
+		assert.NoError(t, validate(time.Second))
+		assert.EqualError(t, validate(-time.Second), "must be greater than zero")
+	})
+}
+
+// TestOptionalMinLengthIntegration verifies optional string validation retains normal flag context.
+func TestOptionalMinLengthIntegration(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.String("oidc-session-secret", "", "OIDC session secret").
+		Validate(tinyflags.Optional(tinyflags.MinLength(32)))
+
+	assert.NoError(t, fs.Parse([]string{"--oidc-session-secret="}))
+
+	err := fs.Parse([]string{"--oidc-session-secret=too-short"})
+	require.Error(t, err)
+	assert.EqualError(t, err, "invalid value for flag --oidc-session-secret: must be at least 32 characters")
+}

@@ -103,3 +103,45 @@ func NotBlank() func(string) error {
 		return nil
 	}
 }
+
+// MinLength returns a validator that requires a string to have at least min characters.
+func MinLength(min int) func(string) error {
+	return func(value string) error {
+		if len(value) < min {
+			return fmt.Errorf("must be at least %d characters", min)
+		}
+		return nil
+	}
+}
+
+// MaxLength returns a validator that requires a string to have at most max characters.
+func MaxLength(max int) func(string) error {
+	return func(value string) error {
+		if len(value) > max {
+			return fmt.Errorf("must be at most %d characters", max)
+		}
+		return nil
+	}
+}
+
+// LengthBetween returns a validator that requires a string length within the inclusive min/max range.
+func LengthBetween(min, max int) func(string) error {
+	return func(value string) error {
+		if len(value) < min || len(value) > max {
+			return fmt.Errorf("must be between %d and %d characters (inclusive)", min, max)
+		}
+		return nil
+	}
+}
+
+// Optional returns a validator that skips validation for the zero value of T.
+func Optional[T comparable](validator func(T) error) func(T) error {
+	return func(value T) error {
+		var zero T
+		if value == zero {
+			return nil
+		}
+
+		return validator(value)
+	}
+}
