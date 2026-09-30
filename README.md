@@ -125,6 +125,7 @@ if err := app.Parse(os.Args[1:]); err != nil {
 | `[]string`      | `StringSlice`, `StringSliceVar`          |
 | `counter`       | `Counter`, `CounterVar` (auto-increment) |
 | `time.Duration` | `Duration`, `DurationVar`                |
+| byte size (`uint64`) | `Bytes`, `BytesVar`                  |
 | `net.IP`        | `IP`, `IPVar`                            |
 | `[]net.IP`      | `IPSlice`, `IPSliceVar`                  |
 | `*net.TCPAddr`  | `TCPAddr`, `TCPAddrVar`                  |
@@ -132,6 +133,7 @@ if err := app.Parse(os.Args[1:]); err != nil {
 | `*os.File`      | `File`, `FileVar`                        |
 
 > Slice flags accept repeated use or custom-delimited strings.
+> Byte-size flags accept raw byte counts as well as SI units such as `32MB` and IEC units such as `32MiB`; the same syntax is accepted from CLI arguments and environment variables.
 
 ## Parse Model
 
@@ -683,3 +685,4 @@ Flags:
 ## License
 
 Apache 2.0 -- see [LICENSE](LICENSE)
+

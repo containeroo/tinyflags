@@ -118,8 +118,75 @@ func ParseIPv4Mask(s string) (net.IPMask, error) {
 // FormatIPv4Mask formats an IPv4 mask.
 func FormatIPv4Mask(ip net.IPMask) string { return ip.String() }
 
-// ParseBytes parses a byte count.
-func ParseBytes(s string) (uint64, error) { return strconv.ParseUint(s, 10, 64) }
+// ParseBytes parses a byte count from either a plain integer or a human-readable size.
+// Decimal units use powers of 1000 (KB, MB, GB, ...), while IEC units use
+// powers of 1024 (KiB, MiB, GiB, ...). Unit matching is case-insensitive.
+func ParseBytes(s string) (uint64, error) {
+	raw := strings.TrimSpace(s)
+	if raw == "" {
+		return 0, fmt.Errorf("byte size cannot be empty")
+	}
+
+	valueText, unitText := splitByteSize(raw)
+	value, err := strconv.ParseUint(valueText, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid byte size %q: %w", s, err)
+	}
+
+	multiplier, ok := byteUnitMultiplier(unitText)
+	if !ok {
+		return 0, fmt.Errorf("invalid byte size %q: unknown unit %q", s, unitText)
+	}
+	if multiplier != 0 && value > ^uint64(0)/multiplier {
+		return 0, fmt.Errorf("invalid byte size %q: value overflows uint64", s)
+	}
+
+	return value * multiplier, nil
+}
+
+// splitByteSize separates the decimal quantity from its optional unit.
+func splitByteSize(s string) (string, string) {
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return strings.TrimSpace(s[:i]), strings.TrimSpace(s[i:])
+		}
+	}
+	return s, ""
+}
+
+// byteUnitMultiplier returns the multiplier represented by one byte-size unit.
+func byteUnitMultiplier(unit string) (uint64, bool) {
+	switch strings.ToUpper(strings.TrimSpace(unit)) {
+	case "", "B":
+		return 1, true
+	case "K", "KB":
+		return 1_000, true
+	case "M", "MB":
+		return 1_000_000, true
+	case "G", "GB":
+		return 1_000_000_000, true
+	case "T", "TB":
+		return 1_000_000_000_000, true
+	case "P", "PB":
+		return 1_000_000_000_000_000, true
+	case "E", "EB":
+		return 1_000_000_000_000_000_000, true
+	case "KI", "KIB":
+		return 1 << 10, true
+	case "MI", "MIB":
+		return 1 << 20, true
+	case "GI", "GIB":
+		return 1 << 30, true
+	case "TI", "TIB":
+		return 1 << 40, true
+	case "PI", "PIB":
+		return 1 << 50, true
+	case "EI", "EIB":
+		return 1 << 60, true
+	default:
+		return 0, false
+	}
+}
 
 // FormatBytes formats a byte count.
 func FormatBytes(b uint64) string { return strconv.FormatUint(b, 10) }
