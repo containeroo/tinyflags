@@ -227,9 +227,6 @@ func (f *FlagSet) IgnoreInvalidEnv(enable bool) { f.ignoreInvalidEnv = enable }
 // SetGetEnvFn replaces the environment lookup function.
 func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.getEnv = fn }
 
-// OverriddenValues returns the changed values after masking.
-func (f *FlagSet) OverriddenValues() map[string]any { return f.overriddenValues() }
-
 // --- Positional Arguments ---
 
 // RequirePositional sets the required positional argument count.
@@ -369,8 +366,8 @@ func (f *FlagSet) DynamicGroup(name string) *dynamic.Group {
 	return g
 }
 
-// overriddenValues returns masked values that changed during parsing.
-func (f *FlagSet) overriddenValues() map[string]any {
+// overrideValues returns masked values that changed during parsing.
+func (f *FlagSet) overrideValues() map[string]any {
 	out := make(map[string]any)
 
 	for _, fl := range f.staticFlagsMap {

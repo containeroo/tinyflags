@@ -56,7 +56,7 @@ func TestParseValuePrecedenceMatrix(t *testing.T) {
 			err := fs.Parse(tt.args)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantValue, *name)
-			assert.Equal(t, tt.wantSource, fs.OverriddenValues())
+			assert.Equal(t, tt.wantSource, fs.Overrides().Values())
 		})
 	}
 }

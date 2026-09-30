@@ -106,7 +106,7 @@ func (d *DynamicFlag[T]) HideAllowed() *DynamicFlag[T] {
 	return d
 }
 
-// OverriddenValueMaskFn sets a mask function used by OverriddenValues().
+// OverriddenValueMaskFn sets a mask function used by Overrides().
 func (d *DynamicFlag[T]) OverriddenValueMaskFn(fn func(any) any) *DynamicFlag[T] {
 	d.meta.maskFn(fn)
 	return d

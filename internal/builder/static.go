@@ -142,7 +142,7 @@ func (s *StaticFlag[T, Self]) HideRequires() Self {
 	return s.self
 }
 
-// OverriddenValueMaskFn sets a mask function used by OverriddenValues().
+// OverriddenValueMaskFn sets a mask function used by Overrides().
 func (s *StaticFlag[T, Self]) OverriddenValueMaskFn(fn func(any) any) Self {
 	s.meta.maskFn(fn)
 	return s.self

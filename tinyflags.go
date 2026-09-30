@@ -19,6 +19,12 @@ type ValueSource = engine.ValueSource
 // ValueOrigin identifies the exact input that supplied an effective flag value.
 type ValueOrigin = engine.ValueOrigin
 
+// Override describes one explicitly supplied flag value and its origin.
+type Override = engine.Override
+
+// Overrides contains explicitly supplied flag values keyed by canonical flag name.
+type Overrides = engine.Overrides
+
 const (
 	// ValueSourceDefault means a flag kept its default value.
 	ValueSourceDefault = engine.ValueSourceDefault

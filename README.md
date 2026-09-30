@@ -148,8 +148,8 @@ Tinyflags applies input in this order:
 Additional behavior:
 
 - Explicit CLI arguments win over environment variables.
-- `OverriddenValues()` reports values provided by CLI or env, not untouched defaults.
-- `Origin(name)` reports the exact input that supplied the effective value; `OverriddenOrigins()` returns origins for every explicit override.
+- `Overrides()` reports values provided by CLI or env, not untouched defaults. Each entry contains both the reporting value and its exact `ValueOrigin`.
+- `Overrides().Values()` projects only reporting values, `Overrides().Origins()` projects only origins, and `Origin(name)` also reports `Default` for untouched values.
 - CLI origins contain only the flag spelling, never its value, so sensitive `--token=...` input is reported as `--token`.
 
 For example:
@@ -165,10 +165,12 @@ fs.String("mode", "development", "Runtime mode")
 // APP_HOST=db.internal DATABASE_DSN=postgres://... app -p 9090
 _ = fs.Parse(os.Args[1:])
 
-fmt.Println(fs.Origin("host")) // Environment · APP_HOST
-fmt.Println(fs.Origin("port")) // Flag · -p
-fmt.Println(fs.Origin("dsn"))  // Environment · DATABASE_DSN
-fmt.Println(fs.Origin("mode")) // Default
+overrides := fs.Overrides()
+fmt.Println(overrides.Values())
+fmt.Println(overrides["host"].Origin) // Environment · APP_HOST
+fmt.Println(overrides["port"].Origin) // Flag · -p
+fmt.Println(overrides["dsn"].Origin)  // Environment · DATABASE_DSN
+fmt.Println(fs.Origin("mode"))        // Default
 ```
 
 - Reusing a `FlagSet` across multiple `Parse(...)` calls is supported; parser state is reset before each parse.
@@ -201,6 +203,7 @@ fmt.Printf("debug: %t (set: %v)\n", enabled, set)
 - `NotBlank()` — rejects empty or whitespace-only strings.
 - `MinLength(min)` / `MaxLength(max)` / `LengthBetween(min, max)` — reusable string-length validators.
 - `Optional(validator)` — skips a wrapped validator when the value is the zero value for its type.
+- `Override` / `Overrides` — one reporting value together with its `ValueOrigin`, and the map of all explicit overrides.
 - `ValueOrigin` — exact provenance (`Source` plus the winning flag or environment key); its `String()` method returns labels such as `Flag · -p` and `Environment · APP_HOST`.
 - `ValueSourceDefault` / `ValueSourceFlag` / `ValueSourceEnvironment` — source kinds stored in `ValueOrigin.Source`.
 
@@ -245,7 +248,7 @@ fs.Validate(func() error {
 | `HideAllowed()`             | all flags   | Hide the allowed values from help.                                                                         |
 | `Requires(names ...string)` | all flags   | Mark flag as required by the given flag.                                                                   |
 | `HideRequires()`            | all flags   | Hide the “(Requires)” suffix from help.                                                                    |
-| `OverriddenValueMaskFn(fn)` | all flags   | Provide a mask function used by `OverriddenValues()`.                                                      |
+| `OverriddenValueMaskFn(fn)` | all flags   | Provide a mask function used by `Overrides()` and its `Values()` projection.                                      |
 | `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                                    |
 
 `Required()` and `NotEmpty()` are intentionally different: `Required()` checks whether a flag was supplied, while `NotEmpty()` checks the resulting value. For example, `--token=` satisfies `Required()` but fails `NotEmpty()`. Chaining both enforces a present, non-empty value.
@@ -335,9 +338,10 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `PrintDynamicDefaults(w,indent,startCol,width)`              | Print dynamic flags help.                                                          |
 | `RequirePositional(n int)`                                   | Enforce at least `n` positional arguments.                                         |
 | `Args() []string` / `Arg(i int) (string, bool)`              | Access leftover positional args safely.                                            |
-| `OverriddenValues() map[string]any`                          | Return flags explicitly set via args/env (dynamic keys: `group.id.flag`).          |
+| `Overrides() Overrides`                                     | Return explicit args/env overrides with both reporting values and origins (dynamic keys: `group.id.flag`). |
+| `Overrides.Values() map[string]any`                          | Project only the masked reporting values from an `Overrides` map.                  |
+| `Overrides.Origins() map[string]ValueOrigin`                 | Project only the exact origins from an `Overrides` map.                            |
 | `Origin(name) ValueOrigin`                                   | Return the exact winning flag spelling or environment key for the effective value. |
-| `OverriddenOrigins() map[string]ValueOrigin`                 | Return exact origins for explicitly set values using the same keys as overrides.   |
 | `MaskFirstLast(value any) any`                               | Helper mask that keeps first/last character (strings, `[]string`).                 |
 | `MaskPostgresURL(value any) any`                             | Helper mask for `postgres://user:pass@host/db` credentials.                        |
 | `AddOneOfGroup(name string, group *core.OneOfGroupGroup)`    | Register a pre-built mutual-exclusion group.                                       |
@@ -685,4 +689,3 @@ Flags:
 ## License
 
 Apache 2.0 -- see [LICENSE](LICENSE)
-

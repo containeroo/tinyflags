@@ -93,14 +93,10 @@ func (f *FlagSet) SetPositionalValidate(fn func(string) error) { f.impl.SetPosit
 // SetPositionalFinalize sets a function to finalize positional arguments.
 func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.impl.SetPositionalFinalize(fn) }
 
-// OverriddenValues returns all flags that were explicitly set (args or env).
-// Dynamic flags use the key format "group.id.flag".
-func (f *FlagSet) OverriddenValues() map[string]any { return f.impl.OverriddenValues() }
+// Overrides returns all flags explicitly set by arguments or environment variables.
+// Dynamic flags use the key format "group.id.flag". Values include configured override masking.
+func (f *FlagSet) Overrides() Overrides { return f.impl.Overrides() }
 
 // Origin returns the exact input that supplied name in the most recent parse.
 // Unoverridden values report the default origin.
 func (f *FlagSet) Origin(name string) ValueOrigin { return f.impl.Origin(name) }
-
-// OverriddenOrigins returns the exact origin of each value explicitly set by a flag or environment variable.
-// Dynamic flags use the key format "group.id.flag".
-func (f *FlagSet) OverriddenOrigins() map[string]ValueOrigin { return f.impl.OverriddenOrigins() }

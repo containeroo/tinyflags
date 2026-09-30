@@ -425,7 +425,7 @@ func TestParseResetsStateBetweenCalls(t *testing.T) {
 	assert.Equal(t, map[string]any{
 		"http.a.port": 8080,
 		"name":        "alice",
-	}, fs.OverriddenValues())
+	}, fs.Overrides().Values())
 
 	err = fs.Parse([]string{"two"})
 	require.NoError(t, err)
@@ -433,7 +433,7 @@ func TestParseResetsStateBetweenCalls(t *testing.T) {
 	assert.False(t, name.Changed())
 	assert.False(t, port.Has("a"))
 	assert.Equal(t, []string{"two"}, fs.Args())
-	assert.Empty(t, fs.OverriddenValues())
+	assert.Empty(t, fs.Overrides().Values())
 }
 
 // TestOneOfGroupVerboseToggle verifies verbose one-of error toggling.
