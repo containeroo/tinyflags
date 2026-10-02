@@ -50,6 +50,7 @@ type FlagSet struct {
 	sortFlags          bool                             // Enable static flag sorting
 	sortGroups         bool                             // Enable dynamic group sorting
 	sectionOrder       []string                         // Explicit static help section order
+	builtinSection     string                           // Help section assigned to built-in help/version flags
 	oneOfVerbose       bool                             // Include conflicting flags in OneOf errors
 	authors            string                           // Optional authors block
 	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
@@ -211,9 +212,26 @@ func (f *FlagSet) SortedFlags(enable bool) { f.sortFlags = enable }
 func (f *FlagSet) SortedGroups(enable bool) { f.sortGroups = enable }
 
 // SetSectionOrder sets the preferred order for static help sections.
-// Sections not listed here follow in first-registration order.
+// Sections not listed here follow in first-registration order. The empty
+// section name positions the unnamed section; otherwise it renders last.
 func (f *FlagSet) SetSectionOrder(names ...string) {
 	f.sectionOrder = append(f.sectionOrder[:0], names...)
+}
+
+// SetBuiltinSection assigns the built-in help and version flags to one help section.
+// The empty name keeps them in the unnamed section.
+func (f *FlagSet) SetBuiltinSection(name string) {
+	f.builtinSection = name
+	if f.showHelp != nil {
+		if flag := f.staticFlagsMap["help"]; flag != nil {
+			flag.Section = name
+		}
+	}
+	if f.showVersion != nil {
+		if flag := f.staticFlagsMap["version"]; flag != nil {
+			flag.Section = name
+		}
+	}
 }
 
 // SetOneOfGroupVerbose toggles verbose one-of validation errors.
@@ -507,12 +525,19 @@ func (f *FlagSet) AttachGroupToOneOf(group string, aon string) {
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.staticFlagsMap["help"]; !exists {
-			f.showHelp = f.Bool("help", false, cmp.Or(f.helpText, "Show help")).Short("h").DisableEnv().Value()
+			f.showHelp = f.Bool("help", false, cmp.Or(f.helpText, "Show help")).
+				Short("h").
+				DisableEnv().
+				Section(f.builtinSection).
+				Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
 		if _, exists := f.staticFlagsMap["version"]; !exists {
-			f.showVersion = f.Bool("version", false, cmp.Or(f.versionText, "Show version")).DisableEnv().Value()
+			f.showVersion = f.Bool("version", false, cmp.Or(f.versionText, "Show version")).
+				DisableEnv().
+				Section(f.builtinSection).
+				Value()
 		}
 	}
 }

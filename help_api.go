@@ -33,8 +33,13 @@ func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
 func (f *FlagSet) SortedGroups() { f.impl.SortedGroups(true) }
 
 // SectionOrder sets the preferred order for static help sections.
-// Unlisted sections follow in first-registration order.
+// Unlisted named sections follow in first-registration order. Use an empty
+// string to position the unnamed section; otherwise it renders last.
 func (f *FlagSet) SectionOrder(names ...string) { f.Help().SectionOrder(names...) }
+
+// BuiltinSection assigns the built-in help and version flags to one help section.
+// An empty name keeps them in the unnamed section.
+func (f *FlagSet) BuiltinSection(name string) { f.Help().BuiltinSection(name) }
 
 // SetOneOfGroupVerbose toggles verbose OneOfGroup error messages.
 func (f *FlagSet) SetOneOfGroupVerbose(enable bool) { f.impl.SetOneOfGroupVerbose(enable) }

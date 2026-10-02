@@ -21,15 +21,16 @@ func (f *FlagSet) staticFlags() []*core.BaseFlag {
 	return f.staticFlagsOrder
 }
 
-// staticSectionOrder returns named help sections in display order.
+// staticSectionOrder returns static help sections in display order.
+// Named sections follow the explicit order first, then first-registration order.
+// The unnamed section is appended last unless explicitly positioned.
 func (f *FlagSet) staticSectionOrder() []string {
-	order := make([]string, 0, len(f.sectionOrder))
-	seen := make(map[string]struct{}, len(f.sectionOrder))
+	order := make([]string, 0, len(f.sectionOrder)+1)
+	seen := make(map[string]struct{}, len(f.sectionOrder)+1)
+	unnamedExplicit := false
+	hasUnnamed := false
 
 	appendSection := func(name string) {
-		if name == "" {
-			return
-		}
 		if _, exists := seen[name]; exists {
 			return
 		}
@@ -38,10 +39,22 @@ func (f *FlagSet) staticSectionOrder() []string {
 	}
 
 	for _, name := range f.sectionOrder {
+		if name == "" {
+			unnamedExplicit = true
+		}
 		appendSection(name)
 	}
+
 	for _, flag := range f.staticFlagsOrder {
+		if flag.Section == "" {
+			hasUnnamed = true
+			continue
+		}
 		appendSection(flag.Section)
+	}
+
+	if hasUnnamed && !unnamedExplicit {
+		appendSection("")
 	}
 
 	return order

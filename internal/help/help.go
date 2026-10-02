@@ -164,7 +164,7 @@ func PrintStaticDefaults(
 	envPrefix, note string,
 ) {
 	layout := newLayout(indent, startCol, maxWidth)
-	sections, unsectioned := groupStaticFlags(flags)
+	sections := groupStaticFlags(flags)
 
 	for _, name := range sectionOrder {
 		sectionFlags := sections[name]
@@ -172,14 +172,12 @@ func PrintStaticDefaults(
 			continue
 		}
 
-		fmt.Fprintf(w, "\n%s:\n", name) // nolint:errcheck
+		if name != "" {
+			fmt.Fprintf(w, "\n%s:\n", name) // nolint:errcheck
+		}
 		for _, flag := range sectionFlags {
 			printFlagUsage(w, layout, hideEnvs, flag, envPrefix)
 		}
-	}
-
-	for _, flag := range unsectioned {
-		printFlagUsage(w, layout, hideEnvs, flag, envPrefix)
 	}
 
 	if note != "" {
@@ -188,22 +186,18 @@ func PrintStaticDefaults(
 }
 
 // groupStaticFlags groups visible static flags by section while preserving input order.
-func groupStaticFlags(flags []*core.BaseFlag) (map[string][]*core.BaseFlag, []*core.BaseFlag) {
+// The empty section name represents the unnamed section and renders without a heading.
+func groupStaticFlags(flags []*core.BaseFlag) map[string][]*core.BaseFlag {
 	sections := make(map[string][]*core.BaseFlag)
-	var unsectioned []*core.BaseFlag
 
 	for _, flag := range flags {
 		if flag.Hidden {
 			continue
 		}
-		if flag.Section == "" {
-			unsectioned = append(unsectioned, flag)
-			continue
-		}
 		sections[flag.Section] = append(sections[flag.Section], flag)
 	}
 
-	return sections, unsectioned
+	return sections
 }
 
 // PrintDynamicDefaults renders all dynamic groups with help descriptions.
