@@ -12,6 +12,33 @@ import (
 func TestHelpBuiltinSections(t *testing.T) {
 	t.Parallel()
 
+	t.Run("unnamedSectionConstantIsEmpty", func(t *testing.T) {
+		t.Parallel()
+
+		assert.Empty(t, tinyflags.UnnamedSection)
+	})
+
+	t.Run("unnamedSectionIsSeparatedFromNamedSection", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.Version("1.2.3")
+		fs.String("server", "", "server flag").Section("Server")
+		fs.SectionOrder("Server", tinyflags.UnnamedSection)
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+
+		require.Contains(t, out, "--server")
+		require.Contains(t, out, "--help")
+		serverEnd := strings.Index(out, "server flag") + len("server flag")
+		helpStart := strings.Index(out, "-h, --help")
+		require.Greater(t, serverEnd, 0)
+		require.Greater(t, helpStart, serverEnd)
+		assert.Contains(t, out[serverEnd:helpStart], "\n\n")
+	})
+
 	t.Run("unnamedSectionRendersLastByDefault", func(t *testing.T) {
 		t.Parallel()
 
@@ -41,7 +68,7 @@ func TestHelpBuiltinSections(t *testing.T) {
 		fs.Version("1.2.3")
 		fs.String("plain", "", "plain flag")
 		fs.String("server", "", "server flag").Section("Server")
-		fs.SectionOrder("", "Server")
+		fs.SectionOrder(tinyflags.UnnamedSection, "Server")
 
 		err := fs.Parse([]string{"--help"})
 		require.Error(t, err)
@@ -124,7 +151,7 @@ func TestHelpBuiltinSections(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "General:")
 
-		fs.BuiltinSection("")
+		fs.BuiltinSection(tinyflags.UnnamedSection)
 
 		err = fs.Parse([]string{"--help"})
 		require.Error(t, err)

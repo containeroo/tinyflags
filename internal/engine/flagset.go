@@ -219,7 +219,7 @@ func (f *FlagSet) SetSectionOrder(names ...string) {
 }
 
 // SetBuiltinSection assigns the built-in help and version flags to one help section.
-// The empty name keeps them in the unnamed section.
+// An empty name keeps them in the unnamed section.
 func (f *FlagSet) SetBuiltinSection(name string) {
 	f.builtinSection = name
 	if f.showHelp != nil {

@@ -30,12 +30,12 @@ func (h *HelpOptions) DisableVersion() { h.impl.DisableVersion() }
 func (h *HelpOptions) VersionText(s string) { h.impl.VersionText(s) }
 
 // SectionOrder sets the preferred order for static help sections.
-// Unlisted named sections follow in first-registration order. Use an empty
-// string to position the unnamed section; otherwise it renders last.
+// Unlisted named sections follow in first-registration order. Use
+// UnnamedSection to position the unnamed section; otherwise it renders last.
 func (h *HelpOptions) SectionOrder(names ...string) { h.impl.SetSectionOrder(names...) }
 
 // BuiltinSection assigns the built-in help and version flags to one help section.
-// An empty name keeps them in the unnamed section.
+// UnnamedSection keeps them in the unnamed section.
 func (h *HelpOptions) BuiltinSection(name string) { h.impl.SetBuiltinSection(name) }
 
 // LayoutOptions groups usage/indent/width configuration.

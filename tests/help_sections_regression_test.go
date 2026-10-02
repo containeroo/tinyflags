@@ -12,6 +12,21 @@ import (
 func TestHelpSectionRegressionCases(t *testing.T) {
 	t.Parallel()
 
+	t.Run("unnamedSectionConstantPositionsBucket", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("plain", "", "plain")
+		fs.String("server", "", "server").Section("Server")
+		fs.SectionOrder(tinyflags.UnnamedSection, "Server")
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+
+		assert.Less(t, strings.Index(out, "--plain"), strings.Index(out, "Server:"))
+	})
+
 	t.Run("unlistedSectionsFollowExplicitOrder", func(t *testing.T) {
 		t.Parallel()
 

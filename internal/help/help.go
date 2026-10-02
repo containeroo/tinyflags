@@ -165,6 +165,7 @@ func PrintStaticDefaults(
 ) {
 	layout := newLayout(indent, startCol, maxWidth)
 	sections := groupStaticFlags(flags)
+	renderedSection := false
 
 	for _, name := range sectionOrder {
 		sectionFlags := sections[name]
@@ -172,12 +173,16 @@ func PrintStaticDefaults(
 			continue
 		}
 
+		if renderedSection || name != "" {
+			fmt.Fprintln(w) // nolint:errcheck
+		}
 		if name != "" {
-			fmt.Fprintf(w, "\n%s:\n", name) // nolint:errcheck
+			fmt.Fprintf(w, "%s:\n", name) // nolint:errcheck
 		}
 		for _, flag := range sectionFlags {
 			printFlagUsage(w, layout, hideEnvs, flag, envPrefix)
 		}
+		renderedSection = true
 	}
 
 	if note != "" {
