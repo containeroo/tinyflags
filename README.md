@@ -117,20 +117,20 @@ if err := app.Parse(os.Args[1:]); err != nil {
 
 ## Supported Types
 
-| Type            | Methods                                  |
-| :-------------- | :--------------------------------------- |
-| `bool`          | `Bool`, `BoolVar`                        |
-| `int`           | `Int`, `IntVar`                          |
-| `string`        | `String`, `StringVar`, `Enum`, `EnumVar` |
-| `[]string`      | `StringSlice`, `StringSliceVar`          |
-| `counter`       | `Counter`, `CounterVar` (auto-increment) |
-| `time.Duration` | `Duration`, `DurationVar`                |
-| byte size (`uint64`) | `Bytes`, `BytesVar`                  |
-| `net.IP`        | `IP`, `IPVar`                            |
-| `[]net.IP`      | `IPSlice`, `IPSliceVar`                  |
-| `*net.TCPAddr`  | `TCPAddr`, `TCPAddrVar`                  |
-| `url.URL`       | `URL`, `URLVar`                          |
-| `*os.File`      | `File`, `FileVar`                        |
+| Type                 | Methods                                  |
+| :------------------- | :--------------------------------------- |
+| `bool`               | `Bool`, `BoolVar`                        |
+| `int`                | `Int`, `IntVar`                          |
+| `string`             | `String`, `StringVar`, `Enum`, `EnumVar` |
+| `[]string`           | `StringSlice`, `StringSliceVar`          |
+| `counter`            | `Counter`, `CounterVar` (auto-increment) |
+| `time.Duration`      | `Duration`, `DurationVar`                |
+| byte size (`uint64`) | `Bytes`, `BytesVar`                      |
+| `net.IP`             | `IP`, `IPVar`                            |
+| `[]net.IP`           | `IPSlice`, `IPSliceVar`                  |
+| `*net.TCPAddr`       | `TCPAddr`, `TCPAddrVar`                  |
+| `url.URL`            | `URL`, `URLVar`                          |
+| `*os.File`           | `File`, `FileVar`                        |
 
 > Slice flags accept repeated use or custom-delimited strings.
 > Byte-size flags accept raw byte counts as well as SI units such as `32MB` and IEC units such as `32MiB`; the same syntax is accepted from CLI arguments and environment variables.
@@ -248,7 +248,7 @@ fs.Validate(func() error {
 | `HideAllowed()`             | all flags   | Hide the allowed values from help.                                                                         |
 | `Requires(names ...string)` | all flags   | Mark flag as required by the given flag.                                                                   |
 | `HideRequires()`            | all flags   | Hide the “(Requires)” suffix from help.                                                                    |
-| `OverriddenValueMaskFn(fn)` | all flags   | Provide a mask function used by `Overrides()` and its `Values()` projection.                                      |
+| `OverriddenValueMaskFn(fn)` | all flags   | Provide a mask function used by `Overrides()` and its `Values()` projection.                               |
 | `Value() *T`                | static only | Return the pointer to the parsed value (after `Parse`).                                                    |
 
 `Required()` and `NotEmpty()` are intentionally different: `Required()` checks whether a flag was supplied, while `NotEmpty()` checks the resulting value. For example, `--token=` satisfies `Required()` but fails `NotEmpty()`. Chaining both enforces a present, non-empty value.
@@ -270,7 +270,7 @@ fs.Validate(func() error {
 | `PreserveSpace()`                                     | _(slice flags only)_ Preserve leading/trailing whitespace in each parsed item. Typed slices trim whitespace by default.    | `fs.IntSlice("ports",nil,"...").PreserveSpace()`                                                                                  |
 | `AllowEmpty()`                                        | _(slice flags only)_ Allow empty items (e.g. `"a,,b"`).                                                                    |                                                                                                                                   |
 | `HideDefault()`                                       | Hide the default value from help output.                                                                                   |                                                                                                                                   |
-| `Section(name string)`                                | Group flags under a section header in help output.                                                                         |                                                                                                                                   |
+| `Section(name string)`                                | Group flags under a section header in help output. Flags with the same section are rendered together.                      |                                                                                                                                   |
 
 ### Dynamic-Flag Extras
 
@@ -307,45 +307,46 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 
 ### FlagSet Core & Help Configuration
 
-| Method                                                       | Description                                                                        |
-| :----------------------------------------------------------- | :--------------------------------------------------------------------------------- |
-| `NewFlagSet(name string, mode ErrorHandling)`                | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`).                     |
-| `EnvPrefix(prefix string)`                                   | Prefix all environment-variable lookups (e.g. `MYAPP_`).                           |
-| `SetEnvKeyFunc`                                              | Set a function to derive env keys from prefix+flag name.                           |
-| `EnvKeyForFlag`                                              | Derive the env key for a flag.                                                     |
-| `NewReplacerEnvKeyFunc`                                      | Build an `EnvKeyFunc` that applies the given replacer.                             |
-| `Version(version string)`                                    | Enable the `--version` flag, printing this string.                                 |
-| `Help()`                                                     | Access grouped helpers for title/authors/description/note/help text.               |
-| `Layout()`                                                   | Access grouped helpers for usage/indent/width/note layout.                         |
-| `BeforeParse(fn func([]string) ([]string, error))`           | Mutate arguments before parsing (e.g., expand @files).                             |
-| `OnUnknownFlag(fn func(name string) error)`                  | Handle or ignore unknown flags instead of failing.                                 |
-| `VersionText(text string)`                                   | Override the `--version` text. Default: `"Show version"`.                          |
-| `HelpText(text string)`                                      | Override the `--help` text. Default: `"Show help"`.                                |
-| `DisableHelp()` / `DisableVersion()`                         | Remove `--help` or `--version`.                                                    |
-| `Usage func()`                                               | Optional custom usage function on `FlagSet` that replaces the default renderer.    |
-| `Title(text string)`                                         | Override the "Usage:" title heading.                                               |
-| `Authors(text string)`                                       | Add an `Authors:` section to help output.                                          |
-| `Description(text string)`                                   | Add a free-form description block under the title.                                 |
-| `Note(text string)`                                          | Add a footer note under the flags listing.                                         |
-| `SetOneOfGroupVerbose(bool)`                                 | Toggle detailed OneOfGroup errors with conflicting flags.                          |
-| `SetOutput(w io.Writer)` / `Output()`                        | Redirect or retrieve where help/version is written.                                |
-| `PrintUsage(w, mode)`                                        | Print the `Usage:` line.                                                           |
-| `PrintTitle(w)`                                              | Print title and description.                                                       |
-| `PrintAuthors(w)`                                            | Print authors section.                                                             |
-| `PrintDescription(w,indent,width)`                           | Print the description block.                                                       |
-| `PrintNotes(w,indent,width)`                                 | Print footer notes.                                                                |
-| `PrintStaticDefaults(w,indent,startCol,width)`               | Print static flags help.                                                           |
-| `PrintDynamicDefaults(w,indent,startCol,width)`              | Print dynamic flags help.                                                          |
-| `RequirePositional(n int)`                                   | Enforce at least `n` positional arguments.                                         |
-| `Args() []string` / `Arg(i int) (string, bool)`              | Access leftover positional args safely.                                            |
-| `Overrides() Overrides`                                     | Return explicit args/env overrides with both reporting values and origins (dynamic keys: `group.id.flag`). |
-| `Overrides.Values() map[string]any`                          | Project only the masked reporting values from an `Overrides` map.                  |
-| `Overrides.Origins() map[string]ValueOrigin`                 | Project only the exact origins from an `Overrides` map.                            |
-| `Origin(name) ValueOrigin`                                   | Return the exact winning flag spelling or environment key for the effective value. |
-| `MaskFirstLast(value any) any`                               | Helper mask that keeps first/last character (strings, `[]string`).                 |
-| `MaskPostgresURL(value any) any`                             | Helper mask for `postgres://user:pass@host/db` credentials.                        |
-| `AddOneOfGroup(name string, group *core.OneOfGroupGroup)`    | Register a pre-built mutual-exclusion group.                                       |
-| `AddAllOrNoneGroup(name string, group *core.AllOrNoneGroup)` | Register a pre-built require-together group.                                       |
+| Method                                                       | Description                                                                                                |
+| :----------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `NewFlagSet(name string, mode ErrorHandling)`                | Create a new flag set (e.g. `ExitOnError`, `ContinueOnError`).                                             |
+| `EnvPrefix(prefix string)`                                   | Prefix all environment-variable lookups (e.g. `MYAPP_`).                                                   |
+| `SetEnvKeyFunc`                                              | Set a function to derive env keys from prefix+flag name.                                                   |
+| `EnvKeyForFlag`                                              | Derive the env key for a flag.                                                                             |
+| `NewReplacerEnvKeyFunc`                                      | Build an `EnvKeyFunc` that applies the given replacer.                                                     |
+| `Version(version string)`                                    | Enable the `--version` flag, printing this string.                                                         |
+| `Help()`                                                     | Access grouped helpers for title/authors/description/note/help text.                                       |
+| `Layout()`                                                   | Access grouped helpers for usage/indent/width/note layout.                                                 |
+| `BeforeParse(fn func([]string) ([]string, error))`           | Mutate arguments before parsing (e.g., expand @files).                                                     |
+| `OnUnknownFlag(fn func(name string) error)`                  | Handle or ignore unknown flags instead of failing.                                                         |
+| `VersionText(text string)`                                   | Override the `--version` text. Default: `"Show version"`.                                                  |
+| `HelpText(text string)`                                      | Override the `--help` text. Default: `"Show help"`.                                                        |
+| `DisableHelp()` / `DisableVersion()`                         | Remove `--help` or `--version`.                                                                            |
+| `Usage func()`                                               | Optional custom usage function on `FlagSet` that replaces the default renderer.                            |
+| `Title(text string)`                                         | Override the "Usage:" title heading.                                                                       |
+| `Authors(text string)`                                       | Add an `Authors:` section to help output.                                                                  |
+| `Description(text string)`                                   | Add a free-form description block under the title.                                                         |
+| `Note(text string)`                                          | Add a footer note under the flags listing.                                                                 |
+| `SectionOrder(names ...string)`                              | Set static help section order; unlisted sections follow in first-registration order.                       |
+| `SetOneOfGroupVerbose(bool)`                                 | Toggle detailed OneOfGroup errors with conflicting flags.                                                  |
+| `SetOutput(w io.Writer)` / `Output()`                        | Redirect or retrieve where help/version is written.                                                        |
+| `PrintUsage(w, mode)`                                        | Print the `Usage:` line.                                                                                   |
+| `PrintTitle(w)`                                              | Print title and description.                                                                               |
+| `PrintAuthors(w)`                                            | Print authors section.                                                                                     |
+| `PrintDescription(w,indent,width)`                           | Print the description block.                                                                               |
+| `PrintNotes(w,indent,width)`                                 | Print footer notes.                                                                                        |
+| `PrintStaticDefaults(w,indent,startCol,width)`               | Print static flags help.                                                                                   |
+| `PrintDynamicDefaults(w,indent,startCol,width)`              | Print dynamic flags help.                                                                                  |
+| `RequirePositional(n int)`                                   | Enforce at least `n` positional arguments.                                                                 |
+| `Args() []string` / `Arg(i int) (string, bool)`              | Access leftover positional args safely.                                                                    |
+| `Overrides() Overrides`                                      | Return explicit args/env overrides with both reporting values and origins (dynamic keys: `group.id.flag`). |
+| `Overrides.Values() map[string]any`                          | Project only the masked reporting values from an `Overrides` map.                                          |
+| `Overrides.Origins() map[string]ValueOrigin`                 | Project only the exact origins from an `Overrides` map.                                                    |
+| `Origin(name) ValueOrigin`                                   | Return the exact winning flag spelling or environment key for the effective value.                         |
+| `MaskFirstLast(value any) any`                               | Helper mask that keeps first/last character (strings, `[]string`).                                         |
+| `MaskPostgresURL(value any) any`                             | Helper mask for `postgres://user:pass@host/db` credentials.                                                |
+| `AddOneOfGroup(name string, group *core.OneOfGroupGroup)`    | Register a pre-built mutual-exclusion group.                                                               |
+| `AddAllOrNoneGroup(name string, group *core.AllOrNoneGroup)` | Register a pre-built require-together group.                                                               |
 
 ### Command API
 

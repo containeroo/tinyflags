@@ -49,6 +49,7 @@ type FlagSet struct {
 	Usage              func()                           // Custom usage function (optional)
 	sortFlags          bool                             // Enable static flag sorting
 	sortGroups         bool                             // Enable dynamic group sorting
+	sectionOrder       []string                         // Explicit static help section order
 	oneOfVerbose       bool                             // Include conflicting flags in OneOf errors
 	authors            string                           // Optional authors block
 	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
@@ -208,6 +209,12 @@ func (f *FlagSet) SortedFlags(enable bool) { f.sortFlags = enable }
 
 // SortedGroups enables or disables sorted dynamic help output.
 func (f *FlagSet) SortedGroups(enable bool) { f.sortGroups = enable }
+
+// SetSectionOrder sets the preferred order for static help sections.
+// Sections not listed here follow in first-registration order.
+func (f *FlagSet) SetSectionOrder(names ...string) {
+	f.sectionOrder = append(f.sectionOrder[:0], names...)
+}
 
 // SetOneOfGroupVerbose toggles verbose one-of validation errors.
 func (f *FlagSet) SetOneOfGroupVerbose(enable bool) { f.oneOfVerbose = enable }

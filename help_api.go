@@ -32,6 +32,10 @@ func (f *FlagSet) SortedFlags() { f.impl.SortedFlags(true) }
 // SortedGroups enables sorted help output for dynamic groups.
 func (f *FlagSet) SortedGroups() { f.impl.SortedGroups(true) }
 
+// SectionOrder sets the preferred order for static help sections.
+// Unlisted sections follow in first-registration order.
+func (f *FlagSet) SectionOrder(names ...string) { f.Help().SectionOrder(names...) }
+
 // SetOneOfGroupVerbose toggles verbose OneOfGroup error messages.
 func (f *FlagSet) SetOneOfGroupVerbose(enable bool) { f.impl.SetOneOfGroupVerbose(enable) }
 

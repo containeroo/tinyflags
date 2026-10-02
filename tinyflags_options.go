@@ -29,6 +29,10 @@ func (h *HelpOptions) DisableVersion() { h.impl.DisableVersion() }
 // VersionText sets the built-in version flag text.
 func (h *HelpOptions) VersionText(s string) { h.impl.VersionText(s) }
 
+// SectionOrder sets the preferred order for static help sections.
+// Unlisted sections follow in first-registration order.
+func (h *HelpOptions) SectionOrder(names ...string) { h.impl.SetSectionOrder(names...) }
+
 // LayoutOptions groups usage/indent/width configuration.
 type LayoutOptions struct{ impl *engine.FlagSet }
 

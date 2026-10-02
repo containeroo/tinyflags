@@ -155,23 +155,55 @@ func WriteIndented(w io.Writer, text string, indent, maxWidth int) {
 }
 
 // PrintStaticDefaults renders all static flags with help descriptions.
-func PrintStaticDefaults(w io.Writer, flags []*core.BaseFlag, indent, startCol, maxWidth int, hideEnvs bool, envPrefix, note string) {
+func PrintStaticDefaults(
+	w io.Writer,
+	flags []*core.BaseFlag,
+	sectionOrder []string,
+	indent, startCol, maxWidth int,
+	hideEnvs bool,
+	envPrefix, note string,
+) {
 	layout := newLayout(indent, startCol, maxWidth)
-	var lastSection string
-	for _, fl := range flags {
-		if fl.Hidden {
+	sections, unsectioned := groupStaticFlags(flags)
+
+	for _, name := range sectionOrder {
+		sectionFlags := sections[name]
+		if len(sectionFlags) == 0 {
 			continue
 		}
-		if fl.Section != "" && fl.Section != lastSection {
-			fmt.Fprintf(w, "\n%s:\n", fl.Section) // nolint:errcheck
-			lastSection = fl.Section
+
+		fmt.Fprintf(w, "\n%s:\n", name) // nolint:errcheck
+		for _, flag := range sectionFlags {
+			printFlagUsage(w, layout, hideEnvs, flag, envPrefix)
 		}
-		printFlagUsage(w, layout, hideEnvs, fl, envPrefix)
+	}
+
+	for _, flag := range unsectioned {
+		printFlagUsage(w, layout, hideEnvs, flag, envPrefix)
 	}
 
 	if note != "" {
 		fmt.Fprintln(w, note) // nolint:errcheck
 	}
+}
+
+// groupStaticFlags groups visible static flags by section while preserving input order.
+func groupStaticFlags(flags []*core.BaseFlag) (map[string][]*core.BaseFlag, []*core.BaseFlag) {
+	sections := make(map[string][]*core.BaseFlag)
+	var unsectioned []*core.BaseFlag
+
+	for _, flag := range flags {
+		if flag.Hidden {
+			continue
+		}
+		if flag.Section == "" {
+			unsectioned = append(unsectioned, flag)
+			continue
+		}
+		sections[flag.Section] = append(sections[flag.Section], flag)
+	}
+
+	return sections, unsectioned
 }
 
 // PrintDynamicDefaults renders all dynamic groups with help descriptions.

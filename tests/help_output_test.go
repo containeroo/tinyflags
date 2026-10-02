@@ -1,6 +1,7 @@
 package tinyflags_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/containeroo/tinyflags"
@@ -77,22 +78,77 @@ func TestHideEnvFromHelp(t *testing.T) {
 	})
 }
 
-// TestHelpSections verifies help section headings.
+// TestHelpSections verifies help section grouping and ordering.
 func TestHelpSections(t *testing.T) {
 	t.Parallel()
 
-	t.Run("sectionHeadersPrinted", func(t *testing.T) {
+	t.Run("groupsInterleavedSections", func(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-		fs.String("general", "", "general flag").Section("General")
-		fs.String("net", "", "net flag").Section("Network")
+		fs.String("server-first", "", "first server flag").Section("Server")
+		fs.String("database", "", "database flag").Section("Database")
+		fs.String("server-second", "", "second server flag").Section("Server")
 
 		err := fs.Parse([]string{"--help"})
 		require.Error(t, err)
 		out := err.Error()
-		assert.Contains(t, out, "General:")
-		assert.Contains(t, out, "Network:")
+
+		assert.Equal(t, 1, strings.Count(out, "Server:"))
+		assert.Equal(t, 1, strings.Count(out, "Database:"))
+		assert.Less(t, strings.Index(out, "Server:"), strings.Index(out, "Database:"))
+		assert.Less(t, strings.Index(out, "--server-first"), strings.Index(out, "--server-second"))
+		assert.Less(t, strings.Index(out, "--server-second"), strings.Index(out, "Database:"))
+	})
+
+	t.Run("explicitSectionOrder", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("server", "", "server flag").Section("Server")
+		fs.String("database", "", "database flag").Section("Database")
+		fs.String("services", "", "services flag").Section("Services")
+		fs.SectionOrder("Server", "Database")
+		fs.SectionOrder("Services", "Database")
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+
+		assert.Less(t, strings.Index(out, "Services:"), strings.Index(out, "Database:"))
+		assert.Less(t, strings.Index(out, "Database:"), strings.Index(out, "Server:"))
+	})
+
+	t.Run("sortedFlagsDoNotReorderSections", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("z-server", "", "server flag").Section("Server")
+		fs.String("a-database", "", "database flag").Section("Database")
+		fs.String("a-server", "", "server flag").Section("Server")
+		fs.SortedFlags()
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+
+		assert.Less(t, strings.Index(out, "Server:"), strings.Index(out, "Database:"))
+		assert.Less(t, strings.Index(out, "--a-server"), strings.Index(out, "--z-server"))
+	})
+
+	t.Run("unsectionedFlagsRenderAfterSections", func(t *testing.T) {
+		t.Parallel()
+
+		fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+		fs.String("plain", "", "plain flag")
+		fs.String("server", "", "server flag").Section("Server")
+
+		err := fs.Parse([]string{"--help"})
+		require.Error(t, err)
+		out := err.Error()
+
+		assert.Less(t, strings.Index(out, "Server:"), strings.Index(out, "--plain"))
+		assert.Less(t, strings.Index(out, "--server"), strings.Index(out, "--help"))
 	})
 }
 

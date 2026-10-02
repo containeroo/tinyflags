@@ -20,3 +20,29 @@ func (f *FlagSet) staticFlags() []*core.BaseFlag {
 	}
 	return f.staticFlagsOrder
 }
+
+// staticSectionOrder returns named help sections in display order.
+func (f *FlagSet) staticSectionOrder() []string {
+	order := make([]string, 0, len(f.sectionOrder))
+	seen := make(map[string]struct{}, len(f.sectionOrder))
+
+	appendSection := func(name string) {
+		if name == "" {
+			return
+		}
+		if _, exists := seen[name]; exists {
+			return
+		}
+		seen[name] = struct{}{}
+		order = append(order, name)
+	}
+
+	for _, name := range f.sectionOrder {
+		appendSection(name)
+	}
+	for _, flag := range f.staticFlagsOrder {
+		appendSection(flag.Section)
+	}
+
+	return order
+}
