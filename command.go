@@ -141,7 +141,17 @@ func (c *Command) FullName() string {
 
 // Parse selects a command path and parses matching local and persistent flags.
 func (c *Command) Parse(args []string) error {
-	c.selected = c
+	state, selected := c.routeArguments(args)
+	c.selected = selected
+
+	if request := c.builtinRequest(state); request != nil {
+		return request
+	}
+	return c.parseSelectedScopes(selected, state)
+}
+
+// routeArguments selects a command and assigns each token to its owning flag set.
+func (c *Command) routeArguments(args []string) (commandParseState, *Command) {
 	state := commandParseState{
 		argsBySet: make(map[*FlagSet][]string),
 	}
@@ -191,16 +201,24 @@ func (c *Command) Parse(args []string) error {
 		state.append(current.FlagSet, arg)
 	}
 
-	c.selected = current
+	return state, current
+}
+
+// builtinRequest returns a requested top-level version or selected-command help response.
+func (c *Command) builtinRequest(state commandParseState) error {
 	if state.versionRequested {
 		return c.FlagSet.Parse([]string{"--version"})
 	}
 	if state.helpTarget != nil {
 		return RequestHelp(renderCommandHelp(state.helpTarget))
 	}
+	return nil
+}
 
+// parseSelectedScopes parses every flag set on the selected command path.
+func (c *Command) parseSelectedScopes(selected *Command, state commandParseState) error {
 	var errs []error
-	for _, cmd := range c.commandPathTo(current) {
+	for _, cmd := range c.commandPathTo(selected) {
 		for _, fs := range cmd.parseScopes() {
 			if err := fs.Parse(state.argsBySet[fs]); err != nil {
 				errs = append(errs, err)
@@ -210,7 +228,7 @@ func (c *Command) Parse(args []string) error {
 			}
 		}
 	}
-	if err := c.missingRequiredCommand(current); err != nil {
+	if err := c.missingRequiredCommand(selected); err != nil {
 		errs = append(errs, err)
 		if c.handling != ContinueOnError {
 			return err
