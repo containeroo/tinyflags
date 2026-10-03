@@ -264,7 +264,10 @@ func newLayout(indent, startCol, maxWidth int) layout {
 
 // descriptionWidth returns the available width for a help description.
 func (l layout) descriptionWidth() int {
-	return max(l.maxWidth-l.indent-l.startCol-1, 100)
+	if l.maxWidth <= 0 {
+		return 100
+	}
+	return max(l.maxWidth-l.indent-l.startCol-1, 1)
 }
 
 // writeWrappedRow renders a label and wraps its description beneath it.
