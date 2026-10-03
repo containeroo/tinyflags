@@ -85,6 +85,7 @@ func Between[T ordered](min, max T) func(T) error {
 	}
 }
 
+// isNaN reports whether value is a floating-point NaN.
 func isNaN[T ordered](value T) bool {
 	rv := reflect.ValueOf(value)
 	if rv.Kind() != reflect.Float32 && rv.Kind() != reflect.Float64 {

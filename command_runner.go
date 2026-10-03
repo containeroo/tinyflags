@@ -74,11 +74,12 @@ func wrapCommandRunner(handler any, bindings ...any) commandBuilder {
 	}
 }
 
+// runHandlerSpec describes the callable shape accepted by Command.Run.
 type runHandlerSpec struct {
-	paramTypes    []reflect.Type
-	paramCount    int
-	injectContext bool
-	returnsError  bool
+	paramTypes    []reflect.Type // Concrete types required for bound handler arguments.
+	paramCount    int            // Number of non-context parameters the handler accepts.
+	injectContext bool           // Whether Run must pass a context as the first argument.
+	returnsError  bool           // Whether the handler returns an error.
 }
 
 // parseRunHandler validates one registered command handler signature.
@@ -111,10 +112,11 @@ func parseRunHandler(handlerType reflect.Type) runHandlerSpec {
 	return spec
 }
 
+// commandHandlerRunner adapts one reflected handler to the Runnable interface.
 type commandHandlerRunner struct {
-	handler reflect.Value
-	args    []reflect.Value
-	spec    runHandlerSpec
+	handler reflect.Value   // Reflected command handler to invoke.
+	args    []reflect.Value // Parsed and frozen handler arguments.
+	spec    runHandlerSpec  // Signature behavior determined at registration time.
 }
 
 // Run executes one registered command handler with its parsed argument values.

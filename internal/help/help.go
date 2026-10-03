@@ -66,6 +66,7 @@ func BuildDynamicFlagDescription(flag *core.BaseFlag, globalHideEnvs bool, prefi
 	return finishFlagDescription(desc, flag)
 }
 
+// buildFlagDescriptionPrefix assembles metadata shared by static and dynamic help text.
 func buildFlagDescriptionPrefix(flag *core.BaseFlag) string {
 	desc := flag.Usage
 
@@ -91,6 +92,7 @@ func buildFlagDescriptionPrefix(flag *core.BaseFlag) string {
 	return desc
 }
 
+// finishFlagDescription appends required and group annotations to a description.
 func finishFlagDescription(desc string, flag *core.BaseFlag) string {
 	if !flag.HideRequired && flag.Required {
 		desc += " (required)"
@@ -107,6 +109,7 @@ func finishFlagDescription(desc string, flag *core.BaseFlag) string {
 	return desc
 }
 
+// dynamicUsageEnvKey returns the displayable environment key for a dynamic flag.
 func dynamicUsageEnvKey(flag *core.BaseFlag, globalHideEnvs bool, prefix, groupName, idPlaceholder string) string {
 	if flag == nil || globalHideEnvs || flag.DisableEnv || flag.HideEnv || prefix == "" {
 		return ""
@@ -247,20 +250,24 @@ func PrintDynamicDefaults(w io.Writer, groups []*dynamic.Group, indent, startCol
 	}
 }
 
+// layout controls indentation and column widths for rendered help rows.
 type layout struct {
-	indent   int
-	startCol int
-	maxWidth int
+	indent   int // Number of leading spaces for each row.
+	startCol int // Width reserved for the flag label column.
+	maxWidth int // Maximum total row width before wrapping.
 }
 
+// newLayout creates a layout with the supplied rendering dimensions.
 func newLayout(indent, startCol, maxWidth int) layout {
 	return layout{indent: indent, startCol: startCol, maxWidth: maxWidth}
 }
 
+// descriptionWidth returns the available width for a help description.
 func (l layout) descriptionWidth() int {
 	return max(l.maxWidth-l.indent-l.startCol-1, 100)
 }
 
+// writeWrappedRow renders a label and wraps its description beneath it.
 func (l layout) writeWrappedRow(w io.Writer, label, desc string) {
 	wrapped := WrapText(desc, l.descriptionWidth())
 	lines := strings.Split(wrapped, "\n")
@@ -273,6 +280,7 @@ func (l layout) writeWrappedRow(w io.Writer, label, desc string) {
 	}
 }
 
+// writeIndented renders wrapped text with this layout's indentation.
 func (l layout) writeIndented(w io.Writer, text string) {
 	if text == "" {
 		return
@@ -289,6 +297,7 @@ func (l layout) writeIndented(w io.Writer, text string) {
 	}
 }
 
+// printFlagUsage renders one static flag's usage row.
 func printFlagUsage(w io.Writer, layout layout, globalHideEnvs bool, flag *core.BaseFlag, prefix string) {
 	var b strings.Builder
 	formatStaticFlagNames(&b, flag)
@@ -299,6 +308,7 @@ func printFlagUsage(w io.Writer, layout layout, globalHideEnvs bool, flag *core.
 	layout.writeWrappedRow(w, b.String(), BuildFlagDescription(flag, globalHideEnvs, prefix))
 }
 
+// formatStaticFlagNames appends the short and long names of a static flag.
 func formatStaticFlagNames(b *strings.Builder, flag *core.BaseFlag) {
 	if flag.Short != "" {
 		b.WriteString("-")
@@ -311,6 +321,7 @@ func formatStaticFlagNames(b *strings.Builder, flag *core.BaseFlag) {
 	b.WriteString(flag.Name)
 }
 
+// formatDynamicFlagLine formats the command-line spelling of a dynamic flag.
 func formatDynamicFlagLine(groupName, idPlaceholder string, fl *core.BaseFlag) string {
 	var b strings.Builder
 	b.WriteString("--")
@@ -326,6 +337,7 @@ func formatDynamicFlagLine(groupName, idPlaceholder string, fl *core.BaseFlag) s
 	return b.String()
 }
 
+// buildGroupInfo formats one one-of group annotation for help text.
 func buildGroupInfo(group *core.OneOfGroupGroup) string {
 	var b strings.Builder
 	b.WriteString(" [group: ")
@@ -342,6 +354,7 @@ func buildGroupInfo(group *core.OneOfGroupGroup) string {
 	return b.String()
 }
 
+// buildRequireGroupInfo formats one all-or-none group annotation for help text.
 func buildRequireGroupInfo(group *core.AllOrNoneGroup) string {
 	var b strings.Builder
 	b.WriteString(" [group: ")

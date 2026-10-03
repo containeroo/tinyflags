@@ -5,9 +5,9 @@ import "github.com/containeroo/tinyflags/internal/core"
 // StaticFlag provides common builder methods for scalar and slice flags.
 // The Self type parameter allows fluent methods to return the concrete flag type.
 type StaticFlag[T any, Self any] struct {
-	meta flagMeta // shared metadata helpers
-	ptr  *T       // destination for parsed values
-	self Self     // concrete flag for fluent returns
+	meta flagMeta // Shared metadata helpers.
+	ptr  *T       // Destination for parsed values.
+	self Self     // Concrete flag for fluent returns.
 }
 
 // NewStaticFlag returns a DefaultFlag ready for embedding.

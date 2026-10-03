@@ -85,6 +85,7 @@ func (f *BaseFlag) VisibleOneOfGroups() []*OneOfGroupGroup {
 	return filterVisibleOneOfGroups(f.OneOfGroups)
 }
 
+// filterVisibleOneOfGroups returns only non-hidden one-of groups.
 func filterVisibleOneOfGroups(groups []*OneOfGroupGroup) []*OneOfGroupGroup {
 	if len(groups) == 0 {
 		return nil

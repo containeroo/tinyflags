@@ -53,8 +53,8 @@ type enumValue interface {
 
 // EnumChoice maps one user-facing enum name to its typed value.
 type EnumChoice[T enumValue] struct {
-	Name  string
-	Value T
+	Name  string // Text accepted from users for this choice.
+	Value T      // Typed value produced when Name is selected.
 }
 
 // EnumMap registers a typed dynamic enum flag with user-facing names.
@@ -65,6 +65,7 @@ func EnumMap[T enumValue](g *Group, field string, def T, usage string, choices .
 	return flag
 }
 
+// parseEnumValue converts raw text into an enum-compatible dynamic value.
 func parseEnumValue[T enumValue](raw string) (T, error) {
 	var zero T
 	typ := reflect.TypeOf(zero)
@@ -92,6 +93,7 @@ func parseEnumValue[T enumValue](raw string) (T, error) {
 	return out.Interface().(T), nil
 }
 
+// formatEnumValue serializes an enum-compatible dynamic value.
 func formatEnumValue[T enumValue](v T) string {
 	value := reflect.ValueOf(v)
 
@@ -107,6 +109,7 @@ func formatEnumValue[T enumValue](v T) string {
 	}
 }
 
+// enumChoiceHooks builds enum parsing, formatting, and allowed-value hooks.
 func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, error), func(T) string, []string) {
 	names := make([]string, 0, len(choices))
 	byName := make(map[string]T, len(choices))

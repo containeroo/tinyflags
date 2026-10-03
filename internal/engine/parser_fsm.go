@@ -23,10 +23,12 @@ func runArgParserFSM(fs *FlagSet, args []string) ([]string, error) {
 	}, args)
 }
 
+// lookupStaticFlag resolves one registered long flag name.
 func (f *FlagSet) lookupStaticFlag(name string) *core.BaseFlag {
 	return f.staticFlagsMap[name]
 }
 
+// lookupShortFlag resolves one registered short flag name.
 func (f *FlagSet) lookupShortFlag(short string) *core.BaseFlag {
 	for _, fl := range f.staticFlagsMap {
 		if fl.Short == short {
@@ -36,6 +38,7 @@ func (f *FlagSet) lookupShortFlag(short string) *core.BaseFlag {
 	return nil
 }
 
+// lookupDynamicFlag resolves a group.ID.field token to its dynamic value and ID.
 func (f *FlagSet) lookupDynamicFlag(name string, raw string) (core.DynamicValue, string, error) {
 	parts := strings.Split(name, ".")
 	if len(parts) != 3 {

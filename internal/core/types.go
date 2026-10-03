@@ -35,8 +35,8 @@ type ParseLifecycle interface {
 
 // GroupItem holds a single flag and its value for a dynamic group.
 type GroupItem struct {
-	Value DynamicValue
-	Flag  *BaseFlag
+	Value DynamicValue // Per-ID storage and parsing behavior for this field.
+	Flag  *BaseFlag    // Shared metadata for this dynamic field.
 }
 
 // DynamicValue accepts keyed values (e.g. --http.alpha.port).

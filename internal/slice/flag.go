@@ -7,8 +7,8 @@ import (
 
 // SliceFlag is the user‐facing builder for slice flags.
 type SliceFlag[T any] struct {
-	builder.StaticFlag[[]T, *SliceFlag[T]]
-	val *SliceValue[T]
+	builder.StaticFlag[[]T, *SliceFlag[T]]                // Embedded fluent static-flag metadata.
+	val                                    *SliceValue[T] // Mutable slice value backing the flag.
 }
 
 // Delimiter sets the delimiter used to split input values and enables splitting.

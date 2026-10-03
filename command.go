@@ -20,18 +20,18 @@ type Runner = Runnable
 
 // Command represents a command or subcommand with local and persistent flags.
 type Command struct {
-	*FlagSet
+	*FlagSet // Flags defined for this command.
 
-	name         string
-	summary      string
-	handling     ErrorHandling
-	requireChild bool
-	parent       *Command
-	globals      *FlagSet
-	children     map[string]*Command
-	order        []*Command
-	selected     *Command
-	builder      commandBuilder
+	name         string              // Command token used to select this command.
+	summary      string              // Short help text for the command.
+	handling     ErrorHandling       // Error policy inherited by this command's flag set.
+	requireChild bool                // Whether selecting this command requires a child command.
+	parent       *Command            // Parent command, if any.
+	globals      *FlagSet            // Root-level flags inherited by this command.
+	children     map[string]*Command // Children indexed by command token.
+	order        []*Command          // Children in registration order.
+	selected     *Command            // Most recently selected descendant.
+	builder      commandBuilder      // Factory that builds this command's runner.
 }
 
 type commandBuilder func() (Runnable, error)
@@ -245,10 +245,11 @@ func (c *Command) ParseRunner(args []string) (Runner, error) {
 	return selected.builder()
 }
 
+// commandParseState collects routed arguments and built-in requests for one parse.
 type commandParseState struct {
-	argsBySet        map[*FlagSet][]string
-	helpTarget       *Command
-	versionRequested bool
+	argsBySet        map[*FlagSet][]string // Arguments routed to each participating flag set.
+	helpTarget       *Command              // Command whose help was requested.
+	versionRequested bool                  // Whether built-in version output was requested.
 }
 
 // setBuilder stores the internal runner builder shared by all registration styles.
@@ -287,6 +288,7 @@ func (c *Command) commandPathTo(target *Command) []*Command {
 	return path
 }
 
+// missingRequiredCommand reports when a command that requires a child was selected.
 func (c *Command) missingRequiredCommand(selected *Command) error {
 	for _, cmd := range c.commandPathTo(selected) {
 		if cmd == nil || !cmd.requireChild {

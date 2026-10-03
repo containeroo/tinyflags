@@ -5,7 +5,7 @@ package core
 type OneOfGroupGroup struct {
 	Name           string            // Identifier for this group.
 	Flags          []*BaseFlag       // Member flags.
-	RequiredGroups []*AllOrNoneGroup // Optional grouped sets
+	RequiredGroups []*AllOrNoneGroup // Optional grouped selections treated as one choice.
 	titleText      string            // Optional title to display in help.
 	hidden         bool              // Hide this group in help.
 	required       bool              // Require exactly one of the flags.

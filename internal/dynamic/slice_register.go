@@ -29,6 +29,7 @@ func RegisterSlice[T any](g *Group, field string, def []T, usage string,
 	return registerSliceValue(g, field, def, usage, format, val)
 }
 
+// registerSliceValue creates and registers the dynamic value backing a slice flag.
 func registerSliceValue[T any](g *Group, field string, def []T, usage string,
 	format func(T) string, val *DynamicSliceValue[T],
 ) *SliceFlag[T] {

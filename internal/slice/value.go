@@ -10,11 +10,11 @@ import (
 
 // SliceValue implements slice flag parsing and validation.
 type SliceValue[T any] struct {
-	ptr     *[]T
-	def     []T
-	changed bool
-	input   core.SliceInputConfig
-	hooks   core.ValueHooks[T]
+	ptr     *[]T                  // Destination that receives the current slice.
+	def     []T                   // Value restored before each parse.
+	changed bool                  // Whether parsing explicitly assigned a value.
+	input   core.SliceInputConfig // Input splitting and normalization behavior.
+	hooks   core.ValueHooks[T]    // Element conversion, validation, and finalization hooks.
 }
 
 // NewSliceValue creates a new slice value.

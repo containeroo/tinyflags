@@ -94,16 +94,18 @@ func runRoot(_ context.Context, verbose bool) error {
 	return nil
 }
 
+// serverRunner runs the typed server command example.
 type serverRunner struct {
-	listenAddr        string
-	verbose           bool
-	readHeaderTimeout time.Duration
-	writeTimeout      time.Duration
-	idleTimeout       time.Duration
-	shutdownTimeout   time.Duration
-	args              []string
+	listenAddr        string        // Address the example server listens on.
+	verbose           bool          // Enables verbose server logging.
+	readHeaderTimeout time.Duration // Maximum duration for reading request headers.
+	writeTimeout      time.Duration // Maximum duration for writing a response.
+	idleTimeout       time.Duration // Maximum idle keep-alive duration.
+	shutdownTimeout   time.Duration // Grace period allowed for server shutdown.
+	args              []string      // Remaining positional arguments.
 }
 
+// Run executes the configured server command.
 func (r serverRunner) Run(ctx context.Context) error {
 	return runServer(
 		ctx,
@@ -174,6 +176,7 @@ func runAdminUsers(_ context.Context, verbose bool, name string) error {
 	return nil
 }
 
+// runTask reports the parsed task command inputs.
 func runTask(verbose bool, mode string, args []string) error {
 	fmt.Printf("run mode: %s\n", mode)
 	fmt.Printf("verbose: %t\n", verbose)

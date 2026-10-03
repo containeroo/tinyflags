@@ -2,12 +2,12 @@ package core
 
 // AllOrNoneGroup enforces that all member flags must be set if any is set.
 type AllOrNoneGroup struct {
-	Name      string      // Identifier for this group.
-	Flags     []*BaseFlag // Member flags.
-	Groups    []*AllOrNoneGroup
-	titleText string // Optional title to display in help.
-	hidden    bool   // Hide this group in help.
-	required  bool   // If true, at least one must be set.
+	Name      string            // Identifier for this group.
+	Flags     []*BaseFlag       // Member flags.
+	Groups    []*AllOrNoneGroup // Nested all-or-none groups that participate with this group.
+	titleText string            // Optional title to display in help.
+	hidden    bool              // Hide this group in help.
+	required  bool              // If true, at least one must be set.
 }
 
 // Title sets a custom help heading.

@@ -4,7 +4,7 @@ import "github.com/containeroo/tinyflags/internal/core"
 
 // DynamicFlag provides common builder methods for dynamic flags.
 type DynamicFlag[T any] struct {
-	meta flagMeta // shared metadata helpers
+	meta flagMeta // Shared metadata helpers.
 }
 
 // NewDynamicFlag returns a DynamicFlag ready for embedding.

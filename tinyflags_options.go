@@ -3,7 +3,9 @@ package tinyflags
 import "github.com/containeroo/tinyflags/internal/engine"
 
 // HelpOptions groups high-level help/metadata settings.
-type HelpOptions struct{ impl *engine.FlagSet }
+type HelpOptions struct {
+	impl *engine.FlagSet // Internal flag set receiving help configuration.
+}
 
 // Title sets the help title.
 func (h *HelpOptions) Title(s string) { h.impl.Title(s) }
@@ -39,7 +41,9 @@ func (h *HelpOptions) SectionOrder(names ...string) { h.impl.SetSectionOrder(nam
 func (h *HelpOptions) BuiltinSection(name string) { h.impl.SetBuiltinSection(name) }
 
 // LayoutOptions groups usage/indent/width configuration.
-type LayoutOptions struct{ impl *engine.FlagSet }
+type LayoutOptions struct {
+	impl *engine.FlagSet // Internal flag set receiving layout configuration.
+}
 
 // SetDescIndent sets the description indentation.
 func (l *LayoutOptions) SetDescIndent(n int) { l.impl.SetDescIndent(n) }

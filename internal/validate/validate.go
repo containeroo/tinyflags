@@ -176,6 +176,7 @@ func FinalizePositionals(positional []string, finalize func(string) string) erro
 	return nil
 }
 
+// isEmpty reports whether value is nil, zero, or has no elements.
 func isEmpty(value any) bool {
 	if value == nil {
 		return true
@@ -199,6 +200,7 @@ func isEmpty(value any) bool {
 	}
 }
 
+// joinFlagNames formats flag names for user-facing validation errors.
 func joinFlagNames(flags []*core.BaseFlag) string {
 	names := make([]string, 0, len(flags))
 	for _, fl := range flags {

@@ -7,10 +7,10 @@ import (
 
 // ScalarValue implements scalar flag parsing, formatting, and validation.
 type ScalarValue[T any] struct {
-	ptr     *T
-	def     T
-	changed bool
-	hooks   core.ValueHooks[T]
+	ptr     *T                 // Destination that receives the current value.
+	def     T                  // Value restored before each parse.
+	changed bool               // Whether parsing explicitly assigned a value.
+	hooks   core.ValueHooks[T] // Shared conversion, validation, and finalization hooks.
 }
 
 // NewScalarValue creates a new scalar value.

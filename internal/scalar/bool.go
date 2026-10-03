@@ -9,8 +9,8 @@ import (
 
 // BoolValue holds the internal state of a boolean flag and whether it is strict.
 type BoolValue struct {
-	*ScalarValue[bool]
-	strictMode *bool
+	*ScalarValue[bool]       // Embedded boolean storage and parsing behavior.
+	strictMode         *bool // Shared marker that enables strict boolean parsing.
 }
 
 // IsStrictBool reports whether the flag requires an explicit value (--flag=true/false).
@@ -21,8 +21,8 @@ func (b *BoolValue) IsStrictBool() bool {
 // BoolFlag provides fluent builder methods for boolean flags,
 // including support for .Strict() to require explicit values.
 type BoolFlag struct {
-	scalarFlagBase[bool, *BoolFlag]
-	val *BoolValue
+	scalarFlagBase[bool, *BoolFlag]            // Fluent metadata and static registration behavior.
+	val                             *BoolValue // Boolean-specific mutable value.
 }
 
 // Strict marks this boolean flag as requiring an explicit value.

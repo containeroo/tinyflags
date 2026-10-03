@@ -10,23 +10,25 @@ import (
 
 // Config supplies the callbacks and behavior needed by the argument parser.
 type Config struct {
-	ContinueOnError   bool
-	LookupStaticFlag  func(string) *core.BaseFlag
-	LookupShortFlag   func(string) *core.BaseFlag
-	LookupDynamicFlag func(string, string) (core.DynamicValue, string, error)
-	HandleUnknownFlag func(string) error
-	RecordOrigin      func(name, key string)
+	ContinueOnError   bool                                                    // Continue parsing and join errors instead of stopping at the first error.
+	LookupStaticFlag  func(string) *core.BaseFlag                             // Resolves a long static flag name.
+	LookupShortFlag   func(string) *core.BaseFlag                             // Resolves a short static flag name.
+	LookupDynamicFlag func(string, string) (core.DynamicValue, string, error) // Resolves a dynamic flag and its ID.
+	HandleUnknownFlag func(string) error                                      // Handles an unknown flag when one is encountered.
+	RecordOrigin      func(name, key string)                                  // Records the source key that set a flag.
 }
 
+// stateFn consumes parser input and returns the next state.
 type stateFn func(*parser) stateFn
 
+// parser holds one stateful argument parsing pass.
 type parser struct {
-	config Config
-	args   []string
-	index  int
-	out    []string
-	err    error
-	errs   []error
+	config Config   // Callbacks and behavior supplied by the owning flag set.
+	args   []string // Input arguments being parsed.
+	index  int      // Index of the next unconsumed input argument.
+	out    []string // Positional arguments collected during parsing.
+	err    error    // Error produced by the current parser state.
+	errs   []error  // Errors accumulated when continuation is enabled.
 }
 
 // Parse tokenizes args and applies callbacks to populate flag values.
@@ -39,6 +41,7 @@ func Parse(config Config, args []string) ([]string, error) {
 	return p.out, err
 }
 
+// next returns and consumes the next input argument.
 func (p *parser) next() (arg string, ok bool) {
 	if p.index < len(p.args) {
 		arg = p.args[p.index]
@@ -48,6 +51,7 @@ func (p *parser) next() (arg string, ok bool) {
 	return arg, ok
 }
 
+// peek returns the next input argument without consuming it.
 func (p *parser) peek() (arg string, ok bool) {
 	if p.index < len(p.args) {
 		arg = p.args[p.index]
@@ -56,6 +60,7 @@ func (p *parser) peek() (arg string, ok bool) {
 	return arg, ok
 }
 
+// run advances the state machine until input is exhausted or parsing fails.
 func (p *parser) run() error {
 	state := stateStart
 	for state != nil {
@@ -78,6 +83,7 @@ func (p *parser) run() error {
 	return nil
 }
 
+// stateStart classifies the next token and dispatches to the appropriate parser state.
 func stateStart(p *parser) stateFn {
 	arg, ok := p.next()
 	if !ok {
@@ -99,6 +105,7 @@ func stateStart(p *parser) stateFn {
 	}
 }
 
+// handleUnknown delegates an unknown flag to the optional callback.
 func handleUnknown(p *parser, name string) stateFn {
 	if p.config.HandleUnknownFlag == nil {
 		p.err = fmt.Errorf("unknown flag %s", name)
@@ -111,6 +118,7 @@ func handleUnknown(p *parser, name string) stateFn {
 	return stateStart
 }
 
+// stateLong parses one long flag token.
 func stateLong(arg string) stateFn {
 	return func(p *parser) stateFn {
 		nameval := strings.TrimPrefix(arg, "--")
@@ -127,6 +135,7 @@ func stateLong(arg string) stateFn {
 	}
 }
 
+// handleDynamic resolves and sets one dynamic flag.
 func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 	return func(p *parser) stateFn {
 		item, id, err := p.config.LookupDynamicFlag(name, raw)
@@ -139,8 +148,6 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 			recordOrigin(p, name, "--"+name)
 			return stateStart
 		}
-
-		item.GetAny(name)
 
 		if hasVal {
 			p.err = trySetDynamic(item, id, val, name)
@@ -161,6 +168,7 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 	}
 }
 
+// handleDynamicValue consumes and sets a separate value for a dynamic flag.
 func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
@@ -173,6 +181,7 @@ func handleDynamicValue(p *parser, item core.DynamicValue, id, name string) bool
 	return true
 }
 
+// handleStatic resolves and sets one static flag.
 func handleStatic(name, val string, hasVal bool) stateFn {
 	return func(p *parser) stateFn {
 		flag := p.config.LookupStaticFlag(name)
@@ -206,6 +215,7 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 	}
 }
 
+// stateShort parses one or more combined short flag tokens.
 func stateShort(arg string) stateFn {
 	return func(p *parser) stateFn {
 		shorts := strings.TrimPrefix(arg, "-")
@@ -248,6 +258,7 @@ func stateShort(arg string) stateFn {
 	}
 }
 
+// tryBool applies the implicit true value for a non-strict boolean flag.
 func tryBool(flag *core.BaseFlag) bool {
 	if flag == nil {
 		return false
@@ -259,6 +270,7 @@ func tryBool(flag *core.BaseFlag) bool {
 	return false
 }
 
+// tryDynamicBool applies the implicit true value for a non-strict dynamic boolean.
 func tryDynamicBool(item core.DynamicValue, id string) bool {
 	if b, ok := item.(core.StrictBool); ok && !b.IsStrictBool() {
 		item.Set(id, "true") // nolint:errcheck
@@ -267,6 +279,7 @@ func tryDynamicBool(item core.DynamicValue, id string) bool {
 	return false
 }
 
+// tryCounter increments a counter flag when it supports incrementing.
 func tryCounter(p *parser, flag *core.BaseFlag) bool {
 	if inc, ok := flag.Value.(core.Incrementable); ok {
 		p.err = inc.Increment()
@@ -275,6 +288,7 @@ func tryCounter(p *parser, flag *core.BaseFlag) bool {
 	return false
 }
 
+// tryShortCombined treats the remainder of a short flag group as this flag's value.
 func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char string) bool {
 	if i < len(shorts)-1 {
 		val := shorts[i+1:]
@@ -284,6 +298,7 @@ func tryShortCombined(p *parser, flag *core.BaseFlag, i int, shorts string, char
 	return false
 }
 
+// tryLongValue consumes the following token as a long flag's value.
 func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
@@ -295,6 +310,7 @@ func tryLongValue(p *parser, flag *core.BaseFlag, name string) bool {
 	return true
 }
 
+// tryShortValue consumes the following token as a short flag's value.
 func tryShortValue(p *parser, flag *core.BaseFlag, short string) error {
 	next, ok := p.peek()
 	if !ok || strings.HasPrefix(next, "-") {
@@ -304,6 +320,7 @@ func tryShortValue(p *parser, flag *core.BaseFlag, short string) error {
 	return trySet(flag.Value, next, "invalid value for flag -%s: %w", short)
 }
 
+// trySet assigns input to a static value and decorates validation errors.
 func trySet(value core.Value, input string, format string, label string) error {
 	if err := value.Set(input); err != nil {
 		return fmt.Errorf(format, label, err)
@@ -311,6 +328,7 @@ func trySet(value core.Value, input string, format string, label string) error {
 	return nil
 }
 
+// trySetDynamic assigns val to one dynamic value and decorates validation errors.
 func trySetDynamic(item core.DynamicValue, id, val, label string) error {
 	if err := item.Set(id, val); err != nil {
 		return fmt.Errorf("invalid value for flag --%s: %w", label, err)
@@ -318,12 +336,14 @@ func trySetDynamic(item core.DynamicValue, id, val, label string) error {
 	return nil
 }
 
+// recordOrigin reports a successful flag assignment to the owning parser.
 func recordOrigin(p *parser, name, key string) {
 	if p.config.RecordOrigin != nil {
 		p.config.RecordOrigin(name, key)
 	}
 }
 
+// splitFlagArg separates a flag name from an optional equals-delimited value.
 func splitFlagArg(s string) (name, val string, hasVal bool) {
 	if i := strings.Index(s, "="); i >= 0 {
 		return s[:i], s[i+1:], true
@@ -331,6 +351,7 @@ func splitFlagArg(s string) (name, val string, hasVal bool) {
 	return s, "", false
 }
 
+// isDynamicFlag reports whether name has the group.ID.field shape.
 func isDynamicFlag(name string) bool {
 	return len(strings.Split(name, ".")) == 3
 }

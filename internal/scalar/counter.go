@@ -23,7 +23,7 @@ func (c *CounterValue) Increment() error {
 
 // CounterValue is a scalar int that increments on each occurrence.
 type CounterValue struct {
-	*ScalarValue[int]
+	*ScalarValue[int] // Embedded integer storage and parsing behavior.
 }
 
 // NewCounterValue returns a new counter that increments on each Set().
@@ -60,8 +60,8 @@ func (c *CounterValue) Set(s string) error {
 
 // CounterFlag provides fluent builder methods for counter flags.
 type CounterFlag struct {
-	scalarFlagBase[int, *CounterFlag]
-	val *CounterValue
+	scalarFlagBase[int, *CounterFlag]               // Fluent metadata and static registration behavior.
+	val                               *CounterValue // Counter-specific mutable value.
 }
 
 // NewCounter creates a new counter flag.

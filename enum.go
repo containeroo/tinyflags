@@ -19,8 +19,8 @@ type enumValue interface {
 
 // EnumChoice maps one user-facing enum name to its typed value.
 type EnumChoice[T enumValue] struct {
-	Name  string
-	Value T
+	Name  string // Text accepted from users for this choice.
+	Value T      // Typed value produced when Name is selected.
 }
 
 // Choice returns an enum choice for named enum helpers.
@@ -73,6 +73,7 @@ func DynamicEnumMap[T enumValue](g *DynamicGroup, field string, def T, usage str
 	return dynamic.EnumMap(g, field, def, usage, dynamicEnumChoices(choices)...)
 }
 
+// parseEnumValue converts raw text into an enum-compatible value.
 func parseEnumValue[T enumValue](raw string) (T, error) {
 	var zero T
 	typ := reflect.TypeOf(zero)
@@ -100,6 +101,7 @@ func parseEnumValue[T enumValue](raw string) (T, error) {
 	return out.Interface().(T), nil
 }
 
+// formatEnumValue serializes an enum-compatible value for help and defaults.
 func formatEnumValue[T enumValue](v T) string {
 	value := reflect.ValueOf(v)
 
@@ -115,6 +117,7 @@ func formatEnumValue[T enumValue](v T) string {
 	}
 }
 
+// enumChoiceHooks builds parsing, formatting, and allowed-value hooks from choices.
 func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, error), func(T) string, []string) {
 	names := make([]string, 0, len(choices))
 	byName := make(map[string]T, len(choices))
@@ -148,6 +151,7 @@ func enumChoiceHooks[T enumValue](choices []EnumChoice[T]) (func(string) (T, err
 	return parse, format, names
 }
 
+// dynamicEnumChoices converts public enum choices to their dynamic equivalent.
 func dynamicEnumChoices[T enumValue](choices []EnumChoice[T]) []dynamic.EnumChoice[T] {
 	out := make([]dynamic.EnumChoice[T], len(choices))
 	for i, choice := range choices {

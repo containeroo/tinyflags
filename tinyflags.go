@@ -48,8 +48,8 @@ type (
 
 // UsageError wraps a semantic parse error with rendered help text.
 type UsageError struct {
-	Err  error
-	Help string
+	Err  error  // Underlying parsing or validation error.
+	Help string // Usage text that explains how to correct the error.
 }
 
 // Error returns the wrapped error message.
@@ -70,7 +70,7 @@ func (e *UsageError) Unwrap() error {
 
 // CommandRequired is returned when one command requires a subcommand selection.
 type CommandRequired struct {
-	Command string
+	Command string // Name of the command that requires a subcommand.
 }
 
 // Error returns the human-readable message for a missing required subcommand.
@@ -120,8 +120,8 @@ type (
 
 // FlagSet is the user-facing flag parser and usage configurator.
 type FlagSet struct {
-	impl  *engine.FlagSet
-	Usage func() // Optional custom usage function
+	impl  *engine.FlagSet // Internal implementation that owns flag state.
+	Usage func()          // Optional custom usage function
 }
 
 // NewFlagSet creates a new flag set with the given name and error handling mode.

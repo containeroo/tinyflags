@@ -4,10 +4,10 @@ import "strings"
 
 // SliceInputConfig centralizes delimiter and item normalization for slice values.
 type SliceInputConfig struct {
-	Delimiter  string
-	NoSplit    bool
-	AllowEmpty bool
-	TrimSpace  bool
+	Delimiter  string // Separator used to split one input value.
+	NoSplit    bool   // Preserves each input as one slice element.
+	AllowEmpty bool   // Permits empty slice elements.
+	TrimSpace  bool   // Removes surrounding whitespace from elements.
 }
 
 // Split breaks a raw slice input into chunks using the configured delimiter.

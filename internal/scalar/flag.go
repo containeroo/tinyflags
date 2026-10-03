@@ -7,9 +7,9 @@ import (
 
 // scalarFlagBase provides shared builder logic while preserving the concrete flag type.
 type scalarFlagBase[T any, Self any] struct {
-	builder.StaticFlag[T, Self]
-	val  *ScalarValue[T]
-	self Self
+	builder.StaticFlag[T, Self]                 // Embedded fluent static-flag metadata.
+	val                         *ScalarValue[T] // Mutable scalar value backing the flag.
+	self                        Self            // Concrete flag returned by fluent methods.
 }
 
 // Choices restricts allowed scalar values.
@@ -49,5 +49,5 @@ func (f *scalarFlagBase[T, Self]) Changed() bool {
 
 // ScalarFlag is the user-facing scalar flag builder.
 type ScalarFlag[T any] struct {
-	scalarFlagBase[T, *ScalarFlag[T]]
+	scalarFlagBase[T, *ScalarFlag[T]] // Embedded scalar flag behavior.
 }

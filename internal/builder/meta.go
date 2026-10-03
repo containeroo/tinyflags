@@ -4,8 +4,8 @@ import "github.com/containeroo/tinyflags/internal/core"
 
 // flagMeta centralizes common flag metadata mutations used by both static and dynamic builders.
 type flagMeta struct {
-	registry core.Registry
-	bf       *core.BaseFlag
+	registry core.Registry  // Owner used to resolve cross-flag groups.
+	bf       *core.BaseFlag // Metadata mutated by fluent builder methods.
 }
 
 // required marks the flag as required.
@@ -103,6 +103,7 @@ func (m *flagMeta) section(name string) { m.bf.Section = name }
 // maskFn sets the masking function for overridden values.
 func (m *flagMeta) maskFn(fn func(any) any) { m.bf.MaskFn = fn }
 
+// appendBaseFlagUnique appends target unless flags already contains that exact flag.
 func appendBaseFlagUnique(flags []*core.BaseFlag, target *core.BaseFlag) []*core.BaseFlag {
 	for _, flag := range flags {
 		if flag == target {
@@ -112,6 +113,7 @@ func appendBaseFlagUnique(flags []*core.BaseFlag, target *core.BaseFlag) []*core
 	return append(flags, target)
 }
 
+// appendOneOfGroupUnique appends target unless groups already contains that exact group.
 func appendOneOfGroupUnique(groups []*core.OneOfGroupGroup, target *core.OneOfGroupGroup) []*core.OneOfGroupGroup {
 	for _, group := range groups {
 		if group == target {

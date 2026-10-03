@@ -58,25 +58,21 @@ type FlagSet struct {
 	unknownFlag        func(string) error               // Handler for unknown flags
 	valueOrigins       map[string]ValueOrigin           // Exact origin of each value overridden during the most recent parse
 
-	// Indentation and width config for description
-	descIndent int
-	descWidth  int
+	descIndent int // Leading spaces used for the description block.
+	descWidth  int // Maximum wrapping width for the description block.
 
-	// Indentation and width config for static flags
-	usageStaticNote   string
-	usageStaticIndent int
-	usageStaticCol    int
-	usageStaticWidth  int
+	usageStaticNote   string // Note rendered after static flag usage.
+	usageStaticIndent int    // Leading spaces for static flag usage rows.
+	usageStaticCol    int    // Width reserved for static flag labels.
+	usageStaticWidth  int    // Maximum wrapping width for static flag descriptions.
 
-	// Indentation and width config for dynamic flags
-	usageDynamicNote   string
-	usageDynamicIndent int
-	usageDynamicCol    int
-	usageDynamicWidth  int
+	usageDynamicNote   string // Note rendered after dynamic flag usage.
+	usageDynamicIndent int    // Leading spaces for dynamic flag usage rows.
+	usageDynamicCol    int    // Width reserved for dynamic flag labels.
+	usageDynamicWidth  int    // Maximum wrapping width for dynamic flag descriptions.
 
-	// Indentation and width config for notes
-	noteIndent int
-	noteWidth  int
+	noteIndent int // Leading spaces for the notes block.
+	noteWidth  int // Maximum wrapping width for the notes block.
 }
 
 // NewFlagSet creates a new FlagSet with the given name and error handling policy.

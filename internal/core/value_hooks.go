@@ -6,12 +6,12 @@ import (
 
 // ValueHooks centralizes parse/format/validate/finalize behavior for typed values.
 type ValueHooks[T any] struct {
-	Parse            func(string) (T, error)
-	Format           func(T) string
-	Validate         func(T) error
-	Finalize         func(T) T
-	FinalizeDefault  bool
-	DefaultFinalized bool
+	Parse            func(string) (T, error) // Converts CLI text to a typed value.
+	Format           func(T) string          // Converts a typed value for help output.
+	Validate         func(T) error           // Optionally validates a parsed value.
+	Finalize         func(T) T               // Optionally transforms a parsed value.
+	FinalizeDefault  bool                    // Enables finalization for unset defaults.
+	DefaultFinalized bool                    // Records whether default finalization has run.
 }
 
 // NewValueHooks returns a new hook container for a typed value.

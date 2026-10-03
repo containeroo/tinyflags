@@ -40,7 +40,7 @@ func (f *FlagSet) parseStaticEnv() error {
 
 // parseDynamicEnv loads dynamic flags from APP_GROUP_ID_FIELD style keys.
 func (f *FlagSet) parseDynamicEnv() error {
-	if f.effectiveEnvPrefix() == "" || len(f.dynamicGroupsMap) == 0 || f.getEnvVars == nil {
+	if !f.canParseDynamicEnv() {
 		return nil
 	}
 
@@ -57,6 +57,11 @@ func (f *FlagSet) parseDynamicEnv() error {
 		}
 	}
 	return nil
+}
+
+// canParseDynamicEnv reports whether dynamic environment discovery is configured.
+func (f *FlagSet) canParseDynamicEnv() bool {
+	return f.effectiveEnvPrefix() != "" && len(f.dynamicGroupsMap) > 0 && f.getEnvVars != nil
 }
 
 // tryParseDynamicEnv applies one environment entry if it matches a dynamic flag.
@@ -90,6 +95,7 @@ func (f *FlagSet) tryParseDynamicEnv(key, val string) error {
 	return nil
 }
 
+// dynamicEnvFlags orders dynamic flags so longer normalized names match first.
 func dynamicEnvFlags(group interface{ Flags() []*core.BaseFlag }) []*core.BaseFlag {
 	flags := append([]*core.BaseFlag(nil), group.Flags()...)
 	sort.SliceStable(flags, func(i, j int) bool {

@@ -4,7 +4,7 @@ package dynamic
 type BoolValue struct {
 	*DynamicScalarValue[bool]       // Underlying parsed values and metadata
 	strictMode                *bool // Pointer to shared strict mode flag
-	hideStrict                *bool
+	hideStrict                *bool // Pointer to the shared strict-mode help visibility marker.
 }
 
 // Base returns the underlying DynamicScalarValue.

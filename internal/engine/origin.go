@@ -16,8 +16,8 @@ const (
 // Key is the flag spelling (for example "-a" or "--address") or environment
 // variable name that actually won during parsing. Defaults have an empty Key.
 type ValueOrigin struct {
-	Source ValueSource
-	Key    string
+	Source ValueSource // Mechanism that supplied the value.
+	Key    string      // Flag spelling or environment key that supplied it.
 }
 
 // String returns a human-readable origin label suitable for diagnostics and UIs.
@@ -34,8 +34,8 @@ func (o ValueOrigin) String() string {
 // Override describes one explicitly supplied flag value and where it came from.
 // Value is the reporting value and therefore includes any configured override mask.
 type Override struct {
-	Value  any
-	Origin ValueOrigin
+	Value  any         // Replacement value to apply before parsing.
+	Origin ValueOrigin // Provenance reported for the replacement value.
 }
 
 // Overrides contains explicitly supplied flag values keyed by canonical flag name.

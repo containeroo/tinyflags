@@ -21,53 +21,66 @@ func (f *FlagSet) Parse(args []string) error {
 		return f.handleError(err)
 	}
 
-	// Check if help was requested
-	if f.enableHelp && f.showHelp != nil && *f.showHelp {
-		var buf strings.Builder
-		prevOutput := f.Output()
-		f.SetOutput(&buf)
-		defer f.SetOutput(prevOutput)
-		f.Usage()
-		return &HelpRequested{Message: buf.String()}
+	if request := f.builtinRequest(); request != nil {
+		return request
 	}
 
-	// Check if version was requested
-	if f.enableVer && f.showVersion != nil && *f.showVersion {
-		return &VersionRequested{Version: f.versionString}
-	}
-
-	// Load values from env and validate
 	if err := f.parseEnv(); err != nil {
 		return f.handleError(err)
 	}
-	f.applyDefaultFinalizers()
-	if err := f.checkRequired(); err != nil { // static
+	if err := f.validateParsedValues(); err != nil {
 		return f.handleError(err)
+	}
+	return nil
+}
+
+// builtinRequest returns the requested built-in help or version response, if any.
+func (f *FlagSet) builtinRequest() error {
+	if f.enableHelp && f.showHelp != nil && *f.showHelp {
+		var buf strings.Builder
+		previousOutput := f.Output()
+		f.SetOutput(&buf)
+		defer f.SetOutput(previousOutput)
+		f.Usage()
+		return &HelpRequested{Message: buf.String()}
+	}
+	if f.enableVer && f.showVersion != nil && *f.showVersion {
+		return &VersionRequested{Version: f.versionString}
+	}
+	return nil
+}
+
+// validateParsedValues applies finalization and runs every post-parse validation stage.
+func (f *FlagSet) validateParsedValues() error {
+	f.applyDefaultFinalizers()
+
+	if err := f.checkRequired(); err != nil {
+		return err
 	}
 	if err := f.checkRequiredDynamic(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.checkNotEmpty(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.checkNotEmptyDynamic(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.checkOneOfGroups(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.checkAllOrNone(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.checkRequirements(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.checkPositionals(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	for _, validate := range f.validators {
 		if err := validate(); err != nil {
-			return f.handleError(err)
+			return err
 		}
 	}
 	return nil
