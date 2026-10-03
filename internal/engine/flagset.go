@@ -354,8 +354,20 @@ func (f *FlagSet) NoteWidth() int { return f.noteWidth }
 
 // RegisterFlag registers a static flag in the set.
 func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
+	if _, exists := f.staticFlagsMap[name]; exists {
+		panic("tinyflags: duplicate flag --" + name)
+	}
 	f.staticFlagsMap[name] = bf
 	f.staticFlagsOrder = append(f.staticFlagsOrder, bf)
+}
+
+// ValidateShortAlias rejects an alias already owned by another static flag.
+func (f *FlagSet) ValidateShortAlias(alias string, target *core.BaseFlag) {
+	for _, flag := range f.staticFlagsOrder {
+		if flag != target && flag.Short == alias {
+			panic("tinyflags: duplicate short flag -" + alias)
+		}
+	}
 }
 
 // LookupFlag returns a registered static flag by name.

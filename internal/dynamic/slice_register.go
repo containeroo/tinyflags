@@ -41,9 +41,8 @@ func registerSliceValue[T any](g *Group, field string, def []T, usage string,
 		Value: &slicePlaceholder{def: utils.JoinFormatted(def, format)},
 	}
 
-	// Register flag and value in the group
-	g.items[field] = core.GroupItem{Value: val, Flag: bf}
-	g.itemOrder = append(g.itemOrder, bf)
+	// Register flag and value in the group.
+	g.registerItem(field, core.GroupItem{Value: val, Flag: bf})
 
 	// Return wrapper with typed access
 	return &SliceFlag[T]{

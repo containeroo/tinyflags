@@ -100,6 +100,15 @@ func (g *Group) DynamicFlags() []*core.BaseFlag {
 	return g.itemOrder
 }
 
+// registerItem adds one dynamic field while preserving unique field names and order.
+func (g *Group) registerItem(field string, item core.GroupItem) {
+	if _, exists := g.items[field]; exists {
+		panic("tinyflags: duplicate dynamic field " + field + " in group " + g.name)
+	}
+	g.items[field] = item
+	g.itemOrder = append(g.itemOrder, item.Flag)
+}
+
 // IsFlagSorted reports whether internal flags should be sorted.
 func (g *Group) IsFlagSorted() bool {
 	return g.sortFlags

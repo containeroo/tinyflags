@@ -24,9 +24,8 @@ func registerDynamicScalar[T any](
 		Value: &placeholderValue{def: format(def)},
 	}
 
-	// Register the flag and its value in the group
-	g.items[field] = core.GroupItem{Value: val, Flag: bf}
-	g.itemOrder = append(g.itemOrder, bf)
+	// Register the flag and its value in the group.
+	g.registerItem(field, core.GroupItem{Value: val, Flag: bf})
 
 	// Return typed wrapper for external use
 	return &ScalarFlag[T]{

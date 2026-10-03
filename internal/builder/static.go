@@ -2,6 +2,10 @@ package builder
 
 import "github.com/containeroo/tinyflags/internal/core"
 
+type shortAliasRegistry interface {
+	ValidateShortAlias(alias string, target *core.BaseFlag)
+}
+
 // StaticFlag provides common builder methods for scalar and slice flags.
 // The Self type parameter allows fluent methods to return the concrete flag type.
 type StaticFlag[T any, Self any] struct {
@@ -22,6 +26,9 @@ func (b *StaticFlag[T, Self]) Short(s string) Self {
 	// count code points, not bytes
 	if len([]rune(s)) != 1 {
 		panic("Short: alias must be exactly one character")
+	}
+	if registry, ok := b.meta.registry.(shortAliasRegistry); ok {
+		registry.ValidateShortAlias(s, b.meta.bf)
 	}
 	b.meta.bf.Short = s
 	return b.self
