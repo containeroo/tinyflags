@@ -66,6 +66,9 @@ func (f *FlagSet) validateParsedValues() error {
 	if err := f.checkNotEmptyDynamic(); err != nil {
 		return err
 	}
+	if err := f.checkDynamicOneOfGroups(); err != nil {
+		return err
+	}
 	if err := f.checkOneOfGroups(); err != nil {
 		return err
 	}

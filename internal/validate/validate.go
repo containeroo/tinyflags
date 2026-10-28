@@ -208,3 +208,13 @@ func joinFlagNames(flags []*core.BaseFlag) string {
 	}
 	return strings.Join(names, ", ")
 }
+
+// CheckDynamicOneOfGroups validates each dynamic group's per-instance choices.
+func CheckDynamicOneOfGroups(groups []*dynamic.Group) error {
+	for _, group := range groups {
+		if err := group.ValidateOneOf(); err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -72,3 +72,8 @@ func (f *FlagSet) checkRequired() error {
 func (f *FlagSet) checkRequiredDynamic() error {
 	return validate.CheckRequiredDynamic(f.dynamicGroups())
 }
+
+// checkDynamicOneOfGroups validates field choices independently for each active instance.
+func (f *FlagSet) checkDynamicOneOfGroups() error {
+	return validate.CheckDynamicOneOfGroups(f.dynamicGroups())
+}

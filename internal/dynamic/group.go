@@ -10,6 +10,7 @@ import (
 
 // Group manages a set of dynamic flags under one prefix.
 type Group struct {
+	oneOf       []*OneOfGroup             // Per-instance exclusivity constraints.
 	fs          FlagSetRef                // Parent flagset reference
 	name        string                    // Group name prefix (e.g. "http")
 	items       map[string]core.GroupItem // Registered flags and their dynamic values

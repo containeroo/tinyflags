@@ -563,6 +563,33 @@ a: port=8080, timeout=30s
 b: port=9090, timeout=1m
 ```
 
+### Per-instance field choices
+
+Use field handles to require exactly one value source for each active instance:
+
+```go
+updates := fs.DynamicGroup("update")
+path := updates.String("path", "", "XML selector")
+path.Required().NotEmpty()
+value := updates.String("value", "", "Literal text")
+valueFromEnv := updates.String("valueFromEnv", "", "Environment variable name")
+updates.OneOf(value, valueFromEnv).Required()
+```
+
+`--update.a.value=literal --update.b.valueFromEnv=TOKEN` is valid when each
+instance also supplies its required path. Supplying both value sources for one
+instance, or neither source for an active instance, returns a parse error.
+An empty literal, zero number, or explicitly false boolean counts as supplied;
+unset defaults do not. A required choice does not create or require an instance.
+
+Without `.Required()`, a choice permits zero or one supplied member per instance.
+Choices work with scalar, boolean, and slice handles, including different value
+types. Environment bindings and CLI overrides participate in the same checks.
+Handles must belong to the receiving group; empty choices, duplicate handles,
+nil handles, and handles from other groups panic during registration. Help output
+shows the per-instance choice. Existing named global one-of groups retain their
+original behavior.
+
 ### Disable slice splitting
 
 Call `.NoSplit()` on any static or dynamic slice to pass each flag input to its

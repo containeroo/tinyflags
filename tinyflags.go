@@ -128,3 +128,9 @@ type FlagSet struct {
 func NewFlagSet(name string, handling ErrorHandling) *FlagSet {
 	return &FlagSet{impl: engine.NewFlagSet(name, handling)}
 }
+
+// DynamicField is a registered scalar, boolean, or slice handle accepted by dynamic constraints.
+type DynamicField = dynamic.Field
+
+// DynamicOneOfGroup enforces a field choice independently for each active dynamic instance.
+type DynamicOneOfGroup = dynamic.OneOfGroup
