@@ -78,8 +78,19 @@ func (f *FlagSet) GlobalDelimiter(s string) { f.impl.GlobalDelimiter(s) }
 // DefaultDelimiter returns the delimiter used for slice flags.
 func (f *FlagSet) DefaultDelimiter() string { return f.impl.DefaultDelimiter() }
 
-// RequirePositional sets how many positional arguments must be present.
-func (f *FlagSet) RequirePositional(n int) { f.impl.RequirePositional(n) }
+// MinPositional sets the minimum number of positional arguments.
+func (f *FlagSet) MinPositional(n int) { f.impl.MinPositional(n) }
+
+// ExactPositional sets the exact number of positional arguments.
+func (f *FlagSet) ExactPositional(n int) { f.impl.ExactPositional(n) }
+
+// MaxPositional sets the maximum number of positional arguments.
+func (f *FlagSet) MaxPositional(n int) { f.impl.MaxPositional(n) }
+
+// RequirePositional sets the minimum number of positional arguments.
+//
+// Deprecated: use MinPositional instead.
+func (f *FlagSet) RequirePositional(n int) { f.impl.MinPositional(n) }
 
 // Args returns all leftover positional arguments.
 func (f *FlagSet) Args() []string { return f.impl.Args() }

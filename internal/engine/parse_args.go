@@ -14,18 +14,46 @@ func (f *FlagSet) parseArgs(args []string) error {
 	}
 	f.positional = append(f.positional, positional...)
 
-	if f.requiredPositional > 0 && len(f.positional) < f.requiredPositional {
-		if f.showHelp != nil && *f.showHelp {
-			return nil
-		}
-		if f.showVersion != nil && *f.showVersion {
-			return nil
-		}
-
-		return fmt.Errorf("expected at least %d positional argument%s, got %d",
-			f.requiredPositional,
-			utils.PluralSuffix(f.requiredPositional),
-			len(f.positional))
+	if f.showHelp != nil && *f.showHelp {
+		return nil
 	}
+	if f.showVersion != nil && *f.showVersion {
+		return nil
+	}
+
+	return f.validatePositionalCount()
+}
+
+// validatePositionalCount enforces configured positional argument count constraints.
+func (f *FlagSet) validatePositionalCount() error {
+	count := len(f.positional)
+
+	if f.exactPositional && count != f.minPositional {
+		return fmt.Errorf(
+			"expected exactly %d positional argument%s, got %d",
+			f.minPositional,
+			utils.PluralSuffix(f.minPositional),
+			count,
+		)
+	}
+
+	if f.minPositional > 0 && count < f.minPositional {
+		return fmt.Errorf(
+			"expected at least %d positional argument%s, got %d",
+			f.minPositional,
+			utils.PluralSuffix(f.minPositional),
+			count,
+		)
+	}
+
+	if f.maxPositionalSet && count > f.maxPositional {
+		return fmt.Errorf(
+			"expected at most %d positional argument%s, got %d",
+			f.maxPositional,
+			utils.PluralSuffix(f.maxPositional),
+			count,
+		)
+	}
+
 	return nil
 }

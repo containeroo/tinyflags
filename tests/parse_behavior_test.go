@@ -410,7 +410,7 @@ func TestParseResetsStateBetweenCalls(t *testing.T) {
 	t.Parallel()
 
 	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-	fs.RequirePositional(1)
+	fs.MinPositional(1)
 
 	name := fs.String("name", "default", "name")
 	http := fs.DynamicGroup("http")

@@ -27,7 +27,7 @@ func FuzzParseStaticArgs(f *testing.F) {
 		fs.Int("count", 0, "count")
 		fs.Bool("debug", false, "debug").Short("d")
 		fs.StringSlice("tag", nil, "tags")
-		fs.RequirePositional(0)
+		fs.MinPositional(0)
 
 		_ = fs.Parse(args)
 	})

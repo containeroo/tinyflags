@@ -142,7 +142,7 @@ func TestNewFlagSet(t *testing.T) {
 	t.Run("Positional args", func(t *testing.T) {
 		t.Parallel()
 		fs := tinyflags.NewFlagSet("myapp", tinyflags.ContinueOnError)
-		fs.RequirePositional(2)
+		fs.MinPositional(2)
 		err := fs.Parse([]string{"one", "two"})
 		require.NoError(t, err)
 		assert.Equal(t, []string{"one", "two"}, fs.Args())
@@ -157,7 +157,7 @@ func TestNewFlagSet(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("pos", tinyflags.ContinueOnError)
-		fs.RequirePositional(1)
+		fs.MinPositional(1)
 		err := fs.Parse([]string{"--help"})
 		require.Error(t, err)
 		assert.True(t, tinyflags.IsHelpRequested(err))
@@ -167,7 +167,7 @@ func TestNewFlagSet(t *testing.T) {
 		t.Parallel()
 
 		fs := tinyflags.NewFlagSet("pos", tinyflags.ContinueOnError)
-		fs.RequirePositional(1)
+		fs.MinPositional(1)
 		fs.Version("1.0.0")
 		err := fs.Parse([]string{"--version"})
 		require.Error(t, err)

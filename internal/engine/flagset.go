@@ -22,7 +22,10 @@ type FlagSet struct {
 	oneOfGroup         []*core.OneOfGroupGroup          // All oneOfGroup groups
 	allOrNoneGroup     []*core.AllOrNoneGroup           // All all-or-none groups
 	positional         []string                         // Remaining non-flag arguments
-	requiredPositional int                              // Required positional argument count
+	minPositional      int                              // Minimum positional argument count
+	maxPositional      int                              // Maximum positional argument count
+	maxPositionalSet   bool                             // Whether a maximum positional argument count is configured
+	exactPositional    bool                             // Whether the configured bounds came from ExactPositional
 	validatePositional func(string) error               // Function to validate positional arguments
 	finalizePositional func(string) string              // Function to finalize positional arguments
 	envPrefixSet       bool                             // Whether a prefix was explicitly configured, including empty.
@@ -49,8 +52,6 @@ type FlagSet struct {
 	Usage              func()                           // Custom usage function (optional)
 	sortFlags          bool                             // Enable static flag sorting
 	sortGroups         bool                             // Enable dynamic group sorting
-	sectionOrder       []string                         // Explicit static help section order
-	builtinSection     string                           // Help section assigned to built-in help/version flags
 	oneOfVerbose       bool                             // Include conflicting flags in OneOf errors
 	authors            string                           // Optional authors block
 	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
@@ -58,21 +59,25 @@ type FlagSet struct {
 	unknownFlag        func(string) error               // Handler for unknown flags
 	valueOrigins       map[string]ValueOrigin           // Exact origin of each value overridden during the most recent parse
 
-	descIndent int // Leading spaces used for the description block.
-	descWidth  int // Maximum wrapping width for the description block.
+	// Indentation and width config for description
+	descIndent int
+	descWidth  int
 
-	usageStaticNote   string // Note rendered after static flag usage.
-	usageStaticIndent int    // Leading spaces for static flag usage rows.
-	usageStaticCol    int    // Width reserved for static flag labels.
-	usageStaticWidth  int    // Maximum wrapping width for static flag descriptions.
+	// Indentation and width config for static flags
+	usageStaticNote   string
+	usageStaticIndent int
+	usageStaticCol    int
+	usageStaticWidth  int
 
-	usageDynamicNote   string // Note rendered after dynamic flag usage.
-	usageDynamicIndent int    // Leading spaces for dynamic flag usage rows.
-	usageDynamicCol    int    // Width reserved for dynamic flag labels.
-	usageDynamicWidth  int    // Maximum wrapping width for dynamic flag descriptions.
+	// Indentation and width config for dynamic flags
+	usageDynamicNote   string
+	usageDynamicIndent int
+	usageDynamicCol    int
+	usageDynamicWidth  int
 
-	noteIndent int // Leading spaces for the notes block.
-	noteWidth  int // Maximum wrapping width for the notes block.
+	// Indentation and width config for notes
+	noteIndent int
+	noteWidth  int
 }
 
 // NewFlagSet creates a new FlagSet with the given name and error handling policy.
@@ -207,29 +212,6 @@ func (f *FlagSet) SortedFlags(enable bool) { f.sortFlags = enable }
 // SortedGroups enables or disables sorted dynamic help output.
 func (f *FlagSet) SortedGroups(enable bool) { f.sortGroups = enable }
 
-// SetSectionOrder sets the preferred order for static help sections.
-// Sections not listed here follow in first-registration order. The empty
-// section name positions the unnamed section; otherwise it renders last.
-func (f *FlagSet) SetSectionOrder(names ...string) {
-	f.sectionOrder = append(f.sectionOrder[:0], names...)
-}
-
-// SetBuiltinSection assigns the built-in help and version flags to one help section.
-// An empty name keeps them in the unnamed section.
-func (f *FlagSet) SetBuiltinSection(name string) {
-	f.builtinSection = name
-	if f.showHelp != nil {
-		if flag := f.staticFlagsMap["help"]; flag != nil {
-			flag.Section = name
-		}
-	}
-	if f.showVersion != nil {
-		if flag := f.staticFlagsMap["version"]; flag != nil {
-			flag.Section = name
-		}
-	}
-}
-
 // SetOneOfGroupVerbose toggles verbose one-of validation errors.
 func (f *FlagSet) SetOneOfGroupVerbose(enable bool) { f.oneOfVerbose = enable }
 
@@ -250,8 +232,26 @@ func (f *FlagSet) SetGetEnvFn(fn func(string) string) { f.getEnv = fn }
 
 // --- Positional Arguments ---
 
-// RequirePositional sets the required positional argument count.
-func (f *FlagSet) RequirePositional(n int) { f.requiredPositional = n }
+// MinPositional sets the minimum number of positional arguments.
+func (f *FlagSet) MinPositional(n int) {
+	f.minPositional = n
+	f.exactPositional = false
+}
+
+// ExactPositional sets the exact number of positional arguments.
+func (f *FlagSet) ExactPositional(n int) {
+	f.minPositional = n
+	f.maxPositional = n
+	f.maxPositionalSet = true
+	f.exactPositional = true
+}
+
+// MaxPositional sets the maximum number of positional arguments.
+func (f *FlagSet) MaxPositional(n int) {
+	f.maxPositional = n
+	f.maxPositionalSet = true
+	f.exactPositional = false
+}
 
 // Args returns the parsed positional arguments.
 func (f *FlagSet) Args() []string { return f.positional }
@@ -354,20 +354,8 @@ func (f *FlagSet) NoteWidth() int { return f.noteWidth }
 
 // RegisterFlag registers a static flag in the set.
 func (f *FlagSet) RegisterFlag(name string, bf *core.BaseFlag) {
-	if _, exists := f.staticFlagsMap[name]; exists {
-		panic("tinyflags: duplicate flag --" + name)
-	}
 	f.staticFlagsMap[name] = bf
 	f.staticFlagsOrder = append(f.staticFlagsOrder, bf)
-}
-
-// ValidateShortAlias rejects an alias already owned by another static flag.
-func (f *FlagSet) ValidateShortAlias(alias string, target *core.BaseFlag) {
-	for _, flag := range f.staticFlagsOrder {
-		if flag != target && flag.Short == alias {
-			panic("tinyflags: duplicate short flag -" + alias)
-		}
-	}
 }
 
 // LookupFlag returns a registered static flag by name.
@@ -533,19 +521,12 @@ func (f *FlagSet) AttachGroupToOneOf(group string, aon string) {
 func (f *FlagSet) maybeAddBuiltinFlags() {
 	if f.enableHelp && f.showHelp == nil {
 		if _, exists := f.staticFlagsMap["help"]; !exists {
-			f.showHelp = f.Bool("help", false, cmp.Or(f.helpText, "Show help")).
-				Short("h").
-				DisableEnv().
-				Section(f.builtinSection).
-				Value()
+			f.showHelp = f.Bool("help", false, cmp.Or(f.helpText, "Show help")).Short("h").DisableEnv().Value()
 		}
 	}
 	if f.enableVer && f.showVersion == nil && f.versionString != "" {
 		if _, exists := f.staticFlagsMap["version"]; !exists {
-			f.showVersion = f.Bool("version", false, cmp.Or(f.versionText, "Show version")).
-				DisableEnv().
-				Section(f.builtinSection).
-				Value()
+			f.showVersion = f.Bool("version", false, cmp.Or(f.versionText, "Show version")).DisableEnv().Value()
 		}
 	}
 }
