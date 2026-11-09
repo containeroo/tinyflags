@@ -14,6 +14,9 @@ func (m *flagMeta) required() { m.bf.Required = true }
 // notEmpty rejects explicitly set empty or zero values after parsing.
 func (m *flagMeta) notEmpty() { m.bf.NotEmpty = true }
 
+// notBlank rejects explicitly set empty or whitespace-only string values after parsing.
+func (m *flagMeta) notBlank() { m.bf.NotBlank = true }
+
 // hideRequired hides the required marker in help output.
 func (m *flagMeta) hideRequired() { m.bf.HideRequired = true }
 

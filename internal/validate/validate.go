@@ -89,6 +89,37 @@ func CheckNotEmptyDynamic(groups []*dynamic.Group) error {
 	return nil
 }
 
+// CheckNotBlank ensures explicitly set static string flags are not whitespace-only.
+func CheckNotBlank(flags map[string]*core.BaseFlag) error {
+	for _, fl := range flags {
+		if fl == nil || !fl.NotBlank || !fl.IsChanged() {
+			continue
+		}
+		if isBlank(fl.Value.Get()) {
+			return fmt.Errorf("flag --%s must not be blank", fl.Name)
+		}
+	}
+	return nil
+}
+
+// CheckNotBlankDynamic ensures explicitly set dynamic string flags are not whitespace-only.
+func CheckNotBlankDynamic(groups []*dynamic.Group) error {
+	for _, group := range groups {
+		for _, id := range group.Instances() {
+			for field, item := range group.Items() {
+				if item.Flag == nil || !item.Flag.NotBlank {
+					continue
+				}
+				value, set := item.Value.GetAny(id)
+				if set && isBlank(value) {
+					return fmt.Errorf("flag --%s.%s.%s must not be blank", group.Name(), id, field)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // CheckOneOfGroups ensures at most one choice per one-of group is set.
 func CheckOneOfGroups(groups []*core.OneOfGroupGroup, verbose bool) error {
 	for _, g := range groups {
@@ -198,6 +229,16 @@ func isEmpty(value any) bool {
 	default:
 		return v.IsZero()
 	}
+}
+
+// isBlank reports whether value is a string whose whitespace-trimmed form is empty.
+func isBlank(value any) bool {
+	if value == nil {
+		return false
+	}
+
+	v := reflect.ValueOf(value)
+	return v.Kind() == reflect.String && strings.TrimSpace(v.String()) == ""
 }
 
 // joinFlagNames formats flag names for user-facing validation errors.

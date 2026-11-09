@@ -17,6 +17,16 @@ func (f *FlagSet) checkNotEmptyDynamic() error {
 	return validate.CheckNotEmptyDynamic(f.dynamicGroups())
 }
 
+// checkNotBlank ensures explicitly set static string flags are not blank.
+func (f *FlagSet) checkNotBlank() error {
+	return validate.CheckNotBlank(f.staticFlagsMap)
+}
+
+// checkNotBlankDynamic ensures explicitly set dynamic string flags are not blank.
+func (f *FlagSet) checkNotBlankDynamic() error {
+	return validate.CheckNotBlankDynamic(f.dynamicGroups())
+}
+
 // checkPositionals ensures all positional arguments are valid.
 func (f *FlagSet) checkPositionals() error {
 	if err := f.validatePositionals(); err != nil {

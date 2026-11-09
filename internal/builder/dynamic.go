@@ -27,6 +27,12 @@ func (d *DynamicFlag[T]) NotEmpty() *DynamicFlag[T] {
 	return d
 }
 
+// NotBlank rejects explicitly set empty or whitespace-only string values.
+func (d *DynamicFlag[T]) NotBlank() *DynamicFlag[T] {
+	d.meta.notBlank()
+	return d
+}
+
 // HideRequired hides the “(Required)” suffix from help.
 func (d *DynamicFlag[T]) HideRequired() *DynamicFlag[T] {
 	d.meta.hideRequired()

@@ -46,6 +46,12 @@ func (s *StaticFlag[T, Self]) NotEmpty() Self {
 	return s.self
 }
 
+// NotBlank rejects explicitly set empty or whitespace-only string values.
+func (s *StaticFlag[T, Self]) NotBlank() Self {
+	s.meta.notBlank()
+	return s.self
+}
+
 // HideRequired hides the "(Required)" suffix from help.
 func (s *StaticFlag[T, Self]) HideRequired() Self {
 	s.meta.hideRequired()
