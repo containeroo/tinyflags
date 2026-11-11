@@ -99,6 +99,12 @@ func (c *Command) RequireCommand() *Command {
 	return c
 }
 
+// NoPositional rejects all positional arguments.
+func (c *Command) NoPositional() *Command {
+	c.ExactPositional(0)
+	return c
+}
+
 // BuildCommand registers a zero-argument builder that returns the runnable for this command.
 func (c *Command) BuildCommand(builder any) *Command {
 	c.setBuilder(wrapCommandBuilder(builder))

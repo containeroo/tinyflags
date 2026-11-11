@@ -191,6 +191,8 @@ fs.ExactPositional(2)
 
 `MinPositional` and `MaxPositional` can be combined to define a range. `RequirePositional(n)` remains available for backward compatibility and is deprecated in favor of `MinPositional(n)`.
 
+Commands that accept no positional arguments can use `cmd.NoPositional()`.
+
 ### Handling toggles with multiple flags
 
 You can model toggles with paired flags (e.g., `--debug` and `--no-debug`) and pick the first one the user set:
@@ -373,6 +375,7 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `Command(name, summary string)`                       | Register a child command.                                                             |
 | `Globals()`                                           | Access persistent flags inherited by that subtree.                                    |
 | `RequireCommand()`                                    | Return an error if this command is selected without a child command.                  |
+| `NoPositional()`                                      | Reject all positional arguments for this command.                                     |
 | `HelpText()`                                          | Return rendered help for the selected command when available, otherwise the receiver. |
 | `WriteHelp(w io.Writer)`                              | Write rendered help for the selected command when available, otherwise the receiver.  |
 | `Parse(args)`                                         | Parse flags and select the active command.                                            |
@@ -707,3 +710,5 @@ Flags:
 ## License
 
 Apache 2.0 -- see [LICENSE](LICENSE)
+
+

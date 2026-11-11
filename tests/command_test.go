@@ -87,6 +87,30 @@ func TestCommandHelpListsChildren(t *testing.T) {
 	assert.Contains(t, err.Error(), "build")
 }
 
+func TestCommandNoPositional(t *testing.T) {
+	t.Parallel()
+
+	t.Run("accepts no positional arguments", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		serve := root.Command("serve", "Run the server")
+
+		assert.Same(t, serve, serve.NoPositional())
+		require.NoError(t, root.Parse([]string{"serve"}))
+	})
+
+	t.Run("rejects positional arguments", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		root.Command("serve", "Run the server").NoPositional()
+
+		err := root.Parse([]string{"serve", "unexpected"})
+		require.EqualError(t, err, "accepts no positional arguments")
+	})
+}
+
 func TestCommandHelpTextAndWriteHelp(t *testing.T) {
 	t.Parallel()
 
