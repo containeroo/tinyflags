@@ -179,7 +179,7 @@ fmt.Println(fs.Origin("mode"))        // Default
 
 ### Positional argument counts
 
-Use `MinPositional`, `ExactPositional`, and `MaxPositional` to constrain leftover positional arguments:
+Use `MinPositional`, `ExactPositional`, `MaxPositional`, and `NoPositional` to constrain leftover positional arguments:
 
 ```go
 fs.MinPositional(1)   // one or more
@@ -187,11 +187,12 @@ fs.MaxPositional(3)   // at most three
 
 // Or require one exact count:
 fs.ExactPositional(2)
+
+// Or reject positional arguments entirely:
+fs.NoPositional()
 ```
 
-`MinPositional` and `MaxPositional` can be combined to define a range. `RequirePositional(n)` remains available for backward compatibility and is deprecated in favor of `MinPositional(n)`.
-
-Commands that accept no positional arguments can use `cmd.NoPositional()`.
+The same methods are available on `Command` and return the command for fluent chaining. `MinPositional` and `MaxPositional` can be combined to define a range. `RequirePositional(n)` remains available for backward compatibility and is deprecated in favor of `MinPositional(n)`.
 
 ### Handling toggles with multiple flags
 
@@ -375,7 +376,9 @@ searchExcludePins := fs.Bool("exclude-pins", false, "Exclude pinned commands fro
 | `Command(name, summary string)`                       | Register a child command.                                                             |
 | `Globals()`                                           | Access persistent flags inherited by that subtree.                                    |
 | `RequireCommand()`                                    | Return an error if this command is selected without a child command.                  |
-| `NoPositional()`                                      | Reject all positional arguments for this command.                                     |
+| `MinPositional(n)` / `ExactPositional(n)` / `MaxPositional(n)` | Configure positional argument counts and return the command for fluent chaining.   |
+| `NoPositional()`                                     | Reject all positional arguments and return the command for fluent chaining.            |
+| `RequirePositional(n)`                              | Deprecated fluent compatibility alias for `MinPositional(n)`.                          |
 | `HelpText()`                                          | Return rendered help for the selected command when available, otherwise the receiver. |
 | `WriteHelp(w io.Writer)`                              | Write rendered help for the selected command when available, otherwise the receiver.  |
 | `Parse(args)`                                         | Parse flags and select the active command.                                            |
@@ -710,5 +713,3 @@ Flags:
 ## License
 
 Apache 2.0 -- see [LICENSE](LICENSE)
-
-

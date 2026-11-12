@@ -29,11 +29,11 @@ func (f *FlagSet) parseArgs(args []string) error {
 func (f *FlagSet) validatePositionalCount() error {
 	count := len(f.positional)
 
-	if f.exactPositional && count != f.minPositional {
-		if f.minPositional == 0 {
-			return errors.New("accepts no positional arguments")
-		}
+	if f.exactPositional && f.minPositional == 0 && count > 0 {
+		return errors.New("accepts no positional arguments")
+	}
 
+	if f.exactPositional && count != f.minPositional {
 		return fmt.Errorf(
 			"expected exactly %d positional argument%s, got %d",
 			f.minPositional,

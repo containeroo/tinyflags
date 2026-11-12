@@ -87,30 +87,6 @@ func TestCommandHelpListsChildren(t *testing.T) {
 	assert.Contains(t, err.Error(), "build")
 }
 
-func TestCommandNoPositional(t *testing.T) {
-	t.Parallel()
-
-	t.Run("accepts no positional arguments", func(t *testing.T) {
-		t.Parallel()
-
-		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
-		serve := root.Command("serve", "Run the server")
-
-		assert.Same(t, serve, serve.NoPositional())
-		require.NoError(t, root.Parse([]string{"serve"}))
-	})
-
-	t.Run("rejects positional arguments", func(t *testing.T) {
-		t.Parallel()
-
-		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
-		root.Command("serve", "Run the server").NoPositional()
-
-		err := root.Parse([]string{"serve", "unexpected"})
-		require.EqualError(t, err, "accepts no positional arguments")
-	})
-}
-
 func TestCommandHelpTextAndWriteHelp(t *testing.T) {
 	t.Parallel()
 
@@ -142,6 +118,66 @@ func TestCommandHelpTextDoesNotMutateParsedPositionals(t *testing.T) {
 	helpText := root.HelpText()
 	assert.Contains(t, helpText, "Usage: app pin")
 	assert.Equal(t, []string{"kubectl", "get", "pods"}, pin.Args())
+}
+
+// TestCommandPositionalMethods verifies command wrappers preserve fluent command configuration.
+func TestCommandPositionalMethods(t *testing.T) {
+	t.Parallel()
+
+	t.Run("min", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		cmd := root.Command("run", "Run a task")
+
+		assert.Same(t, cmd, cmd.MinPositional(1))
+		require.NoError(t, root.Parse([]string{"run", "one"}))
+		require.EqualError(t, root.Parse([]string{"run"}), "expected at least 1 positional argument, got 0")
+	})
+
+	t.Run("exact", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		cmd := root.Command("run", "Run a task")
+
+		assert.Same(t, cmd, cmd.ExactPositional(1))
+		require.NoError(t, root.Parse([]string{"run", "one"}))
+		require.EqualError(t, root.Parse([]string{"run", "one", "two"}), "expected exactly 1 positional argument, got 2")
+	})
+
+	t.Run("max", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		cmd := root.Command("run", "Run a task")
+
+		assert.Same(t, cmd, cmd.MaxPositional(1))
+		require.NoError(t, root.Parse([]string{"run", "one"}))
+		require.EqualError(t, root.Parse([]string{"run", "one", "two"}), "expected at most 1 positional argument, got 2")
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		cmd := root.Command("run", "Run a task")
+
+		assert.Same(t, cmd, cmd.NoPositional())
+		require.NoError(t, root.Parse([]string{"run"}))
+		require.EqualError(t, root.Parse([]string{"run", "unexpected"}), "accepts no positional arguments")
+	})
+
+	t.Run("requireCompatibility", func(t *testing.T) {
+		t.Parallel()
+
+		root := tinyflags.NewCommand("app", tinyflags.ContinueOnError)
+		cmd := root.Command("run", "Run a task")
+
+		assert.Same(t, cmd, cmd.RequirePositional(1)) //nolint:staticcheck // Backward-compatibility coverage.
+		require.NoError(t, root.Parse([]string{"run", "one"}))
+		require.EqualError(t, root.Parse([]string{"run"}), "expected at least 1 positional argument, got 0")
+	})
 }
 
 func TestRequireCommandRoot(t *testing.T) {

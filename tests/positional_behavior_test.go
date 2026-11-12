@@ -38,19 +38,6 @@ func TestExactPositional(t *testing.T) {
 	require.EqualError(t, err, "expected exactly 2 positional arguments, got 3")
 }
 
-// TestExactPositionalZero verifies zero exact positionals use the no-positionals diagnostic.
-func TestExactPositionalZero(t *testing.T) {
-	t.Parallel()
-
-	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
-	fs.ExactPositional(0)
-
-	require.NoError(t, fs.Parse(nil))
-
-	err := fs.Parse([]string{"unexpected"})
-	require.EqualError(t, err, "accepts no positional arguments")
-}
-
 // TestMaxPositional verifies maximum positional argument enforcement.
 func TestMaxPositional(t *testing.T) {
 	t.Parallel()
@@ -64,6 +51,17 @@ func TestMaxPositional(t *testing.T) {
 
 	err := fs.Parse([]string{"one", "two", "three"})
 	require.EqualError(t, err, "expected at most 2 positional arguments, got 3")
+}
+
+// TestNoPositional verifies positional arguments can be rejected entirely.
+func TestNoPositional(t *testing.T) {
+	t.Parallel()
+
+	fs := tinyflags.NewFlagSet("app", tinyflags.ContinueOnError)
+	fs.NoPositional()
+
+	require.NoError(t, fs.Parse(nil))
+	require.EqualError(t, fs.Parse([]string{"unexpected"}), "accepts no positional arguments")
 }
 
 // TestPositionalRange verifies minimum and maximum constraints compose into a range.

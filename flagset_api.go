@@ -87,6 +87,9 @@ func (f *FlagSet) ExactPositional(n int) { f.impl.ExactPositional(n) }
 // MaxPositional sets the maximum number of positional arguments.
 func (f *FlagSet) MaxPositional(n int) { f.impl.MaxPositional(n) }
 
+// NoPositional rejects all positional arguments.
+func (f *FlagSet) NoPositional() { f.ExactPositional(0) }
+
 // RequirePositional sets the minimum number of positional arguments.
 //
 // Deprecated: use MinPositional instead.

@@ -99,9 +99,35 @@ func (c *Command) RequireCommand() *Command {
 	return c
 }
 
+// MinPositional sets the minimum number of positional arguments.
+func (c *Command) MinPositional(n int) *Command {
+	c.FlagSet.MinPositional(n)
+	return c
+}
+
+// ExactPositional sets the exact number of positional arguments.
+func (c *Command) ExactPositional(n int) *Command {
+	c.FlagSet.ExactPositional(n)
+	return c
+}
+
+// MaxPositional sets the maximum number of positional arguments.
+func (c *Command) MaxPositional(n int) *Command {
+	c.FlagSet.MaxPositional(n)
+	return c
+}
+
 // NoPositional rejects all positional arguments.
 func (c *Command) NoPositional() *Command {
-	c.ExactPositional(0)
+	c.FlagSet.NoPositional()
+	return c
+}
+
+// RequirePositional sets the minimum number of positional arguments.
+//
+// Deprecated: use MinPositional instead.
+func (c *Command) RequirePositional(n int) *Command {
+	c.FlagSet.MinPositional(n)
 	return c
 }
 
