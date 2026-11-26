@@ -107,6 +107,21 @@ func (f *FlagSet) SetPositionalValidate(fn func(string) error) { f.impl.SetPosit
 // SetPositionalFinalize sets a function to finalize positional arguments.
 func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.impl.SetPositionalFinalize(fn) }
 
+// SetPositionalValidateAll sets a hook to validate the entire positional slice
+// after per-argument validation and finalization. It receives a copy, including
+// when no arguments were supplied. Passing nil removes the hook.
+func (f *FlagSet) SetPositionalValidateAll(fn func([]string) error) {
+	f.impl.SetPositionalValidateAll(fn)
+}
+
+// SetPositionalFinalizeAll sets a hook to replace the entire positional slice
+// after positional validation. It receives a copy, including when no arguments
+// were supplied. A returned error aborts parsing without storing the result.
+// Count constraints apply to the input before finalization. Passing nil removes the hook.
+func (f *FlagSet) SetPositionalFinalizeAll(fn func([]string) ([]string, error)) {
+	f.impl.SetPositionalFinalizeAll(fn)
+}
+
 // Overrides returns all flags explicitly set by arguments or environment variables.
 // Dynamic flags use the key format "group.id.flag". Values include configured override masking.
 func (f *FlagSet) Overrides() Overrides { return f.impl.Overrides() }

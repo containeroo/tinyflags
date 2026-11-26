@@ -65,6 +65,10 @@ Flags:
 | `MaxPositional(n int)`                                       | Enforce at most `n` positional arguments.                                                                        |
 | `NoPositional()`                                             | Reject all positional arguments.                                                                                 |
 | `RequirePositional(n int)`                                   | Deprecated compatibility alias for `MinPositional(n)`.                                                           |
+| `SetPositionalValidate(func(string) error)`                  | Validate each positional argument.                                                                               |
+| `SetPositionalFinalize(func(string) string)`                 | Transform each positional argument.                                                                              |
+| `SetPositionalValidateAll(func([]string) error)`             | Validate the entire positional slice after per-argument finalization.                                            |
+| `SetPositionalFinalizeAll(func([]string) ([]string, error))` | Replace the entire positional slice or return an error.                                                          |
 | `Args() []string` / `Arg(i int) (string, bool)`              | Access leftover positional args safely.                                                                          |
 | `Overrides() Overrides`                                      | Return explicit args/env overrides with both reporting values and origins (dynamic keys: `group.id.flag`).       |
 | `Overrides.Values() map[string]any`                          | Project only the masked reporting values from an `Overrides` map.                                                |

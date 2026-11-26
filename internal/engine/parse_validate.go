@@ -1,6 +1,10 @@
 package engine
 
-import "github.com/containeroo/tinyflags/internal/validate"
+import (
+	"slices"
+
+	"github.com/containeroo/tinyflags/internal/validate"
+)
 
 // checkRequirements ensures all flag dependencies are satisfied.
 func (f *FlagSet) checkRequirements() error {
@@ -27,14 +31,30 @@ func (f *FlagSet) checkNotBlankDynamic() error {
 	return validate.CheckNotBlankDynamic(f.dynamicGroups())
 }
 
-// checkPositionals ensures all positional arguments are valid.
+// checkPositionals validates and finalizes individual arguments, then the entire slice.
 func (f *FlagSet) checkPositionals() error {
 	if err := f.validatePositionals(); err != nil {
-		return f.handleError(err)
+		return err
 	}
 	if err := f.finalizePositionals(); err != nil {
-		return f.handleError(err)
+		return err
 	}
+
+	if f.validatePositionalAll != nil {
+		if err := f.validatePositionalAll(slices.Clone(f.positional)); err != nil {
+			return err
+		}
+	}
+
+	if f.finalizePositionalAll != nil {
+		args, err := f.finalizePositionalAll(slices.Clone(f.positional))
+		if err != nil {
+			return err
+		}
+
+		f.positional = args
+	}
+
 	return nil
 }
 

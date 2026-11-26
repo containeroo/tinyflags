@@ -13,53 +13,55 @@ import (
 
 // FlagSet manages the definition, parsing, and usage output of command-line flags.
 type FlagSet struct {
-	name               string                           // Application or command name (used in usage)
-	errorHandling      ErrorHandling                    // Behavior when parsing fails
-	staticFlagsMap     map[string]*core.BaseFlag        // All registered static flags by name
-	staticFlagsOrder   []*core.BaseFlag                 // Static flags in registration order
-	dynamicGroupsMap   map[string]*dynamic.Group        // All dynamic groups by name
-	dynamicGroupsOrder []*dynamic.Group                 // Dynamic groups in registration order
-	oneOfGroup         []*core.OneOfGroupGroup          // All oneOfGroup groups
-	allOrNoneGroup     []*core.AllOrNoneGroup           // All all-or-none groups
-	positional         []string                         // Remaining non-flag arguments
-	minPositional      int                              // Minimum positional argument count
-	maxPositional      int                              // Maximum positional argument count
-	maxPositionalSet   bool                             // Whether a maximum positional argument count is configured
-	exactPositional    bool                             // Whether the configured bounds came from ExactPositional
-	validatePositional func(string) error               // Function to validate positional arguments
-	finalizePositional func(string) string              // Function to finalize positional arguments
-	envPrefixSet       bool                             // Whether a prefix was explicitly configured, including empty.
-	envPrefixParent    *FlagSet                         // Fallback scope for command prefix inheritance.
-	envPrefix          string                           // Optional ENV prefix (e.g. "APP_")
-	envKeyFunc         EnvKeyFunc                       // Function to derive env keys from prefix+flag name
-	getEnv             func(string) string              // Function used to read ENV vars (default: os.Getenv)
-	getEnvVars         func() []string                  // Function used to enumerate ENV vars (default: os.Environ)
-	hideEnvs           bool                             // Globally hide environment key hints
-	ignoreInvalidEnv   bool                             // Whether to ignore unknown ENV overrides
-	defaultDelimiter   string                           // Global slice delimiter (default: ",")
-	title              string                           // Title shown in usage output
-	desc               string                           // Prolog before flags
-	notes              string                           // Epilog after flags
-	versionString      string                           // Version string for --version
-	usagePrintMode     FlagPrintMode                    // Usage print mode (short|long|both|flags|none)
-	output             io.Writer                        // Destination for help output
-	enableHelp         bool                             // Whether built-in --help is enabled
-	enableVer          bool                             // Whether built-in --version is enabled
-	showHelp           *bool                            // Parsed value of --help
-	helpText           string                           // Custom help text
-	showVersion        *bool                            // Parsed value of --version
-	versionText        string                           // Custom version text
-	Usage              func()                           // Custom usage function (optional)
-	sortFlags          bool                             // Enable static flag sorting
-	sortGroups         bool                             // Enable dynamic group sorting
-	sectionOrder       []string                         // Explicit static help section order
-	builtinSection     string                           // Help section assigned to built-in help/version flags
-	oneOfVerbose       bool                             // Include conflicting flags in OneOf errors
-	authors            string                           // Optional authors block
-	beforeParse        func([]string) ([]string, error) // Hook to preprocess args
-	validators         []func() error                   // Cross-flag validators run after parsing
-	unknownFlag        func(string) error               // Handler for unknown flags
-	valueOrigins       map[string]ValueOrigin           // Exact origin of each value overridden during the most recent parse
+	name                  string                           // Application or command name (used in usage)
+	errorHandling         ErrorHandling                    // Behavior when parsing fails
+	staticFlagsMap        map[string]*core.BaseFlag        // All registered static flags by name
+	staticFlagsOrder      []*core.BaseFlag                 // Static flags in registration order
+	dynamicGroupsMap      map[string]*dynamic.Group        // All dynamic groups by name
+	dynamicGroupsOrder    []*dynamic.Group                 // Dynamic groups in registration order
+	oneOfGroup            []*core.OneOfGroupGroup          // All oneOfGroup groups
+	allOrNoneGroup        []*core.AllOrNoneGroup           // All all-or-none groups
+	positional            []string                         // Remaining non-flag arguments
+	minPositional         int                              // Minimum positional argument count
+	maxPositional         int                              // Maximum positional argument count
+	maxPositionalSet      bool                             // Whether a maximum positional argument count is configured
+	exactPositional       bool                             // Whether the configured bounds came from ExactPositional
+	validatePositional    func(string) error               // Function to validate positional arguments
+	finalizePositional    func(string) string              // Function to finalize positional arguments
+	validatePositionalAll func([]string) error             // Hook to validate all positional arguments together.
+	finalizePositionalAll func([]string) ([]string, error) // Hook to replace all positional arguments together.
+	envPrefixSet          bool                             // Whether a prefix was explicitly configured, including empty.
+	envPrefixParent       *FlagSet                         // Fallback scope for command prefix inheritance.
+	envPrefix             string                           // Optional ENV prefix (e.g. "APP_")
+	envKeyFunc            EnvKeyFunc                       // Function to derive env keys from prefix+flag name
+	getEnv                func(string) string              // Function used to read ENV vars (default: os.Getenv)
+	getEnvVars            func() []string                  // Function used to enumerate ENV vars (default: os.Environ)
+	hideEnvs              bool                             // Globally hide environment key hints
+	ignoreInvalidEnv      bool                             // Whether to ignore unknown ENV overrides
+	defaultDelimiter      string                           // Global slice delimiter (default: ",")
+	title                 string                           // Title shown in usage output
+	desc                  string                           // Prolog before flags
+	notes                 string                           // Epilog after flags
+	versionString         string                           // Version string for --version
+	usagePrintMode        FlagPrintMode                    // Usage print mode (short|long|both|flags|none)
+	output                io.Writer                        // Destination for help output
+	enableHelp            bool                             // Whether built-in --help is enabled
+	enableVer             bool                             // Whether built-in --version is enabled
+	showHelp              *bool                            // Parsed value of --help
+	helpText              string                           // Custom help text
+	showVersion           *bool                            // Parsed value of --version
+	versionText           string                           // Custom version text
+	Usage                 func()                           // Custom usage function (optional)
+	sortFlags             bool                             // Enable static flag sorting
+	sortGroups            bool                             // Enable dynamic group sorting
+	sectionOrder          []string                         // Explicit static help section order
+	builtinSection        string                           // Help section assigned to built-in help/version flags
+	oneOfVerbose          bool                             // Include conflicting flags in OneOf errors
+	authors               string                           // Optional authors block
+	beforeParse           func([]string) ([]string, error) // Hook to preprocess args
+	validators            []func() error                   // Cross-flag validators run after parsing
+	unknownFlag           func(string) error               // Handler for unknown flags
+	valueOrigins          map[string]ValueOrigin           // Exact origin of each value overridden during the most recent parse
 
 	descIndent int // Leading spaces used for the description block.
 	descWidth  int // Maximum wrapping width for the description block.
@@ -290,6 +292,16 @@ func (f *FlagSet) SetPositionalValidate(fn func(string) error) { f.validatePosit
 
 // SetPositionalFinalize sets the positional finalization hook.
 func (f *FlagSet) SetPositionalFinalize(fn func(string) string) { f.finalizePositional = fn }
+
+// SetPositionalValidateAll sets or clears the collection-level positional validation hook.
+func (f *FlagSet) SetPositionalValidateAll(fn func([]string) error) {
+	f.validatePositionalAll = fn
+}
+
+// SetPositionalFinalizeAll sets or clears the collection-level positional finalization hook.
+func (f *FlagSet) SetPositionalFinalizeAll(fn func([]string) ([]string, error)) {
+	f.finalizePositionalAll = fn
+}
 
 // --- Usage Formatting Configuration ---
 

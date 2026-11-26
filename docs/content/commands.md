@@ -48,6 +48,13 @@ port := serve.Int("port", 8080, "Listen port").Value()
 
 For `app --verbose serve --port=9090`, `verbose` and `port` are bound to their respective scopes. Use `SelectedCommand()` after parsing to identify the selected command. Nested command scopes can register their own persistent flags with `Globals()`.
 
+## Positional argument hooks
+
+Commands inherit the `FlagSet` positional hooks, including `SetPositionalValidateAll`
+and `SetPositionalFinalizeAll`. Each participating flag set processes its own
+positional slice. See [Parsing and positional arguments](parsing.md) for the
+execution order and an IP-address deduplication example.
+
 ## Typed execution
 
 Register a handler with `Run(handler, bindings...)` or a runner factory with `BuildCommand(builder)`. `ParseRunner` parses the command tree and returns the selected runner; the caller then executes it with a context.
