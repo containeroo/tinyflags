@@ -1,0 +1,22 @@
+site_name = "tinyflags"
+site_url = "https://containeroo.github.io/tinyflags/"
+source_dir = "docs/content"
+output_dir = "docs/site"
+language = "en"
+navigation_style = "sidebar"
+navigation_density = "compact"
+sidebar_width = 300
+footer = "tinyflags · Documentation built with Kumbuka"
+
+[[external_links]]
+label = "Repository"
+url = "https://github.com/containeroo/tinyflags"
+icon = "github-simple"
+description = "GitHub"
+hover_text = "{{label}} | {{description}}"
+
+[[external_links]]
+label = "Go API"
+url = "https://pkg.go.dev/github.com/containeroo/tinyflags"
+description = "Package reference"
+hover_text = "{{label}} | {{description}}"

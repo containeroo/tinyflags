@@ -1,5 +1,7 @@
 # Makefile
 
+.DEFAULT_GOAL := help
+
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
@@ -11,6 +13,22 @@ GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 ## Tool Versions
 # renovate: datasource=github-releases depName=golangci/golangci-lint
 GOLANGCI_LINT_VERSION ?= v2.15.0
+
+# renovate: datasource=github-releases depName=gi8lino/dev-tools
+DEV_TOOLS_VERSION ?= v0.9.0
+
+# renovate: datasource=github-releases depName=kumbuka-me/cli
+KUMBUKA_CLI_VERSION ?= v0.17.0
+KUMBUKA_CLI := $(LOCALBIN)/.kumbuka/$(KUMBUKA_CLI_VERSION)/kumbuka-cli
+KUMBUKA_CLI_ASSET ?= kumbuka-cli_{version}_{os}_{arch}.tar.gz
+
+include bin/dev-tools.mk
+
+## Documentation Configuration
+SITE_CONFIG ?= docs/site.toml
+SITE_PORT ?= 8000
+SITE_URL ?= http://127.0.0.1:$(SITE_PORT)/
+BUILD_ARGS ?=
 
 # Default: no prefix. Can be overridden via `make patch VERSION_PREFIX=v`
 VERSION_PREFIX ?= "v"
@@ -69,6 +87,7 @@ cover: ## Display test coverage
 .PHONY: clean
 clean: ## Clean up generated files
 	rm -f coverage.out coverage.html
+	rm -rf docs/site
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter.
@@ -78,7 +97,29 @@ lint: golangci-lint ## Run golangci-lint linter.
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes.
 	$(GOLANGCI_LINT) run --fix
 
+##@ Documentation
+
+.PHONY: build-docs
+build-docs: cli ## Build the production Kumbuka documentation site.
+	$(call run-tool,$(KUMBUKA_CLI),build --config "$(SITE_CONFIG)" $(BUILD_ARGS))
+
+.PHONY: serve-docs
+serve-docs: cli ## Serve and watch documentation locally.
+	$(call run-tool,$(KUMBUKA_CLI),serve --config "$(SITE_CONFIG)" --site-url "$(SITE_URL)" --listen-address "127.0.0.1:$(SITE_PORT)")
+
 ##@ Dependencies
+
+$(KUMBUKA_CLI): $(GITHUB_RELEASE_INSTALL)
+	@mkdir -p "$(dir $@)"
+	@$(GITHUB_RELEASE_INSTALL) \
+		--repo kumbuka-me/cli \
+		--tag "$(KUMBUKA_CLI_VERSION)" \
+		--asset "$(KUMBUKA_CLI_ASSET)" \
+		--binary kumbuka-cli \
+		--target "$@"
+
+.PHONY: cli
+cli: $(KUMBUKA_CLI) ## Download the pinned Kumbuka CLI release.
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
@@ -106,4 +147,3 @@ endef
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
-

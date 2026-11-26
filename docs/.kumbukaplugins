@@ -1,0 +1,13 @@
+[[plugin]]
+id = "me.kumbuka.simple-icons"
+repository = "kumbuka-me/plugins"
+tag_prefix = "simple-icons/v"
+asset = "simple-icons"
+version = "1.1.2"
+
+[[plugin]]
+id = "me.kumbuka.tables"
+repository = "kumbuka-me/plugins"
+tag_prefix = "tables/v"
+asset = "tables"
+version = "1.2.3"

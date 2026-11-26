@@ -1,4 +1,10 @@
 coverage.out
 .projectatlas
 cover.out
-/bin/
+/bin/*
+!/bin/dev-tools.mk
+
+# Generated documentation and downloaded plugins.
+/docs/site/
+plugins/*.kumbukaplugin
+plugins/.downloaded
