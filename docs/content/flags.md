@@ -92,7 +92,7 @@ tags := fs.StringSlice("tag", nil, "Tags").TrimSpace().Value()
 
 ## Boolean flags and counters
 
-Use `.Strict()` on a boolean flag to require an explicit value, for example `--silent=true` or `--silent=false`. Ordinary boolean flags can be enabled with `--debug`. A counter increments each time its flag is supplied.
+Use `.Strict()` on a boolean flag to require an explicit value, for example `--silent=true` or `--silent=false`. Ordinary boolean flags accept `--debug` (implicit `true`), `--debug=true`, and `--debug=false`. Explicit values are parsed and validated, and override environment values even when they equal the default. The same syntax applies to dynamic boolean flags. A counter increments each time its flag is supplied.
 
 ```go
 silent := fs.Bool("silent", false, "Silent mode").Strict().Value()

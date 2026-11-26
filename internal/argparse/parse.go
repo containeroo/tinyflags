@@ -144,7 +144,7 @@ func handleDynamic(name, val string, hasVal bool, raw string) stateFn {
 			return nil
 		}
 
-		if handled := tryDynamicBool(item, id); handled {
+		if !hasVal && tryDynamicBool(item, id) {
 			recordOrigin(p, name, "--"+name)
 			return stateStart
 		}
@@ -186,7 +186,7 @@ func handleStatic(name, val string, hasVal bool) stateFn {
 	return func(p *parser) stateFn {
 		flag := p.config.LookupStaticFlag(name)
 
-		if handled := tryBool(flag); handled {
+		if !hasVal && tryBool(flag) {
 			recordOrigin(p, flag.Name, "--"+name)
 			return stateStart
 		}
