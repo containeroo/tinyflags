@@ -11,3 +11,12 @@ repository = "kumbuka-me/plugins"
 tag_prefix = "tables/v"
 asset = "tables"
 version = "1.2.3"
+
+[[plugin]]
+id = "me.kumbuka.syntax-highlighting"
+repository = "kumbuka-me/plugins"
+tag_prefix = "syntax-highlighting/v"
+asset = "syntax-highlighting"
+version = "1.6.0"
+
+
