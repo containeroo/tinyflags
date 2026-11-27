@@ -18,7 +18,7 @@ GOLANGCI_LINT_VERSION ?= v2.15.0
 DEV_TOOLS_VERSION ?= v0.9.0
 
 # renovate: datasource=github-releases depName=kumbuka-me/cli
-KUMBUKA_CLI_VERSION ?= v0.17.3
+KUMBUKA_CLI_VERSION ?= v0.18.1
 KUMBUKA_CLI := $(LOCALBIN)/.kumbuka/$(KUMBUKA_CLI_VERSION)/kumbuka-cli
 KUMBUKA_CLI_ASSET ?= kumbuka-cli_{version}_{os}_{arch}.tar.gz
 
